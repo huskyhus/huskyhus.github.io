@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>通電ソコバン W2 — 扉</title>
+<style>
+  :root{
+    --paper:#D7DCD2; --paper-2:#CBD1C6; --rule:#AAB3A6;
+    --ink:#1C2620; --ink-soft:#4C5A51;
+    --brass:#B07C22; --brass-d:#8A5F14;
+    --slate:#69766D; --slate-d:#4E5A52;
+    --live:#D6402F;
+    --p1:#F0A81B; --p2:#1E8E7E;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    background-image:linear-gradient(var(--rule) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--rule) 1px,transparent 1px);
+    background-size:22px 22px;
+    color:var(--ink);
+    font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
+    min-height:100dvh;padding:14px 14px calc(18px + env(safe-area-inset-bottom));
+  }
+  .wrap{max-width:540px;margin:0 auto}
+  header{border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:12px}
+  .eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px}
+  h1{margin:0;font-size:21px;font-weight:800;line-height:1.2}
+  .lede{font-size:12.5px;color:var(--ink-soft);line-height:1.6;margin:9px 0 11px}
+  .lede b{color:var(--ink)}
+  .rules{display:flex;flex-wrap:wrap;gap:5px 12px;font-size:11.5px;
+    color:var(--ink-soft);margin-bottom:12px;line-height:1.5}
+  .rules b{color:var(--ink);font-weight:700}
+  .tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
+  .tab{font-family:ui-monospace,monospace;font-size:11px;padding:5px 8px;
+    border:1px solid var(--rule);background:transparent;color:var(--ink-soft);
+    cursor:pointer;border-radius:2px}
+  .tab.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .tab.done::after{content:"✓";margin-left:4px;color:var(--p1)}
+  .board-frame{position:relative;border:2px solid var(--ink);background:var(--paper-2)}
+  svg{display:block;width:100%;height:auto}
+  .clear{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    flex-direction:column;gap:10px;background:rgba(215,220,210,.93)}
+  .clear.on{display:flex}
+  .clear .t{font-size:26px;font-weight:800;letter-spacing:.08em}
+  .clear .s{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ink-soft)}
+  .status{display:flex;justify-content:space-between;align-items:baseline;
+    font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ink-soft);margin:8px 2px 12px}
+  .status b{color:var(--ink);font-size:14px}
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:250px;margin:0 auto}
+  button.k{border:2px solid var(--ink);background:transparent;color:var(--ink);
+    font-size:17px;padding:13px 0;border-radius:3px;cursor:pointer;
+    font-family:ui-monospace,monospace;font-weight:700}
+  button.k:active{background:var(--ink);color:var(--paper)}
+  button.k:focus-visible{outline:3px solid var(--live);outline-offset:2px}
+  .k.ghost{border-style:dashed;font-size:12px;font-weight:600}
+  .k.blank{border:none;pointer-events:none}
+  footer{margin-top:16px;padding-top:10px;border-top:1px solid var(--rule);
+    font-size:11px;color:var(--ink-soft);line-height:1.65}
+  footer code{font-family:ui-monospace,monospace;background:var(--paper-2);padding:1px 4px}
+  @media (prefers-reduced-motion: no-preference){
+    .flow{animation:dash 1s linear infinite}
+    @keyframes dash{to{stroke-dashoffset:-14}}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Mechanic prototype / World 2</div>
+  <h1>通電ソコバン ─ 扉</h1>
+</header>
+
+<p class="lede">
+  ゴールが「電球を点ける」から<b>「点けた状態のまま通り抜ける」</b>に変わります。
+  扉を開けるには電球を点けたい。でも電球を点けると、動かしたい金属がロックされる。
+</p>
+
+<div class="rules">
+  <span><b>電池</b>はいつでも押せる</span>
+  <span><b>通電中の金属は押せない</b></span>
+  <span><b>扉</b>は対応する電球が点いている間だけ通れる</span>
+  <span>ブロックは扉を通れない</span>
+  <span><b>出口</b>に着けばクリア</span>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="board-frame">
+  <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="clear" id="clear">
+    <div class="t">クリア</div>
+    <div class="s" id="clearsub"></div>
+    <button class="k ghost" style="padding:9px 20px" id="next">つぎへ</button>
+  </div>
+</div>
+
+<div class="status">
+  <span>手数 <b id="moves">0</b></span>
+  <span id="par"></span>
+</div>
+
+<div class="pad">
+  <button class="k blank"></button>
+  <button class="k" data-d="U">↑</button>
+  <button class="k blank"></button>
+  <button class="k" data-d="L">←</button>
+  <button class="k" data-d="D">↓</button>
+  <button class="k" data-d="R">→</button>
+  <button class="k ghost" id="undo">もどす</button>
+  <button class="k blank"></button>
+  <button class="k ghost" id="reset">やりなおす</button>
+</div>
+
+<footer>
+  スワイプ、矢印キー、<code>WASD</code> で操作。<code>Z</code> もどす / <code>R</code> やりなおし。<br>
+  「最短」は幅優先探索による理論値。扉を迂回できる抜け道がないことも機械検証済みです。
+</footer>
+
+</div>
+
+<script>
+const LEVELS = [
+ {n:"2-1 とびら", par:9, g:[
+  "##########",
+  "#...1#...#",
+  "#@.S.a..E#",
+  "#....#...#",
+  "##########"]},
+ {n:"2-2 でんせん", par:10, g:[
+  "###########",
+  "#.......#.#",
+  "#@.S..M1#.#",
+  "#.......a.#",
+  "#.......#E#",
+  "###########"]},
+ {n:"2-3 いすわる", par:22, g:[
+  "###########",
+  "#...1#....#",
+  "#..M.#....#",
+  "#....a....#",
+  "#..S@#....#",
+  "#..M.#...E#",
+  "###########"]},
+ {n:"2-4 ならびかえ", par:28, g:[
+  "###########",
+  "#....#....#",
+  "#.S..#....#",
+  "#.MM.a....#",
+  "#...1#....#",
+  "#..@.#...E#",
+  "###########"]},
+ {n:"2-5 いれかえ", par:30, g:[
+  "###########",
+  "#....#....#",
+  "#.1..#....#",
+  "#....a....#",
+  "#.@S.#....#",
+  "#M.M.#...E#",
+  "###########"]},
+ {n:"2-6 ふたつの扉", par:34, g:[
+  "############",
+  "#...@#.....#",
+  "#.M..#.....#",
+  "#.1SMa.....#",
+  "#2...#####b#",
+  "#....#####E#",
+  "############"]}
+];
+
+const DIRS={U:[-1,0],D:[1,0],L:[0,-1],R:[0,1]};
+const PAIR={a:'1',b:'2',c:'3'};
+const TINT={'1':'var(--p1)','2':'var(--p2)','3':'var(--live)'};
+const U=100;
+const done=new Array(LEVELS.length).fill(false);
+let idx=0,S=null,hist=[];
+
+function load(i){
+  idx=i;
+  const st=[],blocks={}; let player=null;
+  LEVELS[i].g.forEach((row,y)=>{
+    const r=[];
+    [...row].forEach((ch,x)=>{
+      if(ch==='#'||ch==='E'||'123'.includes(ch)||'abc'.includes(ch)) r.push(ch);
+      else{ r.push('.');
+        if(ch==='S'||ch==='M') blocks[y+','+x]=ch;
+        else if(ch==='@') player={y,x};
+      }
+    });
+    st.push(r);
+  });
+  S={st,blocks,player,moves:0}; hist=[];
+  document.getElementById('clear').classList.remove('on');
+  document.getElementById('par').textContent='最短 '+LEVELS[i].par+'手';
+  drawTabs(); draw();
+}
+
+function powered(){
+  const b=S.blocks, set=new Set(), q=[];
+  for(const k in b){
+    if(b[k]!=='S') continue;
+    const [y,x]=k.split(',').map(Number);
+    for(const d in DIRS){const nk=(y+DIRS[d][0])+','+(x+DIRS[d][1]);
+      if(b[nk]==='M'&&!set.has(nk)){set.add(nk);q.push(nk);}}
+  }
+  while(q.length){
+    const [y,x]=q.pop().split(',').map(Number);
+    for(const d in DIRS){const nk=(y+DIRS[d][0])+','+(x+DIRS[d][1]);
+      if(b[nk]==='M'&&!set.has(nk)){set.add(nk);q.push(nk);}}
+  }
+  return set;
+}
+function energized(){const e=powered();for(const k in S.blocks)if(S.blocks[k]==='S')e.add(k);return e;}
+function litLabels(){
+  const e=energized(), out=new Set();
+  S.st.forEach((row,y)=>row.forEach((c,x)=>{
+    if(!'123'.includes(c)) return;
+    for(const d in DIRS) if(e.has((y+DIRS[d][0])+','+(x+DIRS[d][1]))) out.add(c);
+  }));
+  return out;
+}
+function walkable(y,x){
+  const c=S.st[y]?.[x];
+  if(c==='.'||c==='E') return true;
+  if(c&&'abc'.includes(c)) return litLabels().has(PAIR[c]);
+  return false;
+}
+function won(){ return S.st[S.player.y][S.player.x]==='E'; }
+function snapshot(){return {blocks:{...S.blocks},player:{...S.player},moves:S.moves};}
+
+function move(d){
+  if(won()) return;
+  const [dy,dx]=DIRS[d],{st,blocks,player}=S;
+  const ny=player.y+dy,nx=player.x+dx;
+  if(!walkable(ny,nx)) return;
+  const key=ny+','+nx;
+  if(!blocks[key]){hist.push(snapshot());S.player={y:ny,x:nx};S.moves++;after();return;}
+  const run=[]; let cy=ny,cx=nx;
+  while(blocks[cy+','+cx]){run.push([cy,cx]);cy+=dy;cx+=dx;}
+  if(st[cy]?.[cx]!=='.') return;              // ブロックは床にしか入れない
+  const p=powered();
+  for(const [y,x] of run) if(p.has(y+','+x)) return;   // 通電中はロック
+  hist.push(snapshot());
+  for(let i=run.length-1;i>=0;i--){
+    const [y,x]=run[i],k=y+','+x,t=blocks[k];
+    delete blocks[k]; blocks[(y+dy)+','+(x+dx)]=t;
+  }
+  S.player={y:ny,x:nx}; S.moves++; after();
+}
+function after(){
+  draw();
+  if(won()){
+    done[idx]=true; drawTabs();
+    document.getElementById('clearsub').textContent=S.moves+'手 / 最短 '+LEVELS[idx].par+'手';
+    setTimeout(()=>document.getElementById('clear').classList.add('on'),260);
+  }
+}
+function undo(){
+  const s=hist.pop(); if(!s) return;
+  S.blocks=s.blocks;S.player=s.player;S.moves=s.moves;
+  document.getElementById('clear').classList.remove('on'); draw();
+}
+function drawTabs(){
+  const t=document.getElementById('tabs'); t.innerHTML='';
+  LEVELS.forEach((L,i)=>{
+    const b=document.createElement('button');
+    b.className='tab'+(i===idx?' on':'')+(done[i]?' done':'');
+    b.textContent=L.n.split(' ')[0]; b.onclick=()=>load(i);
+    t.appendChild(b);
+  });
+}
+
+function draw(){
+  const {st,blocks,player}=S;
+  const rows=st.length,cols=st[0].length;
+  const e=energized(),p=powered(),lit=litLabels();
+  const cx=x=>x*U+U/2, cy=y=>y*U+U/2;
+  let s='';
+
+  // 床・壁
+  st.forEach((row,y)=>row.forEach((c,x)=>{
+    if(c==='#'){
+      s+=`<rect x="${x*U}" y="${y*U}" width="${U}" height="${U}" fill="var(--ink)"/>`;
+    }else{
+      s+=`<rect x="${x*U}" y="${y*U}" width="${U}" height="${U}" fill="none" stroke="var(--rule)" stroke-width="1.5"/>`;
+      s+=`<circle cx="${cx(x)}" cy="${cy(y)}" r="2.5" fill="var(--rule)"/>`;
+    }
+  }));
+
+  // 扉
+  st.forEach((row,y)=>row.forEach((c,x)=>{
+    if(!'abc'.includes(c)) return;
+    const open=lit.has(PAIR[c]), col=TINT[PAIR[c]];
+    s+=`<rect x="${x*U}" y="${y*U}" width="${U}" height="${U}" fill="${open?'none':'var(--ink)'}"
+         stroke="${col}" stroke-width="6"/>`;
+    if(open){
+      s+=`<rect x="${x*U+4}" y="${y*U+4}" width="13" height="${U-8}" fill="${col}" opacity=".85"/>`;
+      s+=`<rect x="${x*U+U-17}" y="${y*U+4}" width="13" height="${U-8}" fill="${col}" opacity=".85"/>`;
+    }else{
+      for(let i=0;i<3;i++)
+        s+=`<rect x="${x*U+18+i*24}" y="${y*U+12}" width="11" height="${U-24}" fill="${col}" opacity=".8"/>`;
+    }
+  }));
+
+  // 電流トレース
+  const seg=[];
+  for(const k of e){
+    const [y,x]=k.split(',').map(Number);
+    for(const d of ['R','D']){
+      const [dy,dx]=DIRS[d],nk=(y+dy)+','+(x+dx);
+      if(e.has(nk)) seg.push([x,y,x+dx,y+dy]);
+    }
+    st.forEach((row,by)=>row.forEach((c,bx)=>{
+      if('123'.includes(c)&&Math.abs(by-y)+Math.abs(bx-x)===1) seg.push([x,y,bx,by]);
+    }));
+  }
+  seg.forEach(([x1,y1,x2,y2])=>{
+    s+=`<line x1="${cx(x1)}" y1="${cy(y1)}" x2="${cx(x2)}" y2="${cy(y2)}"
+         stroke="var(--live)" stroke-width="7" stroke-linecap="round" opacity=".9"
+         stroke-dasharray="9 5" class="flow"/>`;
+  });
+
+  // 電球
+  st.forEach((row,y)=>row.forEach((c,x)=>{
+    if(!'123'.includes(c)) return;
+    const on=lit.has(c), col=TINT[c];
+    if(on) s+=`<circle cx="${cx(x)}" cy="${cy(y)}" r="44" fill="${col}" opacity=".26"/>`;
+    s+=`<circle cx="${cx(x)}" cy="${cy(y)}" r="27" fill="${on?col:'none'}" stroke="var(--ink)" stroke-width="5"/>`;
+    if(on) for(let a=0;a<8;a++){
+      const r=a*Math.PI/4;
+      s+=`<line x1="${cx(x)+Math.cos(r)*34}" y1="${cy(y)+Math.sin(r)*34}"
+           x2="${cx(x)+Math.cos(r)*44}" y2="${cy(y)+Math.sin(r)*44}"
+           stroke="${col}" stroke-width="5" stroke-linecap="round"/>`;
+    }
+    s+=`<text x="${cx(x)}" y="${cy(y)+42}" text-anchor="middle"
+         font-family="ui-monospace,monospace" font-size="20" font-weight="700"
+         fill="var(--ink-soft)">${c}</text>`;
+  }));
+
+  // 出口
+  st.forEach((row,y)=>row.forEach((c,x)=>{
+    if(c!=='E') return;
+    s+=`<rect x="${x*U+14}" y="${y*U+14}" width="${U-28}" height="${U-28}" rx="3"
+         fill="none" stroke="var(--ink)" stroke-width="5" stroke-dasharray="12 7"/>`;
+    s+=`<path d="M${cx(x)-16} ${cy(y)-16} L${cx(x)+4} ${cy(y)} L${cx(x)-16} ${cy(y)+16}"
+         fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }));
+
+  // ブロック
+  for(const k in blocks){
+    const [y,x]=k.split(',').map(Number),t=blocks[k];
+    const X=x*U+11,Y=y*U+11,W=U-22;
+    if(t==='S'){
+      s+=`<rect x="${X}" y="${Y}" width="${W}" height="${W}" rx="7" fill="var(--brass)" stroke="var(--brass-d)" stroke-width="5"/>`;
+      s+=`<rect x="${X+13}" y="${Y+W/2-4}" width="${W*0.28}" height="8" fill="var(--paper)"/>`;
+      s+=`<rect x="${X+W-13-W*0.28}" y="${Y+W/2-4}" width="${W*0.28}" height="8" fill="var(--paper)"/>`;
+      s+=`<rect x="${X+W-13-W*0.28+W*0.14-4}" y="${Y+W/2-18}" width="8" height="28" fill="var(--paper)"/>`;
+    }else{
+      const on=p.has(k);
+      s+=`<rect x="${X}" y="${Y}" width="${W}" height="${W}" rx="4"
+           fill="${on?'#E8B3AA':'var(--slate)'}" stroke="${on?'var(--live)':'var(--slate-d)'}" stroke-width="6"/>`;
+      for(let i=1;i<=2;i++)
+        s+=`<line x1="${X+W*0.2}" y1="${Y+W*i/3}" x2="${X+W*0.8}" y2="${Y+W*i/3}"
+             stroke="${on?'var(--live)':'var(--slate-d)'}" stroke-width="4" opacity=".65"/>`;
+    }
+  }
+
+  // プレイヤー
+  s+=`<circle cx="${cx(player.x)}" cy="${cy(player.y)}" r="28" fill="var(--ink)" stroke="var(--paper)" stroke-width="4"/>`;
+  s+=`<circle cx="${cx(player.x)-9}" cy="${cy(player.y)-6}" r="4.5" fill="var(--paper)"/>`;
+  s+=`<circle cx="${cx(player.x)+9}" cy="${cy(player.y)-6}" r="4.5" fill="var(--paper)"/>`;
+
+  const b=document.getElementById('board');
+  b.setAttribute('viewBox',`0 0 ${cols*U} ${rows*U}`);
+  b.innerHTML=s;
+  document.getElementById('moves').textContent=S.moves;
+}
+
+document.querySelectorAll('[data-d]').forEach(b=>b.addEventListener('click',()=>move(b.dataset.d)));
+document.getElementById('undo').onclick=undo;
+document.getElementById('reset').onclick=()=>load(idx);
+document.getElementById('next').onclick=()=>load(Math.min(idx+1,LEVELS.length-1));
+addEventListener('keydown',ev=>{
+  const m={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',
+           w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R'};
+  if(m[ev.key]){ev.preventDefault();move(m[ev.key]);}
+  if(ev.key==='z'||ev.key==='Z') undo();
+  if(ev.key==='r'||ev.key==='R') load(idx);
+});
+let t0=null;
+const bd=document.getElementById('board');
+bd.addEventListener('touchstart',e=>{t0=e.changedTouches[0]},{passive:true});
+bd.addEventListener('touchend',e=>{
+  if(!t0) return;
+  const t=e.changedTouches[0],dx=t.clientX-t0.clientX,dy=t.clientY-t0.clientY;
+  if(Math.abs(dx)<24&&Math.abs(dy)<24) return;
+  move(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'));
+},{passive:true});
+
+load(0);
+</script>
+</body>
+</html>
