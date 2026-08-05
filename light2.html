@@ -10,11 +10,10 @@
     --ink:#1C2620; --ink-soft:#4C5A51;
     --brass:#B07C22; --brass-d:#8A5F14;
     --slate:#69766D; --slate-d:#4E5A52;
-    --live:#D6402F;
-    --p1:#F0A81B; --p2:#1E8E7E;
+    --live:#D6402F; --p1:#F0A81B; --p2:#1E8E7E;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0}
+  html,body{margin:0;padding:0;overscroll-behavior:none}
   body{
     background:var(--paper);
     background-image:linear-gradient(var(--rule) 1px,transparent 1px),
@@ -22,49 +21,102 @@
     background-size:22px 22px;
     color:var(--ink);
     font-family:"Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif;
-    min-height:100dvh;padding:14px 14px calc(18px + env(safe-area-inset-bottom));
+    min-height:100dvh;padding:14px 14px calc(20px + env(safe-area-inset-bottom));
+    touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;
+    -webkit-text-size-adjust:100%;
   }
   .wrap{max-width:540px;margin:0 auto}
-  header{border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:12px}
-  .eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;
-    letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:3px}
-  h1{margin:0;font-size:21px;font-weight:800;line-height:1.2}
-  .lede{font-size:12.5px;color:var(--ink-soft);line-height:1.6;margin:9px 0 11px}
-  .lede b{color:var(--ink)}
-  .rules{display:flex;flex-wrap:wrap;gap:5px 12px;font-size:11.5px;
-    color:var(--ink-soft);margin-bottom:12px;line-height:1.5}
+
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;
+    border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:10px}
+  h1{margin:0;font-size:20px;font-weight:800;line-height:1.2}
+
+  .rules{display:flex;flex-wrap:wrap;gap:4px 11px;font-size:11px;
+    color:var(--ink-soft);margin-bottom:10px;line-height:1.5}
   .rules b{color:var(--ink);font-weight:700}
-  .tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
-  .tabnote{font-family:ui-monospace,monospace;font-size:10px;color:var(--ink-soft);
-    letter-spacing:.1em;margin:0 0 11px 2px}
-  .meter{letter-spacing:.12em;font-size:12px;color:var(--live)}
-  .meter i{color:var(--rule);font-style:normal}
-  .tab{font-family:ui-monospace,monospace;font-size:10.5px;padding:4px 6px;min-width:34px;
+
+  /* --- キーボード凡例(マウス/トラックパッド環境でのみ表示) --- */
+  .keys{display:none;gap:14px;flex-wrap:wrap;align-items:center;
+    border:2px solid var(--ink);padding:8px 11px;margin-bottom:11px;
+    font-size:12px;font-weight:600}
+  @media (hover:hover) and (pointer:fine){ .keys{display:flex} }
+  .keys .grp{display:flex;align-items:center;gap:5px}
+  kbd{font-family:ui-monospace,monospace;font-size:11px;font-weight:700;
+    background:var(--ink);color:var(--paper);border-radius:3px;
+    padding:3px 7px;min-width:22px;text-align:center;display:inline-block}
+
+  .tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:11px}
+  .tab{font-family:ui-monospace,monospace;font-size:10.5px;padding:4px 5px;min-width:33px;
     border:1px solid var(--rule);background:transparent;color:var(--ink-soft);
-    cursor:pointer;border-radius:2px}
+    cursor:pointer;border-radius:2px;touch-action:manipulation}
   .tab.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-  .tab.done::after{content:"✓";margin-left:4px;color:var(--p1)}
+  .tab.done{border-color:var(--ink-soft);color:var(--ink)}
+  .tab.done::after{content:"✓";margin-left:3px;color:var(--ink-soft)}
+  .tab.perfect{border-color:var(--p1);background:rgba(240,168,27,.22);color:var(--ink)}
+  .tab.perfect::after{content:"★";color:var(--brass-d)}
+  .tab.on.perfect{background:var(--ink);color:var(--paper)}
+  .tab.on.perfect::after{color:var(--p1)}
+
+  /* --- ステージタイトル(署名要素) --- */
+  .stage{display:flex;align-items:center;gap:11px;background:var(--ink);color:var(--paper);
+    padding:11px 13px;border:2px solid var(--ink);border-bottom:none}
+  .stage .num{font-family:ui-monospace,monospace;font-size:13px;font-weight:700;
+    letter-spacing:.08em;opacity:.72;flex:none}
+  .stage .ttl{font-size:20px;font-weight:800;letter-spacing:.06em;line-height:1;flex:1;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stage .meter{font-size:12px;letter-spacing:.1em;color:var(--live);flex:none}
+  .stage .meter i{color:rgba(215,220,210,.35);font-style:normal}
+
   .board-frame{position:relative;border:2px solid var(--ink);background:var(--paper-2)}
-  svg{display:block;width:100%;height:auto}
+  #board{display:block;width:100%;height:auto;touch-action:none}
+  #doglayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+
   .clear{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
-    flex-direction:column;gap:10px;background:rgba(215,220,210,.93)}
+    flex-direction:column;gap:7px;padding:16px;text-align:center;
+    background:rgba(215,220,210,.95)}
   .clear.on{display:flex}
-  .clear .t{font-size:26px;font-weight:800;letter-spacing:.08em}
+  .clear .t{font-size:27px;font-weight:800;letter-spacing:.1em;line-height:1.1}
+  .clear.perfect .t{color:var(--brass-d)}
+  .clear .praise{font-size:13.5px;font-weight:700;line-height:1.5}
   .clear .s{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ink-soft)}
-  .status{display:flex;justify-content:space-between;align-items:baseline;
-    font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ink-soft);margin:8px 2px 12px}
-  .status b{color:var(--ink);font-size:14px}
-  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:250px;margin:0 auto}
+  .stars{font-size:19px;letter-spacing:.18em;color:var(--p1)}
+  .nexthint{display:none;font-family:ui-monospace,monospace;font-size:10.5px;color:var(--ink-soft)}
+  @media (hover:hover) and (pointer:fine){ .nexthint{display:block} }
+
+  .timers{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+    font-family:ui-monospace,monospace;font-size:11px;color:var(--ink-soft);
+    border:2px solid var(--ink);border-top:none;padding:7px 11px;margin-bottom:13px}
+  .timers b{color:var(--ink);font-size:15px;font-variant-numeric:tabular-nums}
+
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:270px;margin:0 auto}
   button.k{border:2px solid var(--ink);background:transparent;color:var(--ink);
-    font-size:17px;padding:13px 0;border-radius:3px;cursor:pointer;
-    font-family:ui-monospace,monospace;font-weight:700}
+    font-size:19px;padding:15px 0;border-radius:3px;cursor:pointer;
+    font-family:ui-monospace,monospace;font-weight:700;touch-action:none}
   button.k:active{background:var(--ink);color:var(--paper)}
   button.k:focus-visible{outline:3px solid var(--live);outline-offset:2px}
-  .k.ghost{border-style:dashed;font-size:12px;font-weight:600}
   .k.blank{border:none;pointer-events:none}
-  footer{margin-top:16px;padding-top:10px;border-top:1px solid var(--rule);
+  .undo{grid-column:1 / -1;font-family:inherit;font-size:15px;font-weight:700;
+    padding:14px 0;background:var(--ink);color:var(--paper)}
+  .undo:active{opacity:.65}
+
+  .reset{border:2px dashed var(--ink-soft);background:transparent;color:var(--ink-soft);
+    font-size:11.5px;font-weight:600;padding:0 4px;border-radius:3px;cursor:pointer;
+    font-family:inherit;touch-action:manipulation;line-height:1.25}
+  .reset:active{background:var(--ink-soft);color:var(--paper)}
+  .reset.armed{border-style:solid;border-color:var(--live);color:var(--live);font-weight:700}
+
+  .share{display:flex;gap:8px;align-items:center;margin:16px 0 0}
+  .share button{flex:1;border:2px solid var(--ink);background:transparent;color:var(--ink);
+    font-family:inherit;font-size:13px;font-weight:700;padding:12px;border-radius:3px;
+    cursor:pointer;touch-action:manipulation}
+  .share button:active{background:var(--ink);color:var(--paper)}
+  .toast{font-family:ui-monospace,monospace;font-size:11px;color:var(--live);
+    opacity:0;transition:opacity .2s;flex:none}
+  .toast.on{opacity:1}
+
+  footer{margin-top:15px;padding-top:10px;border-top:1px solid var(--rule);
     font-size:11px;color:var(--ink-soft);line-height:1.65}
-  footer code{font-family:ui-monospace,monospace;background:var(--paper-2);padding:1px 4px}
   @media (prefers-reduced-motion: no-preference){
     .flow{animation:dash 1s linear infinite}
     @keyframes dash{to{stroke-dashoffset:-14}}
@@ -75,15 +127,8 @@
 <div class="wrap">
 
 <header>
-  <div class="eyebrow">Mechanic prototype / World 2 &nbsp;·&nbsp; 26 levels</div>
   <h1>通電ソコバン ─ 扉</h1>
 </header>
-
-<p class="lede">
-  ゴールが「電球を点ける」から<b>「点けた状態のまま通り抜ける」</b>に変わります。
-  扉を開けるには電球を点けたい。でも電球を点けると、動かしたい金属がロックされる。
-  全26レベル、最短9手から109手まで難易度が単調に上がります。
-</p>
 
 <div class="rules">
   <span><b>電池</b>はいつでも押せる</span>
@@ -93,81 +138,147 @@
   <span><b>出口</b>に着けばクリア</span>
 </div>
 
+<div class="keys">
+  <span class="grp"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> または <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移動</span>
+  <span class="grp"><kbd>Z</kbd> もどす</span>
+  <span class="grp"><kbd>R</kbd> やりなおす</span>
+  <span class="grp"><kbd>Enter</kbd> 次のステージ</span>
+</div>
+
 <div class="tabs" id="tabs"></div>
-<div class="tabnote" id="tabnote"></div>
+
+<div class="stage">
+  <span class="num" id="stnum"></span>
+  <span class="ttl" id="stttl"></span>
+  <span class="meter" id="meter"></span>
+</div>
 
 <div class="board-frame">
   <svg id="board" xmlns="http://www.w3.org/2000/svg"></svg>
+    <svg id="doglayer" xmlns="http://www.w3.org/2000/svg"></svg>
   <div class="clear" id="clear">
-    <div class="t">クリア</div>
+    <div class="stars" id="stars"></div>
+    <div class="t" id="cleartitle">クリア</div>
+    <div class="praise" id="praise"></div>
     <div class="s" id="clearsub"></div>
-    <button class="k ghost" style="padding:9px 20px" id="next">つぎへ</button>
+    <button class="k" style="padding:10px 26px;font-size:14px" id="next">つぎへ</button>
+    <div class="nexthint">Enter でも進めます</div>
   </div>
 </div>
 
-<div class="status">
-  <span>手数 <b id="moves">0</b></span>
-  <span>難易度 <span class="meter" id="meter"></span> &nbsp;最短 <b id="par2"></b>手</span>
+<div class="timers">
+  <span>このステージ <b id="tlevel">0:00</b></span>
+  <span>手数 <b id="moves">0</b> / 最短 <b id="par2">0</b></span>
+  <span>トータル <b id="ttotal">0:00</b></span>
 </div>
 
 <div class="pad">
   <button class="k blank"></button>
   <button class="k" data-d="U">↑</button>
-  <button class="k blank"></button>
+  <button class="reset" id="reset">やりなおす</button>
   <button class="k" data-d="L">←</button>
   <button class="k" data-d="D">↓</button>
   <button class="k" data-d="R">→</button>
-  <button class="k ghost" id="undo">もどす</button>
-  <button class="k blank"></button>
-  <button class="k ghost" id="reset">やりなおす</button>
+  <button class="k undo" id="undo">もどす</button>
 </div>
 
-<footer>
-  スワイプ、矢印キー、<code>WASD</code> で操作。<code>Z</code> もどす / <code>R</code> やりなおし。<br>
-  「最短」は幅優先探索による理論値。扉を迂回できる抜け道がないことも機械検証済みです。
-</footer>
+<div class="share">
+  <button id="sharebtn">記録をコピー</button>
+  <span class="toast" id="toast">コピーしました</span>
+</div>
+
 
 </div>
 
 <script>
 const LEVELS = [
- {n:"2-1 とびら", par:9, g:["##########","#...1#...#","#@.S.a..E#","#....#...#","##########"]},
- {n:"2-2 でんせん", par:10, g:["###########","#.......#.#","#@.S..M1#.#","#.......a.#","#.......#E#","###########"]},
- {n:"2-3 いすわる", par:22, g:["###########","#...1#....#","#..M.#....#","#....a....#","#..S@#....#","#..M.#...E#","###########"]},
- {n:"2-4 ならびかえ", par:28, g:["###########","#....#....#","#.S..#....#","#.MM.a....#","#...1#....#","#..@.#...E#","###########"]},
- {n:"2-5 いれかえ", par:30, g:["###########","#....#....#","#.1..#....#","#....a....#","#.@S.#....#","#M.M.#...E#","###########"]},
- {n:"2-6 ふたつの扉", par:34, g:["############","#...@#.....#","#.M..#.....#","#.1SMa.....#","#2...#####b#","#....#####E#","############"]},
- {n:"2-7 えだわかれ", par:35, g:["############","#1....#....#","#...SM#....#","#....Ma....#","#.....#....#","#@....#...E#","############"]},
- {n:"2-8 とおまわり", par:37, g:["############","#.....#....#","#.....#....#","#@M.1.a....#","#SM...#....#","#.....#...E#","############"]},
- {n:"2-9 かけなおし", par:39, g:["############","#1....#....#","#...SM#....#","#....Ma....#","#....M#....#","#.....#....#","#....@#...E#","############"]},
- {n:"2-10 いれちがい", par:41, g:["############","#.....#....#","#.....#....#","#1....a....#","#...M.#....#","#.M.S@#...E#","############"]},
- {n:"2-11 ふたまた", par:44, g:["#############","#.....#.....#","#.M.S.#.....#","#..2M.a.....#","#....M#.....#","#.....#####b#","#.1..@#####E#","#############"]},
- {n:"2-12 まきもどし", par:45, g:["############","#.MM.M#....#","#..S..#....#","#.....a....#","#.....#....#","#.....#....#","#...1@#...E#","############"]},
- {n:"2-13 つなぎかえ", par:47, g:["############","#.....#....#","#.#.#M#....#","#.M.S.a....#","#.#.#.#....#","#@1...#...E#","############"]},
- {n:"2-14 おいこし", par:50, g:["#############","#...@.#.....#","#...2.#.....#","#.....a.....#","#.M1..#.....#","#...S.#####b#","#..MM.#####E#","#############"]},
- {n:"2-15 したごしらえ", par:52, g:["#############","#M....#.....#","#MS1..#.....#","#.....a.....#","#2M...#.....#","#.....#####b#","#@....#####E#","#############"]},
- {n:"2-16 ぐるり", par:53, g:["############","#...1.#....#","#@....#....#","#M....a....#","#.....#....#","#SM.M.#....#","#.....#...E#","############"]},
- {n:"2-17 ふたつの配線", par:55, g:["##############","#M.2..@#.....#","#......#.....#","#S.....a.....#","#1M....#.....#","#.M....#####b#","#......#####E#","##############"]},
- {n:"2-18 せんろ", par:57, g:["#############","#..1..#.....#","#2.#@.#.....#","#...M.a.....#","#M.#..#.....#","#...SM#####b#","#.....#####E#","#############"]},
- {n:"2-19 やりくり", par:58, g:["#############","#...@.#.....#","#.....#.....#","#M....a.....#","#..S.1#.....#","#2M.M.#####b#","#.....#####E#","#############"]},
- {n:"2-20 ぎりぎり", par:61, g:["#############","#....@#.....#","#...21#.....#","#.....a.....#","#...SM#.....#","#..M..#####b#","#..M..#####E#","#############"]},
- {n:"2-21 ながみち", par:65, g:["############","#.....#....#","#.#M#.#....#","#...S.a....#","#.#M#1#....#","#..@..#...E#","############"]},
- {n:"2-22 かたみち", par:67, g:["############","#.....#....#","#.#M#.#....#","#.S...a....#","#.#M#1#....#","#....@#...E#","############"]},
- {n:"2-23 だんどり", par:82, g:["#############","#.....#.....#","#..#..#.....#","#.MM..a.....#","#.M#..#.....#","#.S.2.#####b#","#...1@#####E#","#############"]},
- {n:"2-24 ほどく", par:84, g:["#############","#.....#.....#","#.M#M.#.....#","#M.S..a.....#","#.1#..#.....#","#...@.#####b#","#...2.#####E#","#############"]},
- {n:"2-25 めぐる", par:89, g:["#############","#@....#.....#","#MS#..#.....#","#..M.Ma.....#","#.2#..#.....#","#.....#####b#","#..1..#####E#","#############"]},
- {n:"2-26 総仕上げ", par:109, g:["#############","#...M.#.....#","#..#..#.....#","#MSM..a.....#","#.@#..#.....#","#.12..#####b#","#.....#####E#","#############"]}
+ {n:"1 とびら", par:9, g:["##########","#...1#...#","#@.S.a..E#","#....#...#","##########"]},
+ {n:"2 でんせん", par:10, g:["###########","#.......#.#","#@.S..M1#.#","#.......a.#","#.......#E#","###########"]},
+ {n:"3 いすわる", par:22, g:["###########","#...1#....#","#..M.#....#","#....a....#","#..S@#....#","#..M.#...E#","###########"]},
+ {n:"4 ならびかえ", par:28, g:["###########","#....#....#","#.S..#....#","#.MM.a....#","#...1#....#","#..@.#...E#","###########"]},
+ {n:"5 いれかえ", par:30, g:["###########","#....#....#","#.1..#....#","#....a....#","#.@S.#....#","#M.M.#...E#","###########"]},
+ {n:"6 ふたつのとびら", par:34, g:["############","#...@#.....#","#.M..#.....#","#.1SMa.....#","#2...#####b#","#....#####E#","############"]},
+ {n:"7 えだわかれ", par:35, g:["############","#1....#....#","#...SM#....#","#....Ma....#","#.....#....#","#@....#...E#","############"]},
+ {n:"8 とおまわり", par:37, g:["############","#.....#....#","#.....#....#","#@M.1.a....#","#SM...#....#","#.....#...E#","############"]},
+ {n:"9 いれちがい", par:41, g:["############","#.....#....#","#.....#....#","#1....a....#","#...M.#....#","#.M.S@#...E#","############"]},
+ {n:"10 ふたまた", par:44, g:["#############","#.....#.....#","#.M.S.#.....#","#..2M.a.....#","#....M#.....#","#.....#####b#","#.1..@#####E#","#############"]},
+ {n:"11 まきもどし", par:45, g:["############","#.MM.M#....#","#..S..#....#","#.....a....#","#.....#....#","#.....#....#","#...1@#...E#","############"]},
+ {n:"12 つなぎかえ", par:47, g:["############","#.....#....#","#.#.#M#....#","#.M.S.a....#","#.#.#.#....#","#@1...#...E#","############"]},
+ {n:"13 おいこし", par:50, g:["#############","#...@.#.....#","#...2.#.....#","#.....a.....#","#.M1..#.....#","#...S.#####b#","#..MM.#####E#","#############"]},
+ {n:"14 したごしらえ", par:52, g:["#############","#M....#.....#","#MS1..#.....#","#.....a.....#","#2M...#.....#","#.....#####b#","#@....#####E#","#############"]},
+ {n:"15 ぐるり", par:53, g:["############","#...1.#....#","#@....#....#","#M....a....#","#.....#....#","#SM.M.#....#","#.....#...E#","############"]},
+ {n:"16 はいせん", par:55, g:["##############","#M.2..@#.....#","#......#.....#","#S.....a.....#","#1M....#.....#","#.M....#####b#","#......#####E#","##############"]},
+ {n:"17 せんろ", par:57, g:["#############","#..1..#.....#","#2.#@.#.....#","#...M.a.....#","#M.#..#.....#","#...SM#####b#","#.....#####E#","#############"]},
+ {n:"18 やりくり", par:58, g:["#############","#...@.#.....#","#.....#.....#","#M....a.....#","#..S.1#.....#","#2M.M.#####b#","#.....#####E#","#############"]},
+ {n:"19 ぎりぎり", par:61, g:["#############","#....@#.....#","#...21#.....#","#.....a.....#","#...SM#.....#","#..M..#####b#","#..M..#####E#","#############"]},
+ {n:"20 ながみち", par:65, g:["############","#.....#....#","#.#M#.#....#","#...S.a....#","#.#M#1#....#","#..@..#...E#","############"]},
+ {n:"21 かたみち", par:67, g:["############","#.....#....#","#.#M#.#....#","#.S...a....#","#.#M#1#....#","#....@#...E#","############"]},
+ {n:"22 だんどり", par:82, g:["#############","#.....#.....#","#..#..#.....#","#.MM..a.....#","#.M#..#.....#","#.S.2.#####b#","#...1@#####E#","#############"]},
+ {n:"23 ほどく", par:84, g:["#############","#.....#.....#","#.M#M.#.....#","#M.S..a.....#","#.1#..#.....#","#...@.#####b#","#...2.#####E#","#############"]},
+ {n:"24 めぐる", par:89, g:["#############","#@....#.....#","#MS#..#.....#","#..M.Ma.....#","#.2#..#.....#","#.....#####b#","#..1..#####E#","#############"]},
+ {n:"25 しあげ", par:109, g:["#############","#...M.#.....#","#..#..#.....#","#MSM..a.....#","#.@#..#.....#","#.12..#####b#","#.....#####E#","#############"]}
 ];
 
 const DIRS={U:[-1,0],D:[1,0],L:[0,-1],R:[0,1]};
 const PAIR={a:'1',b:'2',c:'3'};
 const TINT={'1':'var(--p1)','2':'var(--p2)','3':'var(--live)'};
-const U=100;
-const done=new Array(LEVELS.length).fill(false);
-let idx=0,S=null,hist=[];
+const U=100, MAXPAR=Math.max(...LEVELS.map(l=>l.par));
+const cleared=new Array(LEVELS.length).fill(false);
+const perfect=new Array(LEVELS.length).fill(false);
+const spent  =new Array(LEVELS.length).fill(0);   // 各ステージの累計ミリ秒
+let idx=0,S=null,hist=[],runFrom=null;
 
+const PRAISE_PERFECT=[
+  "完璧です。1手の無駄もありません。",
+  "理論値。お見事。",
+  "これ以上短いルートは存在しません。",
+  "最短。設計者の想定を正面から撃ち抜きました。",
+  "探索した数万通りの中で、あなたが選んだのが最善でした。",
+  "無駄手ゼロ。狙って出せる精度です。",
+  "この盤面の底が抜けました。",
+  "計算機が出した答えと、1手も違いません。",
+  "美しい。手数以上に、順番が正確です。",
+  "文句のつけようがない。",
+  "ソルバーが誇らしげです。",
+  "最短。ここまで来ると、もう解いているのではなく設計しています。"];
+
+const PRAISE_NEAR=[
+  "おしい。最短まであと {X} 手。",
+  "あと {X} 手。どこかに寄り道が残っています。",
+  "ほぼ最短。詰められる余地は {X} 手ぶんです。",
+  "惜しい。{X} 手ぶんの遠回りがありました。",
+  "あと {X} 手で理論値です。ここまで来たら取りたい。"];
+
+const PRAISE_GOOD=[
+  "いい線です。もう少し詰められます。",
+  "解けています。あとは順番の最適化です。",
+  "筋は通っています。無駄を削りましょう。",
+  "正解ルートの親戚くらいの距離感です。",
+  "悪くない。1回だけ戻って考え直すと縮みます。"];
+
+const PRAISE_OK=[
+  "クリア。まだ短くできます。",
+  "通りました。最短は {P} 手です。",
+  "ゴール。回り道の分だけ伸びています。",
+  "クリア。順番を変えると景色が変わります。",
+  "到達。次はもっと短く。"];
+
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* ---------- 時間 ---------- */
+function nowSpent(i){ return spent[i] + (runFrom!==null && i===idx ? Date.now()-runFrom : 0); }
+function totalMs(){ let t=0; for(let i=0;i<LEVELS.length;i++) t+=nowSpent(i); return t; }
+function fmt(ms){ const s=Math.floor(ms/1000); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function startClock(){ if(runFrom===null) runFrom=Date.now(); }
+function stopClock(){ if(runFrom!==null){ spent[idx]+=Date.now()-runFrom; runFrom=null; } }
+setInterval(()=>{
+  document.getElementById('tlevel').textContent=fmt(nowSpent(idx));
+  document.getElementById('ttotal').textContent=fmt(totalMs());
+},250);
+
+/* ---------- レベル読み込み ---------- */
 function load(i){
-  idx=i;
+  stopClock(); idx=i;
   const st=[],blocks={}; let player=null;
   LEVELS[i].g.forEach((row,y)=>{
     const r=[];
@@ -181,35 +292,31 @@ function load(i){
     st.push(r);
   });
   S={st,blocks,player,moves:0}; hist=[];
-  document.getElementById('clear').classList.remove('on');
-  const par=LEVELS[i].par, mx=109;
-  const filled=Math.max(1,Math.round(par/mx*7));
-  document.getElementById('meter').innerHTML=
-    '\u25ae'.repeat(filled)+'<i>'+'\u25af'.repeat(7-filled)+'</i>';
-  document.getElementById('par2').textContent=par;
-  document.getElementById('tabnote').textContent=
-    LEVELS[i].n+'  \u2014  '+(i+1)+' / '+LEVELS.length;
-  drawTabs(); draw();
+  document.getElementById('clear').classList.remove('on','perfect');
+  const parts=LEVELS[i].n.split(' ');
+  document.getElementById('stnum').textContent=parts[0];
+  document.getElementById('stttl').textContent=parts[1]||'';
+  const f=Math.max(1,Math.round(LEVELS[i].par/MAXPAR*7));
+  document.getElementById('meter').innerHTML='▮'.repeat(f)+'<i>'+'▯'.repeat(7-f)+'</i>';
+  document.getElementById('par2').textContent=LEVELS[i].par;
+  disarmReset(); drawTabs(); draw(); placeDogSafe();
 }
 
+/* ---------- ルール ---------- */
 function powered(){
-  const b=S.blocks, set=new Set(), q=[];
-  for(const k in b){
-    if(b[k]!=='S') continue;
+  const b=S.blocks,set=new Set(),q=[];
+  for(const k in b){ if(b[k]!=='S') continue;
     const [y,x]=k.split(',').map(Number);
     for(const d in DIRS){const nk=(y+DIRS[d][0])+','+(x+DIRS[d][1]);
-      if(b[nk]==='M'&&!set.has(nk)){set.add(nk);q.push(nk);}}
-  }
-  while(q.length){
-    const [y,x]=q.pop().split(',').map(Number);
+      if(b[nk]==='M'&&!set.has(nk)){set.add(nk);q.push(nk);}}}
+  while(q.length){ const [y,x]=q.pop().split(',').map(Number);
     for(const d in DIRS){const nk=(y+DIRS[d][0])+','+(x+DIRS[d][1]);
-      if(b[nk]==='M'&&!set.has(nk)){set.add(nk);q.push(nk);}}
-  }
+      if(b[nk]==='M'&&!set.has(nk)){set.add(nk);q.push(nk);}}}
   return set;
 }
 function energized(){const e=powered();for(const k in S.blocks)if(S.blocks[k]==='S')e.add(k);return e;}
 function litLabels(){
-  const e=energized(), out=new Set();
+  const e=energized(),out=new Set();
   S.st.forEach((row,y)=>row.forEach((c,x)=>{
     if(!'123'.includes(c)) return;
     for(const d in DIRS) if(e.has((y+DIRS[d][0])+','+(x+DIRS[d][1]))) out.add(c);
@@ -227,6 +334,7 @@ function snapshot(){return {blocks:{...S.blocks},player:{...S.player},moves:S.mo
 
 function move(d){
   if(won()) return;
+  disarmReset(); startClock();
   const [dy,dx]=DIRS[d],{st,blocks,player}=S;
   const ny=player.y+dy,nx=player.x+dx;
   if(!walkable(ny,nx)) return;
@@ -234,9 +342,9 @@ function move(d){
   if(!blocks[key]){hist.push(snapshot());S.player={y:ny,x:nx};S.moves++;after();return;}
   const run=[]; let cy=ny,cx=nx;
   while(blocks[cy+','+cx]){run.push([cy,cx]);cy+=dy;cx+=dx;}
-  if(st[cy]?.[cx]!=='.') return;              // ブロックは床にしか入れない
+  if(st[cy]?.[cx]!=='.') return;
   const p=powered();
-  for(const [y,x] of run) if(p.has(y+','+x)) return;   // 通電中はロック
+  for(const [y,x] of run) if(p.has(y+','+x)) return;
   hist.push(snapshot());
   for(let i=run.length-1;i>=0;i--){
     const [y,x]=run[i],k=y+','+x,t=blocks[k];
@@ -244,52 +352,75 @@ function move(d){
   }
   S.player={y:ny,x:nx}; S.moves++; after();
 }
+
 function after(){
   draw();
-  if(won()){
-    done[idx]=true; drawTabs();
-    document.getElementById('clearsub').textContent=S.moves+'手 / 最短 '+LEVELS[idx].par+'手';
-    setTimeout(()=>document.getElementById('clear').classList.add('on'),260);
-  }
+  if(!won()) return;
+  stopClock();
+  const par=LEVELS[idx].par, extra=S.moves-par, isPerfect=(extra===0);
+  cleared[idx]=true; if(isPerfect) perfect[idx]=true;
+  drawTabs();
+  const box=document.getElementById('clear');
+  box.classList.toggle('perfect',isPerfect);
+  document.getElementById('stars').textContent = isPerfect?'★ ★ ★' : (extra<=2?'★ ★':'★');
+  document.getElementById('cleartitle').textContent = isPerfect?'最短クリア':'クリア';
+  document.getElementById('praise').textContent = (isPerfect ? pick(PRAISE_PERFECT)
+    : extra<=2 ? pick(PRAISE_NEAR)
+    : extra<=par*0.25 ? pick(PRAISE_GOOD)
+    : pick(PRAISE_OK)).replace('{X}',extra).replace('{P}',par);
+  document.getElementById('clearsub').textContent =
+    `${S.moves}手 / 最短 ${par}手　・　${Math.round(nowSpent(idx)/1000)}秒`;
+  setTimeout(()=>box.classList.add('on'),240);
 }
+
 function undo(){
   const s=hist.pop(); if(!s) return;
+  disarmReset(); startClock();
   S.blocks=s.blocks;S.player=s.player;S.moves=s.moves;
-  document.getElementById('clear').classList.remove('on'); draw();
+  document.getElementById('clear').classList.remove('on','perfect'); draw();
 }
+
+/* ---------- やりなおす: 2回押し確認(誤爆防止) ---------- */
+let armed=false,armTimer=null;
+const resetBtn=document.getElementById('reset');
+function disarmReset(){ armed=false; resetBtn.classList.remove('armed');
+  resetBtn.textContent='やりなおす'; clearTimeout(armTimer); }
+function tapReset(){
+  if(armed){ disarmReset(); spent[idx]=nowSpent(idx); runFrom=null; load(idx); return; }
+  armed=true; resetBtn.classList.add('armed'); resetBtn.textContent='もう一度で確定';
+  armTimer=setTimeout(disarmReset,2500);
+}
+
+function nextLevel(){ if(idx<LEVELS.length-1) load(idx+1); }
+
 function drawTabs(){
   const t=document.getElementById('tabs'); t.innerHTML='';
   LEVELS.forEach((L,i)=>{
     const b=document.createElement('button');
-    b.className='tab'+(i===idx?' on':'')+(done[i]?' done':'');
+    b.className='tab'+(i===idx?' on':'')+(perfect[i]?' perfect':cleared[i]?' done':'');
     b.textContent=L.n.split(' ')[0]; b.onclick=()=>load(i);
     t.appendChild(b);
   });
 }
 
+/* ---------- 描画 ---------- */
 function draw(){
   const {st,blocks,player}=S;
   const rows=st.length,cols=st[0].length;
   const e=energized(),p=powered(),lit=litLabels();
   const cx=x=>x*U+U/2, cy=y=>y*U+U/2;
   let s='';
-
-  // 床・壁
   st.forEach((row,y)=>row.forEach((c,x)=>{
-    if(c==='#'){
-      s+=`<rect x="${x*U}" y="${y*U}" width="${U}" height="${U}" fill="var(--ink)"/>`;
-    }else{
+    if(c==='#'){ s+=`<rect x="${x*U}" y="${y*U}" width="${U}" height="${U}" fill="var(--ink)"/>`; }
+    else{
       s+=`<rect x="${x*U}" y="${y*U}" width="${U}" height="${U}" fill="none" stroke="var(--rule)" stroke-width="1.5"/>`;
       s+=`<circle cx="${cx(x)}" cy="${cy(y)}" r="2.5" fill="var(--rule)"/>`;
     }
   }));
-
-  // 扉
   st.forEach((row,y)=>row.forEach((c,x)=>{
     if(!'abc'.includes(c)) return;
     const open=lit.has(PAIR[c]), col=TINT[PAIR[c]];
-    s+=`<rect x="${x*U}" y="${y*U}" width="${U}" height="${U}" fill="${open?'none':'var(--ink)'}"
-         stroke="${col}" stroke-width="6"/>`;
+    s+=`<rect x="${x*U}" y="${y*U}" width="${U}" height="${U}" fill="${open?'none':'var(--ink)'}" stroke="${col}" stroke-width="6"/>`;
     if(open){
       s+=`<rect x="${x*U+4}" y="${y*U+4}" width="13" height="${U-8}" fill="${col}" opacity=".85"/>`;
       s+=`<rect x="${x*U+U-17}" y="${y*U+4}" width="13" height="${U-8}" fill="${col}" opacity=".85"/>`;
@@ -298,8 +429,6 @@ function draw(){
         s+=`<rect x="${x*U+18+i*24}" y="${y*U+12}" width="11" height="${U-24}" fill="${col}" opacity=".8"/>`;
     }
   }));
-
-  // 電流トレース
   const seg=[];
   for(const k of e){
     const [y,x]=k.split(',').map(Number);
@@ -316,8 +445,6 @@ function draw(){
          stroke="var(--live)" stroke-width="7" stroke-linecap="round" opacity=".9"
          stroke-dasharray="9 5" class="flow"/>`;
   });
-
-  // 電球
   st.forEach((row,y)=>row.forEach((c,x)=>{
     if(!'123'.includes(c)) return;
     const on=lit.has(c), col=TINT[c];
@@ -329,21 +456,16 @@ function draw(){
            x2="${cx(x)+Math.cos(r)*44}" y2="${cy(y)+Math.sin(r)*44}"
            stroke="${col}" stroke-width="5" stroke-linecap="round"/>`;
     }
-    s+=`<text x="${cx(x)}" y="${cy(y)+42}" text-anchor="middle"
-         font-family="ui-monospace,monospace" font-size="20" font-weight="700"
-         fill="var(--ink-soft)">${c}</text>`;
+    s+=`<text x="${cx(x)}" y="${cy(y)+42}" text-anchor="middle" font-family="ui-monospace,monospace"
+         font-size="20" font-weight="700" fill="var(--ink-soft)">${c}</text>`;
   }));
-
-  // 出口
   st.forEach((row,y)=>row.forEach((c,x)=>{
     if(c!=='E') return;
-    s+=`<rect x="${x*U+14}" y="${y*U+14}" width="${U-28}" height="${U-28}" rx="3"
-         fill="none" stroke="var(--ink)" stroke-width="5" stroke-dasharray="12 7"/>`;
-    s+=`<path d="M${cx(x)-16} ${cy(y)-16} L${cx(x)+4} ${cy(y)} L${cx(x)-16} ${cy(y)+16}"
-         fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;
+    s+=`<rect x="${x*U+14}" y="${y*U+14}" width="${U-28}" height="${U-28}" rx="3" fill="none"
+         stroke="var(--ink)" stroke-width="5" stroke-dasharray="12 7"/>`;
+    s+=`<path d="M${cx(x)-16} ${cy(y)-16} L${cx(x)+4} ${cy(y)} L${cx(x)-16} ${cy(y)+16}" fill="none"
+         stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;
   }));
-
-  // ブロック
   for(const k in blocks){
     const [y,x]=k.split(',').map(Number),t=blocks[k];
     const X=x*U+11,Y=y*U+11,W=U-22;
@@ -354,46 +476,237 @@ function draw(){
       s+=`<rect x="${X+W-13-W*0.28+W*0.14-4}" y="${Y+W/2-18}" width="8" height="28" fill="var(--paper)"/>`;
     }else{
       const on=p.has(k);
-      s+=`<rect x="${X}" y="${Y}" width="${W}" height="${W}" rx="4"
-           fill="${on?'#E8B3AA':'var(--slate)'}" stroke="${on?'var(--live)':'var(--slate-d)'}" stroke-width="6"/>`;
+      s+=`<rect x="${X}" y="${Y}" width="${W}" height="${W}" rx="4" fill="${on?'#E8B3AA':'var(--slate)'}"
+           stroke="${on?'var(--live)':'var(--slate-d)'}" stroke-width="6"/>`;
       for(let i=1;i<=2;i++)
         s+=`<line x1="${X+W*0.2}" y1="${Y+W*i/3}" x2="${X+W*0.8}" y2="${Y+W*i/3}"
              stroke="${on?'var(--live)':'var(--slate-d)'}" stroke-width="4" opacity=".65"/>`;
     }
   }
-
-  // プレイヤー
   s+=`<circle cx="${cx(player.x)}" cy="${cy(player.y)}" r="28" fill="var(--ink)" stroke="var(--paper)" stroke-width="4"/>`;
   s+=`<circle cx="${cx(player.x)-9}" cy="${cy(player.y)-6}" r="4.5" fill="var(--paper)"/>`;
   s+=`<circle cx="${cx(player.x)+9}" cy="${cy(player.y)-6}" r="4.5" fill="var(--paper)"/>`;
-
   const b=document.getElementById('board');
   b.setAttribute('viewBox',`0 0 ${cols*U} ${rows*U}`);
   b.innerHTML=s;
   document.getElementById('moves').textContent=S.moves;
+  const key=[...lit].sort().join('');
+  if(prevLit!==null && key!==prevLit){ DOG.moodT=0.85; }
+  prevLit=key;
 }
 
-document.querySelectorAll('[data-d]').forEach(b=>b.addEventListener('click',()=>move(b.dataset.d)));
-document.getElementById('undo').onclick=undo;
-document.getElementById('reset').onclick=()=>load(idx);
-document.getElementById('next').onclick=()=>load(Math.min(idx+1,LEVELS.length-1));
+/* ---------- 入力: pointerdown で即応答。連打してもスクロール/拡大しない ---------- */
+function tapBind(el,fn){
+  el.addEventListener('pointerdown',ev=>{ ev.preventDefault(); fn(); });
+  el.addEventListener('contextmenu',ev=>ev.preventDefault());
+}
+document.querySelectorAll('[data-d]').forEach(b=>tapBind(b,()=>move(b.dataset.d)));
+tapBind(document.getElementById('undo'),undo);
+tapBind(document.getElementById('next'),nextLevel);
+resetBtn.addEventListener('click',tapReset);
+
+
+/* ---------- デバッグ用チート ----------
+   qwerty : 2〜25 を通常クリア扱い / poiuy : 2〜25 を最短クリア扱い
+   ステージ1だけは残るので、そこを自力で解くと犬の演出が見られる。      */
+const CHEATS={qwerty:'clear', poiuy:'perfect'};
+let cheatBuf='';
+function applyCheat(kind){
+  for(let i=1;i<LEVELS.length;i++){
+    cleared[i]=true;
+    if(kind==='perfect') perfect[i]=true;
+  }
+  disarmReset(); drawTabs();
+  const toast=document.getElementById('toast');
+  toast.textContent = kind==='perfect'
+    ? 'CHEAT: 2〜25 を最短クリア扱いにしました'
+    : 'CHEAT: 2〜25 をクリア扱いにしました';
+  toast.classList.add('on');
+  setTimeout(()=>toast.classList.remove('on'),2200);
+}
+function cheatKey(k){
+  if(k.length!==1) { cheatBuf=''; return false; }
+  cheatBuf=(cheatBuf+k.toLowerCase()).slice(-8);
+  for(const code in CHEATS){
+    if(cheatBuf.endsWith(code)){ applyCheat(CHEATS[code]); cheatBuf=''; return true; }
+  }
+  // 入力途中のコードは通常のキー操作を飲み込む(qwerty の w や r が誤爆しないように)
+  for(const code in CHEATS)
+    for(let n=Math.min(cheatBuf.length,code.length-1); n>0; n--)
+      if(code.startsWith(cheatBuf.slice(-n))) return true;
+  cheatBuf='';
+  return false;
+}
+
 addEventListener('keydown',ev=>{
+  if(cheatKey(ev.key)){ ev.preventDefault(); return; }
   const m={ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',
            w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R'};
-  if(m[ev.key]){ev.preventDefault();move(m[ev.key]);}
-  if(ev.key==='z'||ev.key==='Z') undo();
-  if(ev.key==='r'||ev.key==='R') load(idx);
+  if(m[ev.key]){ ev.preventDefault(); move(m[ev.key]); return; }
+  if(ev.key==='z'||ev.key==='Z'){ undo(); return; }
+  if(ev.key==='r'||ev.key==='R'){ ev.preventDefault(); tapReset(); return; }
+  if(ev.key==='Enter'||ev.key==='n'||ev.key==='N'){ ev.preventDefault(); nextLevel(); }
 });
-let t0=null;
-const bd=document.getElementById('board');
-bd.addEventListener('touchstart',e=>{t0=e.changedTouches[0]},{passive:true});
-bd.addEventListener('touchend',e=>{
-  if(!t0) return;
-  const t=e.changedTouches[0],dx=t.clientX-t0.clientX,dy=t.clientY-t0.clientY;
-  if(Math.abs(dx)<24&&Math.abs(dy)<24) return;
-  move(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'));
-},{passive:true});
+// ダブルタップによる拡大とページのはね上がりを抑止
+document.addEventListener('dblclick',ev=>ev.preventDefault(),{passive:false});
+document.addEventListener('gesturestart',ev=>ev.preventDefault(),{passive:false});
 
+/* ---------- シェア ---------- */
+function shareText(){
+  let n=0; for(let i=0;i<LEVELS.length;i++) if(cleared[i]) n++;
+  const sec=Math.round(totalMs()/1000);
+  const pf=perfect.filter(Boolean).length;
+  let t=`通電ソコバン：${n}ステージまで、${sec}秒かかった`;
+  if(pf>0) t+=`（うち最短クリア ${pf}）`;
+  return t;
+}
+document.getElementById('sharebtn').addEventListener('click',async()=>{
+  const t=shareText();
+  try{ await navigator.clipboard.writeText(t); }
+  catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(_){}
+    document.body.removeChild(ta);
+  }
+  const toast=document.getElementById('toast');
+  toast.textContent='コピーしました';
+  toast.classList.add('on');
+  setTimeout(()=>toast.classList.remove('on'),1600);
+});
+
+/* ================= 犬 =================
+   ゲームロジックからは完全に独立。押せない、当たり判定なし、
+   「やりなおす」でも位置と歩みを引き継ぐ。ただそこに居る。      */
+const DOG={cell:null,from:null,t:1,facing:1,phase:0,
+           mood:'idle',moodT:0,regionSet:new Set(),region:[],nextStep:0};
+let prevLit=null;
+
+function dogRegion(){       // 扉で分断された部屋のうち、プレイヤー側でない最大の部屋
+  const st=S.st, seen=new Set(), comps=[];
+  const walk=(y,x)=>{const c=st[y]?.[x];return c==='.'||c==='E';};
+  for(let y=0;y<st.length;y++) for(let x=0;x<st[0].length;x++){
+    if(!walk(y,x)) continue;
+    const k0=y+','+x; if(seen.has(k0)) continue;
+    const set=new Set([k0]),q=[{y,x}],list=[{y,x}]; seen.add(k0);
+    while(q.length){
+      const p=q.pop();
+      for(const d in DIRS){
+        const ny=p.y+DIRS[d][0],nx=p.x+DIRS[d][1],k=ny+','+nx;
+        if(!walk(ny,nx)||set.has(k)) continue;
+        set.add(k); seen.add(k); const n={y:ny,x:nx}; q.push(n); list.push(n);
+      }
+    }
+    comps.push({list,set});
+  }
+  const home=S.player?S.player.y+','+S.player.x:null;
+  const away=comps.filter(c=>!(home&&c.set.has(home)));
+  const pool=away.length?away:comps;
+  pool.sort((a,b)=>b.list.length-a.list.length);
+  return pool[0]||{list:[],set:new Set()};
+}
+function placeDog(){
+  const {list,set}=dogRegion();
+  DOG.region=list; DOG.regionSet=set;
+  if(DOG.cell && set.has(DOG.cell.y+','+DOG.cell.x)) return;   // 継続
+  DOG.cell=list.length?list[Math.floor(Math.random()*list.length)]:null;
+  DOG.from=DOG.cell; DOG.t=1;
+}
+function dogStep(){
+  if(!DOG.cell) return;
+  const opts=[];
+  for(const d in DIRS){
+    const ny=DOG.cell.y+DIRS[d][0],nx=DOG.cell.x+DIRS[d][1];
+    if(DOG.regionSet.has(ny+','+nx)) opts.push({y:ny,x:nx});
+  }
+  if(!opts.length||Math.random()<0.28) return;                 // たまに立ち止まる
+  DOG.from=DOG.cell;
+  DOG.cell=opts[Math.floor(Math.random()*opts.length)];
+  if(DOG.cell.x!==DOG.from.x) DOG.facing=DOG.cell.x>DOG.from.x?1:-1;
+  DOG.t=0;
+}
+function dogMood(){
+  if(perfect.every(Boolean)) return 'howl';
+  if(cleared.every(Boolean)) return 'dance';
+  if(DOG.moodT>0) return 'react';
+  return 'idle';
+}
+
+function dogSVG(){
+  if(!DOG.cell) return '';
+  const ez=t=>1-Math.pow(1-t,3), t=Math.min(1,DOG.t);
+  const fy=DOG.from?DOG.from.y:DOG.cell.y, fx=DOG.from?DOG.from.x:DOG.cell.x;
+  const gy=fy+(DOG.cell.y-fy)*ez(t), gx=fx+(DOG.cell.x-fx)*ez(t);
+  let px=gx*100+50, py=gy*100+50;
+  const ph=DOG.phase, mood=dogMood();
+
+  let face=DOG.facing;
+  if(S&&S.player&&Math.abs(S.player.y-DOG.cell.y)+Math.abs(S.player.x-DOG.cell.x)===1){
+    if(S.player.x!==DOG.cell.x) face=S.player.x>DOG.cell.x?1:-1;   // 隣にいたらそっちを見る
+  }
+
+  let hop=(t<1)?-Math.sin(t*Math.PI)*15:Math.sin(ph*2.2)*1.4;
+  let rot=0, wag=Math.sin(ph*7)*22, ear=0, headUp=0, mark='';
+  if(mood==='react'){
+    hop-=Math.abs(Math.sin(ph*11))*9; wag=Math.sin(ph*17)*34; ear=-16;
+    mark=`<text x="0" y="-58" text-anchor="middle" font-family="ui-monospace,monospace"
+           font-size="30" font-weight="700" fill="var(--live)">!</text>`;
+  }else if(mood==='dance'){
+    hop-=Math.abs(Math.sin(ph*5.5))*17; rot=Math.sin(ph*5.5)*17;
+    wag=Math.sin(ph*13)*40; ear=-9;
+    const n=(dx,dy,o)=>`<text x="${dx}" y="${dy+Math.sin(ph*3+o)*5}" text-anchor="middle"
+      font-size="22" fill="var(--p1)">♪</text>`;
+    mark=n(-46,-40,0)+n(46,-52,1.7);
+  }else if(mood==='howl'){
+    headUp=-13; ear=-20; wag=Math.sin(ph*9)*28; hop-=Math.abs(Math.sin(ph*3))*5;
+    for(let i=1;i<=3;i++){
+      const r=16+i*13, o=(0.9-i*0.22)*(0.55+0.45*Math.sin(ph*4-i));
+      mark+=`<path d="M ${28+r*0.5} ${-40} a ${r} ${r} 0 0 1 0 ${r*0.9}"
+              fill="none" stroke="var(--p1)" stroke-width="4" opacity="${o.toFixed(2)}"/>`;
+    }
+    mark+=`<text x="0" y="-62" text-anchor="middle" font-family="ui-monospace,monospace"
+            font-size="17" font-weight="700" fill="var(--brass-d)">アオーン</text>`;
+  }
+
+  const body=`
+    <g transform="rotate(${rot.toFixed(1)})">
+      <path d="M-30,-2 q-10,-4 -7,-19" fill="none" stroke="var(--ink)" stroke-width="7"
+            stroke-linecap="round" transform="rotate(${wag.toFixed(1)} -30 -2)"/>
+      <rect x="-22" y="10" width="7" height="16" rx="3" fill="var(--ink)"/>
+      <rect x="-6" y="10" width="7" height="16" rx="3" fill="var(--ink)"/>
+      <rect x="10" y="10" width="7" height="16" rx="3" fill="var(--ink)"/>
+      <ellipse cx="-6" cy="0" rx="25" ry="16" fill="#EFE7D2" stroke="var(--ink)" stroke-width="5"/>
+      <g transform="translate(0 ${headUp})">
+        <path d="M13,-14 q-3,-19 11,-16 q6,7 1,17 z" fill="#EFE7D2" stroke="var(--ink)"
+              stroke-width="4.5" transform="rotate(${ear} 18 -16)"/>
+        <circle cx="24" cy="-9" r="16" fill="#EFE7D2" stroke="var(--ink)" stroke-width="5"/>
+        <ellipse cx="38" cy="-4" rx="10" ry="7.5" fill="#EFE7D2" stroke="var(--ink)" stroke-width="4.5"/>
+        <circle cx="45" cy="-6" r="3.6" fill="var(--ink)"/>
+        <circle cx="27" cy="-13" r="2.9" fill="var(--ink)"/>
+        ${mood==='howl'?'<ellipse cx="40" cy="3" rx="5" ry="4" fill="var(--ink)"/>':''}
+      </g>
+    </g>`;
+  return `<g transform="translate(${px.toFixed(1)} ${(py+hop).toFixed(1)}) scale(0.62)">
+            <g transform="scale(${face} 1)">${body}</g>${mark}
+          </g>`;
+}
+
+function dogTick(){
+  const dt=0.045;
+  DOG.phase+=dt;
+  if(DOG.t<1) DOG.t=Math.min(1,DOG.t+dt/0.34);
+  if(DOG.moodT>0) DOG.moodT-=dt;
+  DOG.nextStep-=dt;
+  if(DOG.nextStep<=0){ dogStep(); DOG.nextStep=0.75+Math.random()*0.9; }
+  const L=document.getElementById('doglayer');
+  const b=document.getElementById('board');
+  L.setAttribute('viewBox', b.getAttribute('viewBox')||'0 0 100 100');
+  L.innerHTML=dogSVG();
+}
+setInterval(dogTick,45);
+
+function placeDogSafe(){ if(typeof S!=='undefined'&&S) placeDog(); }
 load(0);
 </script>
 </body>
