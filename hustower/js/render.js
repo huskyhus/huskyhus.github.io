@@ -131,16 +131,14 @@ export function drawPlatform(v) {
 }
 
 /** squash: 0〜1。着地直後に少し潰れて戻る演出。 */
-export function drawSticker(v, img, def, x, y, angle, { alpha = 1, squash = 0 } = {}) {
+export function drawSticker(v, img, def, x, y, angle, squash = 0) {
   const { ctx } = v;
   v.world();
   ctx.translate(x, y);
   ctx.rotate(angle);
   if (squash) ctx.scale(1 + 0.07 * squash, 1 - 0.09 * squash);
-  ctx.globalAlpha = alpha;
   ctx.scale(1, -1);   // 画像は y 下向き
   ctx.drawImage(img, -def.w / 2, -def.h / 2, def.w, def.h);
-  ctx.globalAlpha = 1;
 }
 
 export function drawShapes(v, def, x, y, angle) {

@@ -36,7 +36,7 @@
 <div id="grid"></div>
 <div id="zoom"></div>
 <script>
-// リポジトリのルートで `uv run python -m http.server` を起動し、/tools/viewer.html を開く
+// hustower/ で `uv run python -m http.server` を起動し、/tools/viewer.html を開く
 const opts = ["optImage", "optOutline", "optPieces", "optFill", "optVerts"];
 const state = { data: null, images: [] };
 
@@ -101,18 +101,18 @@ opts.forEach(id => document.getElementById(id).onchange = render);
 
 (async () => {
   try {
-    const res = await fetch("../hustower/data/shapes.json");
+    const res = await fetch("../data/shapes.json");
     state.data = await res.json();
     state.images = await Promise.all(state.data.stickers.map(s => new Promise((ok, ng) => {
       const img = new Image();
       img.onload = () => ok(img);
       img.onerror = () => ng(new Error("読み込み失敗: " + s.file));
-      img.src = "../hustower/" + s.file;
+      img.src = "../" + s.file;
     })));
     render();
   } catch (e) {
     document.getElementById("err").textContent =
-      e.message + "\n\nfile:// では fetch できません。リポジトリのルートで `uv run python -m http.server` を実行し、" +
+      e.message + "\n\nfile:// では fetch できません。hustower/ で `uv run python -m http.server` を実行し、" +
       "http://localhost:8000/tools/viewer.html を開いてください。";
   }
 })();

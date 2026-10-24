@@ -6,9 +6,9 @@ export const STEP = 1 / 120;         // 固定タイムステップ
 export const VELOCITY_ITERATIONS = 10;
 export const POSITION_ITERATIONS = 8;
 export const PLATFORM_HALF_W = 3.15;
-const IMPACT_SPEED = 0.6;            // これ以上の速さでぶつかったら onImpact を呼ぶ m/s
 export const FALL_Y = -1.5;          // これより下に落ちたピースはアウト
 
+const IMPACT_SPEED = 0.6;            // これ以上の速さでぶつかったら onImpact を呼ぶ m/s
 const SETTLE_LINEAR = 0.03;          // m/s
 const SETTLE_ANGULAR = 0.05;         // rad/s
 const SETTLE_HOLD = 0.35;            // 静止がこれだけ続いたら確定（秒）

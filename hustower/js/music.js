@@ -2,7 +2,7 @@
 // 楽器: リード / ソロ（25% パルス + エコー）/ ベース（三角波）/ アルペジオ（12.5% パルス）/ ドラム（ノイズ）
 //
 // 1 周（50 小節 ≒ 100 秒）の構成:
-//   A → B（最後にキメ）→ 転調 +2 → A → B（3 度下ハモリ）→ C メロ（対旋律つき）
+//   A（後半に対旋律）→ B（最後にキメ）→ 転調 +2 → A（対旋律）→ B（ハモリ）→ C メロ（対旋律）
 //   → 哀愁ソロ 8 小節（引き）→ 溜め 2 小節 → 次の周はさらに +1 転調して全開で戻る
 import { getAudio } from "./audio.js";
 
@@ -13,7 +13,7 @@ const TICK_MS = 25;
 const VOLUME = 0.55;
 
 // ---------------------------------------------------------------- 楽譜
-// 1 小節 = 8 分音符 8 個。"-" は直前の音を伸ばす、"." は休符。キーは C（ソロは A マイナー）。
+// 1 小節 = 8 分音符 8 個。"-" は直前の音を伸ばす、"." は休符。キーは C で書き、転調は buildLap() で足す。
 const A_CHORDS = ["C", "G", "Am", "F", "C", "G", "F", "G"];
 const A_LEAD = [
   "C5 . G4 C5 E5 . D5 C5",
@@ -367,12 +367,12 @@ function schedule(s, t) {
       // C メロは長い音にビブラートをかけてノスタルジックに
       const vib = bar.tone === "nostalgic" && len >= 3;
       osc(t, dur, freq(m), { wave: waves.pulse25, vol: 0.11, out: leadIn, slideFrom: slide, vib });
-      // ハモリ: 3 度下を細い音で
+      // ハモリ: 和音の構成音から 3 度 / 6 度下を細い音で
       if (bar.harmony) osc(t, dur, freq(harmonyBelow(m, bar)), { wave: waves.pulse12, vol: 0.05, out: leadIn });
     }
   }
 
-  // 対旋律（C メロ）: 柔らかい矩形波で長い音
+  // 対旋律（A・C メロ・ソロの一部）: 柔らかい矩形波
   if (bar.counter && pos % 2 === 0) {
     const i = pos / 2;
     const tok = bar.counter[i];

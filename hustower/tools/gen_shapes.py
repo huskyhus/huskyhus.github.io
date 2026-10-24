@@ -23,7 +23,7 @@ import shapely
 from PIL import Image
 from shapely.geometry import Polygon
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent / "hustower"   # ゲーム本体のフォルダ
+ROOT = pathlib.Path(__file__).resolve().parent.parent   # ゲーム本体のフォルダ（hustower/）
 SRC = ROOT / "stickers"
 OUT = ROOT / "data" / "shapes.json"
 

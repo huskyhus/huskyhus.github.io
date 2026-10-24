@@ -17,6 +17,7 @@ const ROT_TAP = Math.PI / 12;          // 1回押すと 15°
 const ROT_SPEED = Math.PI * 5 / 6;     // 長押しで 150°/s
 const ROT_HOLD_DELAY = 0.22;           // 長押し判定までの秒数
 const WHEEL_STEP = Math.PI / 36;       // ホイール 1 目盛り 5°
+const WHEEL_NOTCH = 100;               // 1 目盛りとみなすスクロール量（px）
 const KEY_SPEED = 3;         // キーボード移動の速さ m/s
 const FALL_TIMEOUT = 8;      // 揺れが収まらなくてもこの秒数で次へ
 const MILESTONE = 5;         // この高さごとに演出
@@ -101,6 +102,8 @@ function resize() {
   canvas.width = Math.round(view.w * view.dpr);
   canvas.height = Math.round(view.h * view.dpr);
   view.ppm = Math.min(view.w / VIEW_W, view.h / MIN_VIEW_H);
+  // 画面の向きが変わったら、狙い位置を画面内に戻す
+  if (game?.current) game.current.x = clampAim(game.current.x, game.current.def);
 }
 
 // ---------------------------------------------------------------- ゲーム状態
@@ -271,7 +274,9 @@ function onSettled() {
   for (const o of dropped.others) moved = Math.max(moved, Math.hypot(o.p.body.getPosition().x - o.x, o.p.body.getPosition().y - o.y));
   const at = body.getPosition();
   const labelY = at.y + dropped.piece.def.radius * 0.6;
-  if (turned < 2 && moved < 0.02) {
+  if (!dropped.others.length) {
+    // 1 個目は台に置くだけなので判定しない（毎回 PERFECT になってしまう）
+  } else if (turned < 2 && moved < 0.02) {
     game.combo++;
     effects.popText(at.x, labelY, game.combo > 1 ? `PERFECT ×${game.combo}` : "PERFECT!", "#ffd23c", 26);
     effects.sparkle(at.x, labelY);
@@ -332,8 +337,10 @@ function gameOver() {
   setTimeout(() => { $("over").hidden = false; }, 1400);
 }
 
+/** 共有するリンク。正式な URL は index.html の og:url に 1 か所だけ書く */
 function shareUrl() {
-  return location.origin + location.pathname;
+  return document.querySelector('meta[property="og:url"]')?.content
+    || location.origin + location.pathname.replace(/index\.html$/, "");
 }
 
 function shareText() {
@@ -442,7 +449,7 @@ function render() {
   drawPlatform(view);
   for (const p of game.phys.pieces) {
     const pos = p.body.getPosition();
-    drawSticker(view, images[p.def.id], p.def, pos.x, pos.y, p.body.getAngle(), { squash: p.squash || 0 });
+    drawSticker(view, images[p.def.id], p.def, pos.x, pos.y, p.body.getAngle(), p.squash || 0);
     if (showShapes) drawShapes(view, p.def, pos.x, pos.y, p.body.getAngle());
   }
   if (game.state === "aim") drawAim();
@@ -480,12 +487,20 @@ canvas.addEventListener("pointerup", e => {
   drop();
 });
 
-canvas.addEventListener("pointercancel", e => { if (press?.id === e.pointerId) press = null; });
+for (const ev of ["pointercancel", "lostpointercapture"]) {
+  canvas.addEventListener(ev, e => { if (press?.id === e.pointerId) press = null; });
+}
 
+// ホイール: トラックパッドは細かいイベントが大量に来るので、量を貯めて 1 目盛りずつ回す
+let wheelAcc = 0;
 canvas.addEventListener("wheel", e => {
   if (game?.state !== "aim") return;
   e.preventDefault();
-  rotateBy(Math.sign(e.deltaY) * -WHEEL_STEP);
+  wheelAcc += e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1);   // 行・ページ単位を px に
+  while (Math.abs(wheelAcc) >= WHEEL_NOTCH) {
+    rotateBy(-Math.sign(wheelAcc) * WHEEL_STEP);
+    wheelAcc -= Math.sign(wheelAcc) * WHEEL_NOTCH;
+  }
 }, { passive: false });
 
 for (const [id, dir] of [["rotL", 1], ["rotR", -1]]) {
@@ -497,6 +512,9 @@ for (const [id, dir] of [["rotL", 1], ["rotR", -1]]) {
 
 $("hold").addEventListener("pointerdown", e => { e.preventDefault(); hold(); });
 
+// プレイ中の HUD ボタンはクリックしてもフォーカスを持たない（Space が落下ではなくボタンに行ってしまうため）
+for (const id of ["bgm", "mute"]) $(id).addEventListener("pointerdown", e => e.preventDefault());
+
 const MOVE_KEYS = { ArrowLeft: "left", a: "left", A: "left", ArrowRight: "right", d: "right", D: "right" };
 const ROT_KEYS = { ArrowUp: -1, e: -1, E: -1, w: -1, W: -1, q: 1, Q: 1 };
 
@@ -505,6 +523,8 @@ window.addEventListener("keydown", e => {
   if (e.repeat) return;
   if (e.key in ROT_KEYS) { startRotate(ROT_KEYS[e.key]); e.preventDefault(); }
   else if ([" ", "Enter", "ArrowDown", "s", "S"].includes(e.key)) {
+    // Tab で選んだボタンは、そのボタンとして押させる（デイリーを選んで Enter など）
+    if ((e.key === " " || e.key === "Enter") && e.target.closest?.("button")) return;
     e.preventDefault();
     if (!$("title").hidden) $("startNormal").click();
     else if (!$("over").hidden) $("retry").click();

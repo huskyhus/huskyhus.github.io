@@ -135,7 +135,7 @@ html, body {
 
 .hold {
   pointer-events: auto;
-  border: 2px dashed transparent;
+  border: none;
   font: inherit;
   color: inherit;
   cursor: pointer;
@@ -214,6 +214,7 @@ html, body {
   display: grid;
   place-items: center;
   padding: 16px;
+  overflow-y: auto;
   background: rgba(20, 30, 60, 0.35);
 }
 
@@ -358,7 +359,6 @@ html, body {
   cursor: pointer;
 }
 
-.overlay { overflow-y: auto; }
 
 /* タイトル画面ではゲーム用 UI を隠す */
 body:not(.playing) .hud,

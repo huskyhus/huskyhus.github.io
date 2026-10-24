@@ -1,7 +1,7 @@
 # ハスタワー
 
 ステッカーを積み上げて高さを競う、1人用のスコアアタックゲームです。
-HTML / CSS / JavaScript だけで動く静的サイトで、物理演算には [Planck.js](https://piqnt.com/planck.js/) v1.5.0（MIT ライセンス、`hustower/vendor/` に同梱）を使っています。
+HTML / CSS / JavaScript だけで動く静的サイトで、物理演算には [Planck.js](https://piqnt.com/planck.js/) v1.5.0（MIT ライセンス、`vendor/` に同梱）を使っています。
 
 公開先: https://huskyhus.github.io/hustower/
 
@@ -24,35 +24,36 @@ HTML / CSS / JavaScript だけで動く静的サイトで、物理演算には [
 
 ## ローカルで動かす
 
-`fetch` で JSON を読むため、`file://` で開いても動きません。ローカルサーバーを立ててください。
+`fetch` で JSON を読むため、`file://` で開いても動きません。**このフォルダ（`hustower/`）**でローカルサーバーを立ててください。
 
 ```sh
 uv run python -m http.server 8000
 ```
 
-- ゲーム: http://localhost:8000/hustower/
-- 当たり判定を表示: http://localhost:8000/hustower/?debug （ゲーム中に G キーでも切り替え可）。
-  `?debug` のときはコンソールから `hustower.game` / `hustower.effects` を触れます
+- ゲーム: http://localhost:8000/
+- 当たり判定を表示: http://localhost:8000/?debug （ゲーム中に G キーでも切り替え可）。
+  `?debug` のときはコンソールから `hustower.game` / `hustower.effects` / `hustower.music` を触れます
+  （例: `hustower.music.start(32)` で C メロから再生）
 - 形状データのビューア: http://localhost:8000/tools/viewer.html
 
 ## 構成
 
 リポジトリは GitHub Pages のユーザーサイト（huskyhus.github.io）で、ゲームは `hustower/` に置いています。
+この README のパスとコマンドは、すべてこのフォルダ（`hustower/`）が基準です。
 
 ```
-hustower/                  ゲーム本体（https://huskyhus.github.io/hustower/）
-  index.html               OGP / X カードの meta タグもここ
-  ogp.png                  リンクを貼ったときのカード画像（tools/gen_ogp.py で生成）
-  js/physics.js            物理（Planck.js のラッパー。DOM 非依存）
-  js/game.js               状態管理・入力・モード
-  js/view.js, render.js    座標変換と描画（ゲーム画面とシェア画像で共用）
-  js/effects.js            パーティクル・文字・画面揺れ
-  js/audio.js              効果音（Web Audio で合成、音声ファイルなし）
-  js/music.js              BGM（楽譜はファイル先頭の LEAD / CHORDS）
-  js/share.js              シェア画像の生成と共有
-  stickers/*.png           ステッカー画像（24枚）
-  data/shapes.json         画像から生成した衝突形状
-  vendor/planck.min.js     物理エンジン
+index.html                 ゲーム本体。OGP / X カードの meta タグもここ（og:url が共有リンクの正）
+ogp.png                    リンクを貼ったときのカード画像（tools/gen_ogp.py で生成）
+js/physics.js              物理（Planck.js のラッパー。DOM 非依存）
+js/game.js                 状態管理・入力・モード
+js/view.js, render.js      座標変換と描画（ゲーム画面とシェア画像で共用）
+js/effects.js              パーティクル・文字・画面揺れ
+js/audio.js                効果音（Web Audio で合成、音声ファイルなし）
+js/music.js                BGM（楽譜はファイル先頭の *_LEAD / *_CHORDS / *_COUNTER / SOLO）
+js/share.js                シェア画像の生成と共有
+stickers/*.png             ステッカー画像（24枚）
+data/shapes.json           画像から生成した衝突形状
+vendor/planck.min.js       物理エンジン
 tools/                     開発用
   gen_shapes.py            shapes.json の生成
   gen_ogp.py               ogp.png の生成
@@ -60,9 +61,11 @@ tools/                     開発用
   sim_test.mjs             物理のヘッドレステスト
 ```
 
+リポジトリのルートの `index.html` はサイトのトップページ（https://huskyhus.github.io/）で、このゲームへのリンクを置いています。
+
 ## ステッカーを追加・差し替えるとき
 
-1. `hustower/stickers/` に透過 PNG を置く
+1. `stickers/` に透過 PNG を置く
 2. 形状データを作り直す: `uv run tools/gen_shapes.py`（`--preview out.png` で確認用画像も出力）
 3. ビューアで輪郭を確認する
 4. 必要なら物理のテストを実行する: `node tools/sim_test.mjs`
@@ -72,6 +75,7 @@ tools/                     開発用
 ビルドは不要です。`main` に push すれば GitHub Pages（Settings → Pages → Branch: `main` / `(root)`）で
 https://huskyhus.github.io/hustower/ に公開されます。
 
-リンクを貼ったときのカード（OGP / X の summary カード）は `hustower/index.html` の meta タグで設定しています。
+リンクを貼ったときのカード（OGP / X の summary カード）は `index.html` の meta タグで設定しています。
+ゲーム内のシェアボタンも `og:url` を共有リンクとして使います。
 画像は絶対 URL で指定しているので、公開先の URL が変わったらそこも直してください。
 カード画像を変えるときは `tools/gen_ogp.py` のステッカー指定を変えて `uv run tools/gen_ogp.py`。

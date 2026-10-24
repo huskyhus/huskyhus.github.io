@@ -21,7 +21,8 @@ export function unlock() {
     sfxBus = ac.createGain();
     sfxBus.gain.value = muted ? 0 : 1;
     sfxBus.connect(master);
-    noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    // 2 秒分（ランダムな位置から最大 1.1 秒鳴らすシンバルでも途切れないように）
+    noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     // タブが裏に回ったら音を止める

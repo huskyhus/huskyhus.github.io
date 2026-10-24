@@ -13,7 +13,7 @@ import pathlib
 
 from PIL import Image
 
-GAME = pathlib.Path(__file__).resolve().parent.parent / "hustower"
+GAME = pathlib.Path(__file__).resolve().parent.parent
 STICKER = GAME / "stickers" / "744223954.png"   # 「不可能です！」
 OUT = GAME / "ogp.png"
 SIZE = 600
