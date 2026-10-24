@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shape Viewer</title>
+<style>
+  :root { --bg: #1b1d22; --panel: #262930; --fg: #e8e8ea; --muted: #9a9ca3; --accent: #ff5a5a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center;
+           padding: 10px 16px; background: var(--panel); border-bottom: 1px solid #000; }
+  header h1 { font-size: 15px; margin: 0; }
+  label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); cursor: pointer; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; padding: 16px; }
+  .card { background: var(--panel); border-radius: 8px; padding: 8px; cursor: zoom-in; }
+  .card canvas { width: 100%; height: auto; display: block; border-radius: 4px; }
+  .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 4px; }
+  #zoom { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; place-items: center; z-index: 2; cursor: zoom-out; }
+  #zoom.open { display: grid; }
+  #zoom canvas { max-width: 96vw; max-height: 90vh; }
+  #err { color: var(--accent); padding: 16px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>shapes.json ビューア</h1>
+  <label><input type="checkbox" id="optImage" checked> 画像</label>
+  <label><input type="checkbox" id="optOutline" checked> 輪郭</label>
+  <label><input type="checkbox" id="optPieces" checked> 凸パーツ</label>
+  <label><input type="checkbox" id="optFill"> パーツ塗り</label>
+  <label><input type="checkbox" id="optVerts"> 頂点</label>
+  <span id="summary" style="color:var(--muted)"></span>
+</header>
+<div id="err"></div>
+<div id="grid"></div>
+<div id="zoom"></div>
+<script>
+// リポジトリのルートで `uv run python -m http.server` を起動し、/tools/viewer.html を開く
+const opts = ["optImage", "optOutline", "optPieces", "optFill", "optVerts"];
+const state = { data: null, images: [] };
+
+function hue(i) { return `hsl(${(i * 67) % 360} 85% 60%)`; }
+
+function draw(canvas, s, img, scale) {
+  const ctx = canvas.getContext("2d");
+  canvas.width = s.width * scale;
+  canvas.height = s.height * scale;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  // 透明部分が分かるように市松模様
+  for (let y = 0; y < s.height; y += 8)
+    for (let x = 0; x < s.width; x += 8) {
+      ctx.fillStyle = ((x + y) / 8) % 2 ? "#3a3d45" : "#30333a";
+      ctx.fillRect(x, y, 8, 8);
+    }
+  const o = Object.fromEntries(opts.map(id => [id, document.getElementById(id).checked]));
+  if (o.optImage) { ctx.globalAlpha = o.optPieces || o.optOutline ? 0.6 : 1; ctx.drawImage(img, 0, 0); ctx.globalAlpha = 1; }
+  ctx.translate(s.width / 2, s.height / 2);
+  const lw = 1.5 / scale;
+  const path = pts => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); };
+  if (o.optPieces) s.pieces.forEach((p, i) => {
+    path(p);
+    if (o.optFill) { ctx.fillStyle = hue(i).replace(")", " / .35)"); ctx.fill(); }
+    ctx.strokeStyle = hue(i); ctx.lineWidth = lw; ctx.stroke();
+  });
+  if (o.optOutline) s.outlines.forEach(p => { path(p); ctx.strokeStyle = "#ff3030"; ctx.lineWidth = 2.5 / scale; ctx.stroke(); });
+  const r = 2 / scale;
+  if (o.optVerts) s.pieces.forEach(p => p.forEach(([x, y]) => {
+    ctx.fillStyle = "#fff"; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+  }));
+}
+
+function render() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  state.data.stickers.forEach((s, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    const c = document.createElement("canvas");
+    draw(c, s, state.images[i], 1);
+    const maxV = Math.max(...s.pieces.map(p => p.length));
+    card.append(c);
+    card.insertAdjacentHTML("beforeend",
+      `<div class="meta"><span>${i}: ${s.file.split("/").pop()}</span><span>パーツ ${s.pieces.length} / 最大頂点 ${maxV}</span></div>`);
+    card.onclick = () => {
+      const z = document.getElementById("zoom");
+      z.innerHTML = "";
+      const big = document.createElement("canvas");
+      draw(big, s, state.images[i], 3);
+      z.append(big);
+      z.classList.add("open");
+    };
+    grid.append(card);
+  });
+  const n = state.data.stickers.reduce((a, s) => a + s.pieces.length, 0);
+  document.getElementById("summary").textContent = `${state.data.stickers.length} 枚 / 凸パーツ計 ${n}`;
+}
+
+document.getElementById("zoom").onclick = e => e.currentTarget.classList.remove("open");
+opts.forEach(id => document.getElementById(id).onchange = render);
+
+(async () => {
+  try {
+    const res = await fetch("../data/shapes.json");
+    state.data = await res.json();
+    state.images = await Promise.all(state.data.stickers.map(s => new Promise((ok, ng) => {
+      const img = new Image();
+      img.onload = () => ok(img);
+      img.onerror = () => ng(new Error("読み込み失敗: " + s.file));
+      img.src = "../" + s.file;
+    })));
+    render();
+  } catch (e) {
+    document.getElementById("err").textContent =
+      e.message + "\n\nfile:// では fetch できません。リポジトリのルートで `uv run python -m http.server` を実行し、" +
+      "http://localhost:8000/tools/viewer.html を開いてください。";
+  }
+})();
+</script>
+</body>
+</html>
