@@ -101,13 +101,13 @@ opts.forEach(id => document.getElementById(id).onchange = render);
 
 (async () => {
   try {
-    const res = await fetch("../data/shapes.json");
+    const res = await fetch("../hustower/data/shapes.json");
     state.data = await res.json();
     state.images = await Promise.all(state.data.stickers.map(s => new Promise((ok, ng) => {
       const img = new Image();
       img.onload = () => ok(img);
       img.onerror = () => ng(new Error("読み込み失敗: " + s.file));
-      img.src = "../" + s.file;
+      img.src = "../hustower/" + s.file;
     })));
     render();
   } catch (e) {

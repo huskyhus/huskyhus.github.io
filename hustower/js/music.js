@@ -48,6 +48,33 @@ const C_LEAD = [
   "E5 - - - C5 - B4 C5",
   "D5 - - - . . . .",
 ];
+// A の対旋律（1 回目）: 後半 4 小節だけ、低い長い音でそっと入り、最後は B へのピックアップ
+const A_COUNTER_SOFT = [
+  null, null, null, null,
+  "E4 - - - - - - -",
+  "D4 - - - - - - -",
+  "C4 - - - A3 - - -",
+  "B3 - - - . G4 A4 B4",
+];
+// A の対旋律（転調後）: メロディと反対に動き、メロディが休む所で合いの手
+const A_COUNTER = [
+  "E4 - - - G4 - - -",
+  "D4 - - - . B4 C5 D5",
+  "A4 - - - C5 - B4 A4",
+  "F4 - - - A4 - G4 -",
+  "G4 - - - C5 - - -",
+  "B4 - - - D5 - - -",
+  "A4 - - - C5 - A4 -",
+  "B4 - - - . D5 E5 F5",
+];
+// ソロの対旋律: 後半 4 小節だけ、低い音で下から支える
+const SOLO_COUNTER = [
+  null, null, null, null,
+  "A3 - - - C4 - - -",
+  "B3 - - - D4 - - -",
+  "G#3 - - - B3 - - -",
+  "G#3 - - - - - - -",
+];
 // C メロの対旋律: 和音の 3 度と 7 度をゆっくりなぞる
 const C_COUNTER = [
   "A4 - - - E4 - - -",
@@ -108,6 +135,16 @@ const SOLO = [
 /** 半音 k をおおむね -4〜+8 に収める（上がり続けると音域を外れるので、たまにオクターブ下に折り返す） */
 const foldKey = k => { k = ((k % 12) + 12) % 12; return k > 8 ? k - 12 : k; };
 
+/** 対旋律の楽譜（null の小節は無し）を section() の opts 形式にする */
+const counterOpts = lines => Object.fromEntries(lines.map((c, i) => [i, c ? { counter: c.split(" ") } : {}]));
+
+/** 小節ごとの opts を重ねる（同じ小節は後ろが優先で混ぜる） */
+function mergeOpts(...list) {
+  const out = {};
+  for (const o of list) for (const [k, v] of Object.entries(o)) out[k] = { ...(out[k] || {}), ...v };
+  return out;
+}
+
 /** opts[i] は i 小節目だけの上書き、opts.all は全小節への上書き */
 function section(chords, lead, key, opts = {}) {
   return chords.map((c, i) => ({
@@ -124,16 +161,17 @@ function buildLap(lap) {
   const nextKey = foldKey((lap + 1) * 3);
   const soloKey = k2 > 5 ? k2 - 12 : k2;   // キーが上がったらソロは 1 オクターブ下で弾く
   const bars = [];
-  bars.push(...section(A_CHORDS, A_LEAD, k1, lap > 0 ? { 0: { crash: true } } : {}));
+  // 声部は周の中で少しずつ増やす: A 後半に対旋律 → 転調後 A は全編 → B にハモリ → C メロ
+  bars.push(...section(A_CHORDS, A_LEAD, k1, mergeOpts(counterOpts(A_COUNTER_SOFT), lap > 0 ? { 0: { crash: true } } : {})));
   // キメ → 転調
   bars.push(...section(B_CHORDS, B_LEAD, k1, { 7: { drums: "kime", bass: "kime", arp: "kime" } }));
-  bars.push(...section(A_CHORDS, A_LEAD, k2, { 0: { crash: true } }));
+  bars.push(...section(A_CHORDS, A_LEAD, k2, mergeOpts(counterOpts(A_COUNTER), { 0: { crash: true } })));
   // 転調後の B は 3 度下のハモリを足して厚く
   bars.push(...section(B_CHORDS, B_LEAD, k2, { all: { harmony: true } }));
   // C メロ: 軽いドラム、4 和音のアルペジオ、対旋律
   bars.push(...section(C_CHORDS, C_LEAD, k2, {
     all: { drums: "light", arp: "four", tone: "nostalgic" },
-    ...Object.fromEntries(C_COUNTER.map((c, i) => [i, { counter: c.split(" "), ...(i === 7 ? { drums: "fill" } : {}) }])),
+    ...mergeOpts(counterOpts(C_COUNTER), { 7: { drums: "fill" } }),
   }));
   // 哀愁ソロ（引き）: ハーフタイムのドラム、伸ばすベース、8 分のアルペジオ
   SOLO_CHORDS.forEach((c, i) => {
@@ -143,6 +181,7 @@ function buildLap(lap) {
     bars.push({
       chord: parseChord(c), key: soloKey, lead: null, solo: byStart, crash: i === 0,
       drums: "ballad", bass: "long", arp: "slow",
+      counter: SOLO_COUNTER[i] ? SOLO_COUNTER[i].split(" ") : undefined,
     });
   });
   // 溜め: 次の周のキーのドミナント（G）で 2 小節 → 全開で戻る

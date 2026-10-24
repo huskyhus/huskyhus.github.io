@@ -3,11 +3,11 @@
 // プレイヤーは置く前に候補（角度×位置）を試し、一番安定するものを選ぶ。
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
-import { Physics, buildStickerDefs, STEP } from "../js/physics.js";
+import { Physics, buildStickerDefs, STEP } from "../hustower/js/physics.js";
 
 const require = createRequire(import.meta.url);
-const planck = require("../vendor/planck.min.js");
-const defs = buildStickerDefs(JSON.parse(readFileSync(new URL("../data/shapes.json", import.meta.url), "utf8")));
+const planck = require("../hustower/vendor/planck.min.js");
+const defs = buildStickerDefs(JSON.parse(readFileSync(new URL("../hustower/data/shapes.json", import.meta.url), "utf8")));
 
 const trials = Number(process.argv[2] ?? 8);
 const maxPieces = Number(process.argv[3] ?? 25);
