@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>musiclab</title>
+<style>
+  :root {
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --ink: #2b2d42;
+    --muted: #6c7086;
+    --line: #e2e5ee;
+    --accent: #ff6b4a;
+    --wave: #4a7dff;
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17181d;
+      --card: #23252d;
+      --ink: #e8e8ea;
+      --muted: #9a9ca3;
+      --line: #363945;
+      --wave: #7fa2ff;
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Hiragino Sans", "BIZ UDPGothic", "Meiryo", system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 20px;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+  @media (max-width: 720px) { .wrap { grid-template-columns: 1fr; } }
+  h1 { margin: 0 0 12px; font-size: 22px; }
+  h1 small { font-size: 13px; font-weight: normal; color: var(--muted); margin-left: 6px; }
+  .card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; }
+  #list { display: flex; flex-direction: column; gap: 4px; padding: 8px; }
+  #list button {
+    text-align: left; border: 0; background: none; color: inherit; font: inherit;
+    padding: 8px 10px; border-radius: 10px; cursor: pointer;
+  }
+  #list button:hover { background: var(--bg); }
+  #list button[aria-current="true"] { background: var(--accent); color: #fff; }
+  #list button small { display: block; font-size: 11px; opacity: 0.7; }
+  main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  h2 { margin: 0; font-size: 20px; }
+  #desc { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  .transport { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+  .btn {
+    border: 0; border-radius: 999px; padding: 8px 18px; font: inherit; font-weight: bold;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  .btn.sub { background: var(--bg); color: var(--ink); font-weight: normal; }
+  .btn:focus-visible, #list button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #pos { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+  #beats { display: flex; gap: 3px; }
+  #beats i { width: 10px; height: 10px; border-radius: 3px; background: var(--line); }
+  #beats i:nth-child(4n + 1) { background: color-mix(in srgb, var(--line), var(--ink) 25%); }
+  #beats i.on { background: var(--accent); }
+  #status { min-height: 1.6em; margin: 10px 0 0; font-size: 14px; }
+  .rows { display: grid; grid-template-columns: max-content 1fr; gap: 10px 14px; align-items: center; font-size: 14px; }
+  .rows label { color: var(--muted); }
+  .rows .ctl { display: flex; gap: 8px; align-items: center; min-width: 0; }
+  .rows input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .rows output { font-variant-numeric: tabular-nums; min-width: 3em; }
+  .rows select { font: inherit; max-width: 100%; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: inherit; }
+  .rows input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+  h3 { margin: 0 0 12px; font-size: 13px; letter-spacing: 0.08em; color: var(--muted); }
+  .cardHead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .btn.small { padding: 4px 12px; font-size: 12px; }
+  canvas { width: 100%; height: 140px; display: block; }
+  #error { display: none; white-space: pre-wrap; font-family: ui-monospace, Consolas, monospace; font-size: 13px; color: #fff; background: #c0392b; }
+  .hint { font-size: 12px; color: var(--muted); margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside>
+    <h1>musiclab<small>音の研究室</small></h1>
+    <nav class="card" id="list" aria-label="スケッチ"></nav>
+    <p class="hint" style="margin-top:12px">Space: 再生/停止　R: 再読込</p>
+    <p class="hint"><a href="chords.html" style="color:var(--accent)">コード進行ラボ →</a></p>
+  </aside>
+
+  <main>
+    <section class="card">
+      <h2 id="title">…</h2>
+      <p id="desc"></p>
+      <div class="transport">
+        <button class="btn" id="play">▶ 再生</button>
+        <button class="btn sub" id="reload" title="スケッチのファイルを読み直す（再生中なら同じ小節から続ける）">⟳ 再読込</button>
+        <span id="pos">-</span>
+        <span id="beats" aria-hidden="true"></span>
+      </div>
+      <p id="status"></p>
+    </section>
+
+    <section class="card" id="error"></section>
+
+    <section class="card">
+      <h3>全体</h3>
+      <div class="rows">
+        <label for="bpm">テンポ</label>
+        <div class="ctl"><input type="range" id="bpm" min="40" max="240" step="1"><output id="bpmOut"></output></div>
+        <label for="vol">音量</label>
+        <div class="ctl"><input type="range" id="vol" min="0" max="1" step="0.01" value="0.5"><output id="volOut"></output></div>
+      </div>
+    </section>
+
+    <section class="card" id="paramsCard">
+      <div class="cardHead">
+        <h3>パラメータ</h3>
+        <button class="btn sub small" id="reset">初期値に戻す</button>
+      </div>
+      <div class="rows" id="params"></div>
+    </section>
+
+    <section class="card">
+      <h3>波形 / スペクトル</h3>
+      <canvas id="scope"></canvas>
+      <canvas id="spectrum"></canvas>
+    </section>
+  </main>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
