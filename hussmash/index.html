@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1b1033">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<title>ハススマッシュ</title>
+<meta name="description" content="ステッカーの技を 4 つ選んで戦う、2〜4 人のスマホ対戦アクション">
+<link rel="icon" href="stickers/744223937.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 対戦画面 -->
+<section id="game" class="screen" hidden>
+  <canvas id="stage" aria-label="対戦画面"></canvas>
+  <div id="controls" class="controls">
+    <div id="stickZone" class="stick-zone"></div>
+    <div id="stickBase" class="stick-base"><div id="stickKnob" class="stick-knob"></div></div>
+    <div class="pad">
+      <button class="mbtn" data-bit="2" style="--px: 1; --py: 0" type="button"><img alt=""><b>X</b></button>
+      <button class="mbtn" data-bit="3" style="--px: 0; --py: 1" type="button"><img alt=""><b>Y</b></button>
+      <button class="mbtn" data-bit="0" style="--px: 2; --py: 1" type="button"><img alt=""><b>A</b></button>
+      <button class="mbtn" data-bit="1" style="--px: 1; --py: 2" type="button"><img alt=""><b>B</b></button>
+    </div>
+    <button class="jbtn" data-bit="4" type="button">ジャンプ</button>
+  </div>
+  <div class="game-bar">
+    <button id="quitBtn" class="icon-btn" type="button" aria-label="退出">✕</button>
+    <span id="gameRoom" class="room-chip"></span>
+  </div>
+  <div id="pcHint" class="pc-hint" hidden>移動: ←→ / AD　ジャンプ: Space / ↑　技: L=A　K=B　I=X　J=Y</div>
+</section>
+
+<!-- タイトル -->
+<section id="title" class="screen title">
+  <div class="title-left">
+    <div class="logo">
+      <img src="stickers/744223951.png" alt="">
+      <h1>ハススマッシュ</h1>
+    </div>
+    <label class="field">
+      <span>なまえ</span>
+      <input id="nameInput" maxlength="10" autocomplete="off" spellcheck="false" placeholder="ハスキー">
+    </label>
+    <button id="createBtn" class="primary" type="button">ルームを作る</button>
+    <div class="join-row">
+      <input id="roomInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" placeholder="12345" autocomplete="off" aria-label="ルーム番号（5 桁）">
+      <button id="joinBtn" class="primary" type="button">ルームに入る</button>
+    </div>
+    <button id="practiceBtn" class="secondary" type="button">練習（CPU と対戦）</button>
+    <p id="titleMsg" class="msg" role="status"></p>
+  </div>
+  <div class="title-right">
+    <h2>持っていく技 <small>24 種から 4 つ</small></h2>
+    <div id="loadoutView" class="loadout-view"></div>
+    <button id="editBtn" class="secondary" type="button">技を選ぶ</button>
+    <div class="row">
+      <button id="helpBtn" class="text-btn" type="button">あそびかた</button>
+      <button id="bgmBtn" class="text-btn" type="button">🎵 BGM</button>
+      <button id="sfxBtn" class="text-btn" type="button">🔊 効果音</button>
+    </div>
+  </div>
+</section>
+
+<!-- ロビー -->
+<section id="lobby" class="screen lobby" hidden>
+  <div class="lobby-left">
+    <div id="roomBox" class="room-box">
+      <span>ルーム番号</span>
+      <b id="roomCode">-----</b>
+      <small>友だちにこの番号を伝えよう</small>
+    </div>
+    <div id="practiceBox" class="room-box" hidden>
+      <b class="practice-label">練習</b>
+      <small>CPU を相手に技を試そう</small>
+    </div>
+    <div id="hostCtl" class="host-ctl">
+      <div class="seg-row">
+        <span>ストック</span>
+        <div id="stockSeg" class="seg">
+          <button type="button" data-v="1">1</button>
+          <button type="button" data-v="2">2</button>
+          <button type="button" data-v="3">3</button>
+          <button type="button" data-v="5">5</button>
+        </div>
+      </div>
+      <button id="startBtn" class="primary" type="button">対戦開始！</button>
+    </div>
+    <p id="lobbyMsg" class="msg" role="status"></p>
+  </div>
+  <div class="lobby-right">
+    <ul id="slotList" class="slot-list"></ul>
+    <div class="row">
+      <button id="lobbyEditBtn" class="secondary" type="button">技を選ぶ</button>
+      <button id="leaveBtn" class="text-btn" type="button">退出</button>
+    </div>
+  </div>
+</section>
+
+<!-- 技を選ぶ -->
+<section id="editor" class="overlay" hidden>
+  <div class="editor">
+    <div class="editor-head">
+      <div id="editSlots" class="edit-slots"></div>
+      <button id="editDone" class="primary small" type="button">決定</button>
+    </div>
+    <div class="editor-body">
+      <ul id="moveGrid" class="move-grid scroll"></ul>
+      <div id="moveDetail" class="move-detail scroll"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 結果 -->
+<section id="result" class="overlay" hidden>
+  <div class="panel">
+    <h2 class="result-head">結果</h2>
+    <ol id="rankList" class="rank-list"></ol>
+    <div class="row">
+      <button id="againBtn" class="primary" type="button">もう一度</button>
+      <button id="toLobbyBtn" class="secondary" type="button">ロビーへ</button>
+    </div>
+    <p id="resultMsg" class="msg"></p>
+  </div>
+</section>
+
+<!-- あそびかた -->
+<section id="help" class="overlay" hidden>
+  <div class="panel wide scroll">
+    <h2>あそびかた</h2>
+    <ul class="howto">
+      <li><b>目的</b>相手を画面の外までふっとばすと撃墜。ストックを最後まで残した人の勝ち。% が高いほどよく飛ぶ</li>
+      <li><b>移動</b>画面の左側をさわってぐりぐり。上にはじくとジャンプ（空中でもう 1 回）。空中で下に倒すと急降下</li>
+      <li><b>技</b>右側の A / B / X / Y。どのボタンに何を入れるかはタイトルの「技を選ぶ」で。技はボタンより多く 24 種あり、4 つしか持っていけない</li>
+      <li><b>読みあい</b>相手の持ち技は、使われるまでわからない（使うと頭の上にステッカーが出る）。カウンターを持っているか、ガードを割るつかみを持っているか…</li>
+      <li><b>復帰</b>場外に落ちたら、ジャンプや復帰技で台のふちまで戻れば自動でよじ登る。復帰技を持っていくかどうかも作戦</li>
+      <li><b>PC</b>移動 ←→ / AD、ジャンプ Space / ↑ / W、急降下 ↓ / S、技 L = A・K = B・I = X・J = Y</li>
+      <li><b>通信</b>ルームを作った人（ホスト）の端末で対戦を計算し、ほかの人とは P2P（WebRTC）で直接つながります</li>
+    </ul>
+    <button id="helpClose" class="primary" type="button">とじる</button>
+  </div>
+</section>
+
+<!-- 縦向きのとき -->
+<div id="rotate" class="rotate">
+  <div class="rotate-icon">📱</div>
+  <p>横向きにして遊んでください</p>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="vendor/peerjs.min.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
