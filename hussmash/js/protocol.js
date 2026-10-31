@@ -81,7 +81,7 @@ const F_RANGES = [
   [0, 999], [0, 999], [0, 999], [0, 999], [0, 60],
 ];
 const P_RANGES = [[0, 2 ** 31], [0, PROJ_KINDS.length - 1], [-3000, 5000], [-3000, 5000], [0, 3], [-1, 1], [0, 999]];
-const E_RANGES = [[0, 2 ** 31], [0, EVENTS.length - 1], [-3000, 5000], [-3000, 5000], [-1, 3], [-1, 999]];
+const E_RANGES = [[0, 2 ** 31], [0, EVENTS.length - 1], [-3000, 5000], [-3000, 5000], [-1, 3], [-1, 999], [0, 999]];
 
 function list(arr, max, ranges) {
   if (!Array.isArray(arr) || arr.length > max) return null;
@@ -100,7 +100,7 @@ export function checkFromHost(o) {
     case "lb": {
       const s = int(o.s, 0, 2 ** 31);
       const ph = int(o.ph, 0, PHASES.length - 1);
-      const st = int(o.st, 1, 9);
+      const st = int(o.st, 0, 9);   // 0 = ストック無限
       const you = int(o.you, 0, MAX_PLAYERS - 1);
       if (s === null || ph === null || st === null || you === null) return null;
       if (!Array.isArray(o.P) || o.P.length !== MAX_PLAYERS) return null;
@@ -109,7 +109,7 @@ export function checkFromHost(o) {
         if (!isObj(p)) return null;
         const k = int(p.k, 0, 2);   // 0: 空き / 1: 人 / 2: CPU
         if (k === null) return null;
-        P.push({ k, n: k ? cleanName(p.n) : "" });
+        P.push({ k, n: k ? cleanName(p.n) : "", m: p.m === 1 ? 1 : 0, lv: k === 2 ? (int(p.lv, 0, 3) ?? 2) : 0 });   // m: 今の対戦に出ている / lv: CPU の強さ
       }
       return { t: "lb", s, ph: PHASES[ph], st, you, P };
     }
@@ -136,7 +136,7 @@ export function checkFromHost(o) {
         if (v === null || R.includes(v)) return null;
         R.push(v);
       }
-      return { t: "st", f, ph: PHASES[ph], tm, F, P, E, R };
+      return { t: "st", f, ph: PHASES[ph], tm, F, P, E, R, I: o.I === 1 ? 1 : 0 };
     }
     case "no": {
       const r = o.r === "full" || o.r === "started" ? o.r : "other";
@@ -150,13 +150,13 @@ export function checkFromHost(o) {
 /** スナップショットの配列を、描画で使いやすい形に開く */
 export function expandSnapshot(s) {
   return {
-    f: s.f, ph: s.ph, tm: s.tm, R: s.R,
+    f: s.f, ph: s.ph, tm: s.tm, R: s.R, I: s.I,
     F: s.F.map(a => a && {
       x: a[0], y: a[1], face: a[2] || 1, st: STATES[a[3]], mv: a[4] >= 0 ? MOVES[a[4]] : null, mf: a[5],
       dmg: a[6], stocks: a[7], flags: a[8], guardHp: a[9], cd: a.slice(10, 14), charge: a[14],
     }),
     P: s.P.map(p => ({ id: p[0], kind: PROJ_KINDS[p[1]], x: p[2], y: p[3], owner: p[4], dir: p[5] || 1, t: p[6] })),
-    E: s.E.map(e => ({ id: e[0], k: EVENTS[e[1]], x: e[2], y: e[3], s: e[4], p: e[5] })),
+    E: s.E.map(e => ({ id: e[0], k: EVENTS[e[1]], x: e[2], y: e[3], s: e[4], p: e[5], q: e[6] })),
   };
 }
 

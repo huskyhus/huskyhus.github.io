@@ -71,6 +71,7 @@ export class Renderer {
         this.burst(e.x, e.y, big ? "#fff3a0" : "#ffffff", big ? 26 : 12, big ? 16 : 9, big ? 34 : 22, big ? 6 : 4);
         this.flashes.push({ x: e.x, y: e.y, r: 20 + e.p * 2, life: 8, max: 8, color: "#fff" });
         this.shake = Math.max(this.shake, Math.min(18, e.p * 0.45));
+        if (e.q > 0) this.popText(e.x + (Math.random() - 0.5) * 30, e.y - 50, `${e.q}%`, big ? "#fff3a0" : "#ffffff", 22 + Math.min(14, e.q));
         break;
       }
       case "ko": {
@@ -569,7 +570,8 @@ export class Renderer {
       const nm = this.roster[i]?.name || `P${i + 1}`;
       ctx.fillText(`P${i + 1} ${nm}`.slice(0, 12), x + 54, 22);
       ctx.fillStyle = color;
-      for (let s = 0; s < F.stocks && s < 9; s++) {
+      if (view.I) { ctx.font = `bold 15px ${FONT}`; ctx.fillText("∞", x + 54, 40); }
+      else for (let s = 0; s < F.stocks && s < 9; s++) {
         ctx.beginPath(); ctx.arc(x + 58 + (s % 5) * 10, 34 + Math.floor(s / 5) * 9, 3.5, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();

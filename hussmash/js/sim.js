@@ -30,11 +30,12 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const overlap = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
 class Fighter {
-  constructor({ slot, name, loadout, cpu }, stocks) {
+  constructor({ slot, name, loadout, cpu, level = 2 }, stocks) {
     this.slot = slot;
     this.name = name;
     this.loadout = loadout;
     this.cpu = !!cpu;
+    this.level = level;
     this.stocks = stocks;
     this.dmg = 0;
     this.x = SPAWN_X[slot];
@@ -66,10 +67,11 @@ class Fighter {
 }
 
 export class Sim {
-  /** players: [{ slot, name, loadout, cpu }] */
+  /** players: [{ slot, name, loadout, cpu, level }]。stocks が 0 ならストック無限（技の研究用。終わるのはロビーに戻したとき） */
   constructor(players, { stocks = 3 } = {}) {
+    this.infinite = stocks === 0;
     this.fighters = [null, null, null, null];
-    for (const p of players) this.fighters[p.slot] = new Fighter(p, stocks);
+    for (const p of players) this.fighters[p.slot] = new Fighter(p, this.infinite ? 1 : stocks);
     this.projs = [];
     this.events = [];
     this.eventId = 0;
@@ -290,7 +292,7 @@ export class Sim {
     const cx = clamp(F.x, BLAST.x0, BLAST.x1), cy = clamp(F.y, BLAST.top, BLAST.bottom);
     this.emit("ko", cx, cy, F.slot, F.lastHitBy);
     F.move = null; F.charge = 0;
-    F.stocks--;
+    if (!this.infinite) F.stocks--;
     F.dmg = 0;
     F.vx = F.vy = 0;
     F.helpless = false;
@@ -437,7 +439,7 @@ export class Sim {
     T.hitlag = hl;
     if (A && !isProj) A.hitlag = hl;
     if (A) T.lastHitBy = A.slot;
-    this.emit("hit", mx, my, T.slot, kb);
+    this.emit("hit", mx, my, T.slot, kb, h.dmg);
     return true;
   }
 
@@ -501,8 +503,9 @@ export class Sim {
     }
   }
 
-  emit(kind, x, y, slot, p) {
-    this.events.push({ id: ++this.eventId, frame: this.frame, k: EVENTS.indexOf(kind), x, y, s: slot, p });
+  /** p, q はイベントごとの数値（hit: p = ふっとばしの強さ・q = ダメージ） */
+  emit(kind, x, y, slot, p, q = 0) {
+    this.events.push({ id: ++this.eventId, frame: this.frame, k: EVENTS.indexOf(kind), x, y, s: slot, p, q });
   }
 
   // ---- 配信用 ----
@@ -524,24 +527,40 @@ export class Sim {
         r(F.guardHp), ...F.cd.map(c => Math.min(c, 999)), r(F.charge),
       ]),
       P: this.projs.slice(0, 24).map(p => [p.id, PROJ_KINDS.indexOf(p.kind), r(p.x), r(p.y), p.owner, p.dir0, p.t]),
-      E: this.events.slice(-24).map(e => [e.id, e.k, r(e.x), r(e.y), e.s, r(e.p)]),
+      E: this.events.slice(-24).map(e => [e.id, e.k, r(e.x), r(e.y), e.s, r(e.p), r(e.q)]),
+      I: this.infinite ? 1 : 0,
       R: this.phase === "game" || this.phase === "result" ? this.ranking() : [],
     };
   }
 }
 
 // ---- CPU ----
+// 人と同じ条件に近づけるため、相手の技は「出し始めてから react フレーム経ってから」しか気づかない。
+// （以前は出始めの 1 フレーム目から内部状態を読んでガード・カウンターしていて、人には無理な速さで返していた）
 
 const RANGED = new Set(["kando", "wasureru", "oroka"]);
 const DEFENSIVE = new Set(["zazen", "gomen", "hansei", "fukanou"]);
 
+export const CPU_LEVEL_NAMES = ["動かない", "よわい", "ふつう", "つよい"];
+export const CPU_DEFAULT_LEVEL = 2;
+//   react: 相手の技に気づくまでのフレーム / def: 気づいたとき守りの技で返す確率 / think: 次の行動を考えるまでの間（範囲）
+//   speed: 近づく速さ / miss: 場外で復帰技を使い忘れる確率 / ranged: 遠くから飛び道具を使う確率 / hop: 上の相手へ跳ぶ確率（毎フレーム）
+const CPU_LEVELS = [
+  null,
+  { react: 32, def: 0.15, think: [40, 80], speed: 0.6, miss: 0.4, ranged: 0.25, hop: 0.015 },
+  { react: 22, def: 0.3, think: [24, 50], speed: 0.85, miss: 0.15, ranged: 0.4, hop: 0.03 },
+  { react: 14, def: 0.45, think: [14, 36], speed: 1, miss: 0, ranged: 0.5, hop: 0.04 },
+];
+
 /** CPU の入力を作る（pressed / held の形でシミュレーションに渡す） */
 export function cpuInput(F, sim) {
-  if (!F.alive || sim.phase !== "fight") return EMPTY_INPUT;
+  const L = CPU_LEVELS[F.level];
+  if (!L || !F.alive || sim.phase !== "fight") return EMPTY_INPUT;   // 動かない CPU は何もしない（技の研究用）
   const ai = F.ai;
   let x = 0, y = 0, held = 0, pressed = 0;
   const slotOf = id => F.loadout.indexOf(id);
   const ready = i => i >= 0 && F.cd[i] === 0;
+  const between = ([lo, hi]) => lo + Math.floor(Math.random() * (hi - lo));
 
   if (F.hover > 0) return ai.cool-- > 0 ? EMPTY_INPUT : { x: 0, y: 1, held: 0, pressed: 0 };
 
@@ -549,21 +568,18 @@ export function cpuInput(F, sim) {
     ai.holdT--;
     held |= 1 << ai.holdSlot;
   }
+  if (F.grounded) ai.trip = null;
 
   // 場外: 中央へ戻る
   const off = F.x < STAGE.x0 + 5 || F.x > STAGE.x1 - 5;
   if (off && !F.grounded) {
-    x = F.x < 800 ? 1 : -1;
+    ai.trip ??= { forget: Math.random() < L.miss };
+    x = (F.x < 800 ? 1 : -1) * Math.max(L.speed, 0.8);
     if (F.state === "normal" && !F.helpless && F.y > STAGE.y - 60 && F.vy > -3) {
-      const up = slotOf("cheat");
+      const up = slotOf("cheat"), dash = slotOf("yatchi");
       if (F.jumps > 0) pressed |= 1 << JUMP_BIT;
-      else if (ready(up) && !F.airUsed.has("cheat")) pressed |= 1 << up;
-      else {
-        const dash = slotOf("yatchi");
-        const sw = slotOf("omaemo");
-        if (ready(sw)) pressed |= 1 << sw;
-        else if (ready(dash) && F.y < STAGE.y + 80) pressed |= 1 << dash;
-      }
+      else if (!ai.trip.forget && ready(up) && !F.airUsed.has("cheat")) pressed |= 1 << up;
+      else if (!ai.trip.forget && ready(dash) && F.y < STAGE.y + 80) pressed |= 1 << dash;
     }
     return { x, y, held, pressed };
   }
@@ -572,28 +588,32 @@ export function cpuInput(F, sim) {
   if (!T) return { x, y, held, pressed };
   const dx = T.x - F.x, dy = T.y - F.y, adx = Math.abs(dx);
 
-  if (adx > 70) x = sign(dx);
-  else if (Math.abs(dx) > 5 && F.state === "normal") x = sign(dx) * 0.25;   // 向きだけ合わせる
+  if (adx > 70) x = sign(dx) * L.speed;
+  else if (adx > 5 && F.state === "normal") x = sign(dx) * 0.35;   // 向きだけ合わせる
   if (F.grounded && ((x < 0 && F.x < STAGE.x0 + 40) || (x > 0 && F.x > STAGE.x1 - 40))) x = 0;
-  if (F.grounded && dy < -110 && Math.random() < 0.04) pressed |= 1 << JUMP_BIT;
-
-  if (--ai.cool > 0 || F.state !== "normal") return { x, y, held, pressed };
-  ai.cool = 14 + Math.floor(Math.random() * 26);
+  if (F.grounded && dy < -110 && Math.random() < L.hop) pressed |= 1 << JUMP_BIT;
 
   const avail = [0, 1, 2, 3].filter(i => ready(i));
   const id = i => F.loadout[i];
-  // 相手が技を出してきたら、守りの技で返すことがある
-  if (T.state === "move" && adx < 140 && Math.random() < 0.35) {
+
+  // 相手の技に（react フレーム遅れて）気づいたら、守りの技で返すことがある。1 つの技に 1 回だけ
+  if (F.state === "normal" && T.move && T.move !== ai.seenMove && T.move.f >= L.react && adx < 140) {
+    ai.seenMove = T.move;
     const d = avail.find(i => DEFENSIVE.has(id(i)));
-    if (d != null) {
+    if (d != null && Math.random() < L.def) {
       pressed |= 1 << d;
       if (id(d) === "zazen") { ai.holdSlot = d; ai.holdT = 20 + Math.floor(Math.random() * 20); }
+      ai.cool = between(L.think);
       return { x, y, held, pressed };
     }
   }
+
+  if (--ai.cool > 0 || F.state !== "normal") return { x, y, held, pressed };
+  ai.cool = between(L.think);
+
   if (adx > 260) {
     const r = avail.find(i => RANGED.has(id(i)));
-    if (r != null && Math.random() < 0.5) pressed |= 1 << r;
+    if (r != null && Math.random() < L.ranged) pressed |= 1 << r;
     else if (F.dmg > 60 && avail.some(i => id(i) === "neru") && adx > 450) pressed |= 1 << slotOf("neru");
     return { x, y, held, pressed };
   }

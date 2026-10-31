@@ -230,6 +230,7 @@ export const MOVES = [
     id: "omaemo", sticker: "744223937", name: "おまえもな！", kind: "入れ替え",
     desc: "いちばん近い相手と位置と勢いを入れ替える。場外から相手と入れ替わって生還できる",
     total: 30, cd: 480,
+    banned: true,   // 場外から入れ替えて相手を落とすのが強すぎるので禁止（選べない・持ち込めない）
     tick(F, G, f) {
       if (f !== 16) return;
       const t = G.nearestFoe(F);
@@ -248,27 +249,88 @@ export const MOVES = [
   },
 ];
 
+// MOVES の並び（= スナップショットで送る番号）は変えない。禁止した技も定義は残す
 export const MOVE_INDEX = Object.fromEntries(MOVES.map((m, i) => [m.id, i]));
 export const MOVE_BY_ID = Object.fromEntries(MOVES.map(m => [m.id, m]));
+export const SELECTABLE = MOVES.filter(m => !m.banned);
 export const DEFAULT_LOADOUT = ["jab", "mori", "kando", "cheat"];
 export const BUTTONS = ["A", "B", "X", "Y"];
 
 export const stickerSrc = id => `stickers/${id}.png`;
 
-/** 4 つの技 id として正しいか（重複なし・存在する id） */
+/** 技を選ぶ画面での分け方 */
+export const GROUPS = [
+  { name: "攻撃", ids: ["jab", "mori", "kisoku", "itsukan", "kansha", "junbi", "gyakuten", "tokiwa"] },
+  { name: "飛び道具・設置", ids: ["kando", "wasureru", "oroka", "jigoku"] },
+  { name: "守り", ids: ["zazen", "hansei", "gomen", "fukanou", "sumimasen"] },
+  { name: "移動・復帰", ids: ["cheat", "yatchi", "saraba"] },
+  { name: "くせ者", ids: ["haha", "neru", "yokubou"] },
+];
+
+/** 4 つの技 id として正しいか（重複なし・存在する id・禁止されていない） */
 export function isValidLoadout(ld) {
-  return Array.isArray(ld) && ld.length === 4 && ld.every(id => typeof id === "string" && id in MOVE_BY_ID)
+  return Array.isArray(ld) && ld.length === 4
+    && ld.every(id => typeof id === "string" && id in MOVE_BY_ID && !MOVE_BY_ID[id].banned)
     && new Set(ld).size === 4;
 }
 
-/** 技の一覧画面に出す、ざっくりの性能（発生・威力） */
+/** 保存してあった組み合わせを直す（禁止になった技・知らない技は、空いている技に差し替える） */
+export function repairLoadout(ld) {
+  if (!Array.isArray(ld) || ld.length !== 4) return DEFAULT_LOADOUT.slice();
+  const out = [];
+  for (const id of ld) {
+    const ok = typeof id === "string" && MOVE_BY_ID[id] && !MOVE_BY_ID[id].banned && !out.includes(id);
+    out.push(ok ? id : null);
+  }
+  const spare = [...DEFAULT_LOADOUT, ...SELECTABLE.map(m => m.id)].filter(id => !out.includes(id));
+  return out.map(id => id ?? spare.shift());
+}
+
+// 技を選ぶ画面に出す性能の補足。
+//   startup / dmg / power: 攻撃判定を hits に書いていない技の数値（dmg は最大・power は 100% のときのふっとばしの目安）
+//   text: 数値だけではわからない技の説明（速さ・威力・ふっとびの欄にそのまま出す）。数値のない欄は、ここで必ず説明する
+const INFO = {
+  jab: { text: { dmg: "3%（連打できる）" } },
+  haha: { text: { speed: "6F（届くのは目の前だけ）", dmg: "10%（ガード・カウンターを無視）" } },
+  neru: { startup: 16, text: { speed: "16F で眠り、回復が始まる", dmg: "なし（自分の % を最大 18 回復）", power: "なし（殴られると起きる）" } },
+  yatchi: { text: { speed: "9F で突っ込み始める" } },
+  zazen: { startup: 1, text: { speed: "1F（押した瞬間から守る）", dmg: "なし（受けた攻撃を無効にする）", power: "なし（自分が少し押される）" } },
+  kando: { startup: 10, dmg: 7, power: 9, text: { dmg: "7%（まっすぐ飛ぶ）" } },
+  kisoku: { text: { dmg: "3 + 3 + 7 = 13%", power: "17（最後の一撃だけ）" } },
+  hansei: { startup: 4, text: { speed: "4F〜24F の間だけ構える", dmg: "受けた技の 1.3 倍（最低 8%）", power: "22（返した一撃）" } },
+  junbi: { startup: 5, dmg: 24, power: 33, text: { speed: "離して 4F（ためは最大 1 秒）", dmg: "8〜24%（ためるほど強い）", power: "15〜33（ためるほど強い）" } },
+  saraba: { startup: 6, dmg: 10, power: 13, text: { speed: "空中 6F / 地上 10F", dmg: "空中 10% / 地上 8%", power: "13（空中では真下へ落とす）" } },
+  gomen: { startup: 2, text: { speed: "2F〜16F の間は無敵", dmg: "なし（転がって避けるだけ）", power: "なし" } },
+  sumimasen: { text: { dmg: "1%", power: "14（% に関係なく一定）" } },
+  oroka: { startup: 54, dmg: 13, power: 18, text: { speed: "14F で予告、さらに 40F 後に落雷" } },
+  yokubou: { text: { dmg: "10%（半分の 5% を自分が回復）" } },
+  cheat: { text: { speed: "4F（すぐ上昇する）", dmg: "5%（上昇中に当たる）" } },
+  wasureru: { startup: 8, dmg: 12, power: 11, text: { dmg: "6% × 2（行きと帰り）" } },
+  jigoku: { startup: 18, dmg: 24, power: 19, text: { speed: "18F で柱が立つ", dmg: "3% × 数回 + 最後 6%", power: "19（最後の一撃で打ち上げ）" } },
+  fukanou: { text: { dmg: "2%（飛び道具ははね返す）", power: "7（% に関係なく一定）" } },
+  gyakuten: { startup: 13, dmg: 20, power: 31, text: { dmg: "5〜20%（自分の % が高いほど）", power: "12〜31（自分の % が高いほど）" } },
+  omaemo: { startup: 16, text: { dmg: "なし（位置を入れ替えるだけ）", power: "なし" } },
+  tokiwa: { startup: 48, dmg: 22, power: 32, text: { speed: "48F（ためている間は無防備）", dmg: "22%（まわり全部）" } },
+};
+
+/** 技の一覧画面に出す性能。速さ・威力・ふっとびは 1〜5 の段階（数値のない欄は 0）と、欄に出す文 */
 export function moveStats(m) {
   const h = m.hits?.[m.hits.length - 1];
   const first = m.hits?.[0];
+  const info = INFO[m.id] || {};
+  const text = info.text || {};
+  const startup = info.startup ?? (first ? first.f[0] : null);
+  const dmg = info.dmg ?? (m.hits ? m.hits.reduce((s, x) => s + x.dmg, 0) : null);
+  const power = info.power ?? (h ? h.base + h.grow : null);
+  const step = (v, cuts) => (v == null ? 0 : 1 + cuts.filter(c => v >= c).length);
   return {
-    startup: first ? first.f[0] : null,
-    dmg: m.hits ? m.hits.reduce((s, x) => s + x.dmg, 0) : null,
+    startup, dmg, power,
     cd: Math.max(m.cd, 0),
-    power: h ? h.base + h.grow : null,
+    speedLv: startup == null ? 0 : 6 - step(startup, [5, 9, 14, 25]),
+    dmgLv: step(dmg, [5, 9, 13, 18]),
+    powerLv: step(power, [8, 14, 20, 28]),
+    speedText: text.speed ?? (startup != null ? `${startup}F` : "—"),
+    dmgText: text.dmg ?? (dmg != null ? `${dmg}%` : "—"),
+    powerText: text.power ?? (power != null ? String(Math.round(power)) : "—"),
   };
 }

@@ -33,6 +33,7 @@
     <button id="quitBtn" class="icon-btn" type="button" aria-label="退出">✕</button>
     <span id="gameRoom" class="room-chip"></span>
   </div>
+  <div id="spectate" class="spectate" hidden>観戦中 ― 次の対戦から参加します</div>
   <div id="pcHint" class="pc-hint" hidden>移動: ←→ / AD　ジャンプ: Space / ↑　技: L=A　K=B　I=X　J=Y</div>
 </section>
 
@@ -56,7 +57,7 @@
     <p id="titleMsg" class="msg" role="status"></p>
   </div>
   <div class="title-right">
-    <h2>持っていく技 <small>24 種から 4 つ</small></h2>
+    <h2>持っていく技 <small>23 種から 4 つ</small></h2>
     <div id="loadoutView" class="loadout-view"></div>
     <button id="editBtn" class="secondary" type="button">技を選ぶ</button>
     <div class="row">
@@ -87,6 +88,7 @@
           <button type="button" data-v="2">2</button>
           <button type="button" data-v="3">3</button>
           <button type="button" data-v="5">5</button>
+          <button type="button" data-v="0" title="ストック無限（技の研究用）">∞</button>
         </div>
       </div>
       <button id="startBtn" class="primary" type="button">対戦開始！</button>
@@ -136,7 +138,7 @@
     <ul class="howto">
       <li><b>目的</b>相手を画面の外までふっとばすと撃墜。ストックを最後まで残した人の勝ち。% が高いほどよく飛ぶ</li>
       <li><b>移動</b>画面の左側をさわってぐりぐり。上にはじくとジャンプ（空中でもう 1 回）。空中で下に倒すと急降下</li>
-      <li><b>技</b>右側の A / B / X / Y。どのボタンに何を入れるかはタイトルの「技を選ぶ」で。技はボタンより多く 24 種あり、4 つしか持っていけない</li>
+      <li><b>技</b>右側の A / B / X / Y。どのボタンに何を入れるかはタイトルの「技を選ぶ」で。技はボタンより多く 23 種あり、4 つしか持っていけない</li>
       <li><b>読みあい</b>相手の持ち技は、使われるまでわからない（使うと頭の上にステッカーが出る）。カウンターを持っているか、ガードを割るつかみを持っているか…</li>
       <li><b>復帰</b>場外に落ちたら、ジャンプや復帰技で台のふちまで戻れば自動でよじ登る。復帰技を持っていくかどうかも作戦</li>
       <li><b>PC</b>移動 ←→ / AD、ジャンプ Space / ↑ / W、急降下 ↓ / S、技 L = A・K = B・I = X・J = Y</li>

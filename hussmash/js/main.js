@@ -3,8 +3,8 @@
 // ホストは対戦を計算し（sim.js）、30 回/秒スナップショットを配る。クライアントは入力を 60 回/秒送り、届いたスナップショットを補間して描く。
 // 通信はすべて state の同期なので（ロビーの状態も対戦の状態も毎回まるごと送る）、何通か落ちても次の 1 通で元に戻る。
 
-import { MOVES, MOVE_BY_ID, DEFAULT_LOADOUT, BUTTONS, stickerSrc, isValidLoadout, moveStats } from "./moves.js";
-import { Sim, cpuInput, EMPTY_INPUT, PHASES } from "./sim.js";
+import { MOVE_BY_ID, SELECTABLE, GROUPS, DEFAULT_LOADOUT, BUTTONS, stickerSrc, repairLoadout, moveStats } from "./moves.js";
+import { Sim, cpuInput, EMPTY_INPUT, PHASES, CPU_LEVEL_NAMES, CPU_DEFAULT_LEVEL } from "./sim.js";
 import { expandSnapshot, cleanName } from "./protocol.js";
 import { hostRoom, joinRoom, randomRoom, isRoomCode } from "./net.js";
 import { Renderer, COLORS } from "./render.js";
@@ -23,7 +23,7 @@ const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } cat
 
 const me = {
   name: cleanName(load(KEY.name, "")) || "",
-  loadout: (() => { const l = load(KEY.loadout, null); return isValidLoadout(l) ? l : DEFAULT_LOADOUT.slice(); })(),
+  loadout: repairLoadout(load(KEY.loadout, null)),   // 禁止になった技が入っていたら差し替える
 };
 const myName = () => me.name || "ハスキー";
 
@@ -98,12 +98,14 @@ function renderLoadout() {
   const box = $("loadoutView");
   box.replaceChildren(...me.loadout.map((id, i) => {
     const m = MOVE_BY_ID[id];
-    return el("div", { class: "lo-card" }, [
+    const b = el("button", { class: "lo-card", type: "button", "aria-label": `${BUTTONS[i]}: ${m.name}（タップで変更）` }, [
       el("img", { src: stickerSrc(m.sticker), alt: "" }),
       el("span", { class: "btn-letter", text: BUTTONS[i] }),
       el("div", { text: m.name }),
       el("div", { class: "kind", text: m.kind }),
     ]);
+    b.addEventListener("click", () => openEditor(i));
+    return b;
   }));
   document.querySelectorAll(".mbtn").forEach(b => {
     const i = Number(b.dataset.bit);
@@ -175,8 +177,8 @@ $("practiceBtn").addEventListener("click", () => {
   addCpu();
 });
 
-$("editBtn").addEventListener("click", openEditor);
-$("lobbyEditBtn").addEventListener("click", openEditor);
+$("editBtn").addEventListener("click", () => openEditor(0));
+$("lobbyEditBtn").addEventListener("click", () => openEditor(0));
 $("helpBtn").addEventListener("click", () => { $("help").hidden = false; });
 $("helpClose").addEventListener("click", () => { $("help").hidden = true; });
 $("bgmBtn").addEventListener("click", () => { firstGesture(); setBgm(!bgmOn()); syncToggles(); });
@@ -184,60 +186,95 @@ $("sfxBtn").addEventListener("click", () => { firstGesture(); setMuted(!isMuted(
 
 // ---- 技の選択 ----
 
-let editSel = 0, editFocus = null;
+// 操作は 2 つだけ: 「技をタップして見る」→「入れたいボタン（A / B / X / Y）を押す」。
+// 上の 4 つのボタン欄をタップすると、そこに入っている技を見る。
+let editFocus = null, editFlash = -1;
 
-function openEditor() {
-  editSel = 0;
-  editFocus = me.loadout[0];
+function openEditor(slot = 0) {
+  editFocus = me.loadout[slot];
+  editFlash = -1;
   renderEditor();
   $("editor").hidden = false;
+  $("moveGrid").querySelector(".focus")?.scrollIntoView({ block: "nearest" });
+}
+
+/** 性能の 1 行。数値で比べられる欄は 5 段階のバー、数値のない欄（ガード・回復など）は説明の文だけ */
+function bars(lv, label, value) {
+  const segs = [1, 2, 3, 4, 5].map(k => el("i", { class: k <= lv ? "on" : "" }));
+  return el("div", { class: "stat" }, [
+    el("span", { text: label }),
+    el("div", { class: "stat-v" }, [lv ? el("span", { class: "bars" }, segs) : null, el("small", { text: value })]),
+  ]);
 }
 
 function renderEditor() {
   $("editSlots").replaceChildren(...me.loadout.map((id, i) => {
     const m = MOVE_BY_ID[id];
-    const b = el("button", { class: "edit-slot" + (i === editSel ? " sel" : ""), type: "button" }, [
+    const b = el("button", { class: "edit-slot" + (id === editFocus ? " sel" : "") + (i === editFlash ? " flash" : ""), type: "button" }, [
       el("b", { text: BUTTONS[i] }), el("img", { src: stickerSrc(m.sticker), alt: "" }), el("span", { text: m.name }),
     ]);
-    b.addEventListener("click", () => { editSel = i; editFocus = id; sfx("ui"); renderEditor(); });
+    b.addEventListener("click", () => { editFocus = id; editFlash = -1; sfx("ui"); renderEditor(); });
     return b;
   }));
-  $("moveGrid").replaceChildren(...MOVES.map(m => {
-    const at = me.loadout.indexOf(m.id);
-    const b = el("button", { type: "button", class: (at >= 0 ? "equipped" : "") + (m.id === editFocus ? " focus" : "") }, [
-      el("img", { src: stickerSrc(m.sticker), alt: "" }),
-      el("div", { text: m.name }),
-      at >= 0 ? el("span", { class: "eq", text: BUTTONS[at] }) : null,
-    ]);
-    b.addEventListener("click", () => {
-      sfx("ui");
-      if (editFocus === m.id && me.loadout[editSel] !== m.id) assign(m.id);
-      else if (editFocus !== m.id) { editFocus = m.id; if (at < 0) assign(m.id); }
-      renderEditor();
-    });
-    return el("li", {}, [b]);
-  }));
-  const m = MOVE_BY_ID[editFocus] || MOVES[0];
+
+  const items = [];
+  for (const g of GROUPS) {
+    items.push(el("li", { class: "grp", text: g.name }));
+    for (const id of g.ids) {
+      const m = MOVE_BY_ID[id];
+      if (!m || m.banned) continue;
+      const at = me.loadout.indexOf(id);
+      const b = el("button", { type: "button", class: (at >= 0 ? "equipped" : "") + (id === editFocus ? " focus" : "") }, [
+        el("img", { src: stickerSrc(m.sticker), alt: "" }),
+        el("div", { text: m.name }),
+        el("small", { text: m.kind }),
+        at >= 0 ? el("span", { class: "eq", text: BUTTONS[at] }) : null,
+      ]);
+      b.addEventListener("click", () => { editFocus = id; editFlash = -1; sfx("ui"); renderEditor(); });
+      items.push(el("li", {}, [b]));
+    }
+  }
+  $("moveGrid").replaceChildren(...items);
+
+  const m = MOVE_BY_ID[editFocus] || SELECTABLE[0];
   const st = moveStats(m);
+  const at = me.loadout.indexOf(m.id);
+  const setRow = el("div", { class: "set-row" }, BUTTONS.map((B, i) => {
+    const cur = MOVE_BY_ID[me.loadout[i]];
+    const b = el("button", { type: "button", class: "set-btn" + (i === at ? " here" : "") }, [
+      el("b", { text: B }),
+      el("img", { src: stickerSrc(cur.sticker), alt: "" }),
+      el("small", { text: i === at ? "セット中" : at >= 0 ? "入れ替え" : "ここに入れる" }),
+    ]);
+    b.addEventListener("click", () => { if (i !== at) { setMove(m.id, i); sfx("ui"); } });
+    return b;
+  }));
   $("moveDetail").replaceChildren(
-    el("img", { src: stickerSrc(m.sticker), alt: "" }),
-    el("span", { class: "kind", text: m.kind }),
-    el("h3", { text: m.name }),
-    el("p", { text: m.desc, style: "margin: 4px 0" }),
-    el("dl", {}, [
-      el("dt", { text: "発生" }), el("dd", { text: st.startup ? `${st.startup} F` : "—" }),
-      el("dt", { text: "ダメージ" }), el("dd", { text: st.dmg ? `${st.dmg}%` : "—" }),
-      el("dt", { text: "再使用" }), el("dd", { text: st.cd ? `${(st.cd / 60).toFixed(1)} 秒` : "すぐ" }),
+    el("div", { class: "detail-top" }, [
+      el("img", { src: stickerSrc(m.sticker), alt: "" }),
+      el("div", {}, [
+        el("span", { class: "kind", text: m.kind }),
+        el("h3", { text: m.name }),
+        bars(st.speedLv, "速さ", st.speedText),
+        bars(st.dmgLv, "威力", st.dmgText),
+        bars(st.powerLv, "ふっとび", st.powerText),
+        el("div", { class: "stat cd", text: `再使用 ${st.cd ? `${(st.cd / 60).toFixed(1)} 秒` : "すぐ"}` }),
+      ]),
     ]),
+    el("p", { class: "desc", text: m.desc }),
+    el("p", { class: "legend", text: "F = 1/60 秒（小さいほど早く出る）。ふっとびが 30 前後なら、相手が 100% 前後で撃墜を狙える" }),
+    el("div", { class: "set-box" }, [el("div", { class: "set-head", text: "どのボタンに入れる？" }), setRow]),
   );
 }
 
-/** 選んでいるボタンに技を入れる。ほかのボタンに入っていたら入れ替える */
-function assign(id) {
+/** 技をボタン i に入れる。ほかのボタンに入っていたら、そのボタンとは中身を入れ替える */
+function setMove(id, i) {
   const at = me.loadout.indexOf(id);
-  if (at >= 0) me.loadout[at] = me.loadout[editSel];
-  me.loadout[editSel] = id;
-  editSel = (editSel + 1) % 4;
+  if (at >= 0) me.loadout[at] = me.loadout[i];
+  me.loadout[i] = id;
+  editFlash = i;
+  save(KEY.loadout, me.loadout);
+  renderEditor();
 }
 
 $("editDone").addEventListener("click", () => {
@@ -260,9 +297,10 @@ function renderLobby() {
   $("hostCtl").hidden = !host;
   document.querySelectorAll("#stockSeg button").forEach(b => b.classList.toggle("on", Number(b.dataset.v) === S.stocks));
 
-  const roster = host ? S.slots.map(s => s && { k: s.kind, n: s.name, hello: s.hello }) : S.roster;
+  const roster = host ? S.slots.map(s => s && { k: s.kind, n: s.name, hello: s.hello, lv: s.level }) : S.roster;
   const self = host ? 0 : S.you;
-  const filled = roster.filter(Boolean).length;
+  const filled = host ? S.slots.filter(ready).length : roster.filter(Boolean).length;
+  const matchOn = !host && S.phase !== "lobby";
   $("slotList").replaceChildren(...roster.map((p, i) => {
     const li = el("li", { class: p ? "" : "empty", style: `--c: ${COLORS[i]}` });
     li.append(el("div", { class: "face" }, [el("img", { src: "avatars/husky.png", alt: "" })]));
@@ -278,7 +316,17 @@ function renderLobby() {
     const who = el("div", { class: "who", text: `P${i + 1} ${p.n || "…"}` });
     if (i === self) who.append(el("small", { text: "あなた" }));
     li.append(who);
-    li.append(el("span", { class: "tag", text: p.k === 2 ? "CPU" : host && p.hello === false ? "接続中…" : "準備OK" }));
+    if (p.k === 2 && host) {
+      // CPU の強さ（押すたびに 動かない → よわい → ふつう → つよい）
+      const b = el("button", { class: "mini lv", type: "button", text: `CPU: ${CPU_LEVEL_NAMES[p.lv]} ▸` });
+      b.addEventListener("click", () => { S.slots[i].level = (S.slots[i].level + 1) % CPU_LEVEL_NAMES.length; sfx("ui"); renderLobby(); broadcastLobby(); });
+      li.append(b);
+    } else {
+      const tag = p.k === 2 ? `CPU: ${CPU_LEVEL_NAMES[p.lv]}`
+        : host && p.hello === false ? "接続中…"
+        : matchOn && !p.m ? "次の対戦から" : matchOn ? "対戦中" : "準備OK";
+      li.append(el("span", { class: "tag", text: tag }));
+    }
     if (host && i > 0) {
       const b = el("button", { class: "mini", type: "button", text: p.k === 2 ? "外す" : "退出させる" });
       b.addEventListener("click", () => removeSlot(i));
@@ -287,13 +335,16 @@ function renderLobby() {
     return li;
   }));
   if (host) {
-    const ok = filled >= 2 && S.slots.every(s => !s || s.kind === 2 || s.hello);
-    $("startBtn").disabled = !ok;
-    $("lobbyMsg").textContent = filled < 2 ? (S.offline ? "CPU を追加してください" : "参加を待っています（CPU を入れることもできます）") : "";
+    $("startBtn").disabled = filled < 2;
+    $("lobbyMsg").textContent = filled < 2 ? (S.offline ? "CPU を追加してください" : "参加を待っています（CPU を入れることもできます）")
+      : S.stocks === 0 ? "ストック∞: 対戦は ✕ でロビーに戻るまで続きます" : "";
   } else {
-    $("lobbyMsg").textContent = "ホストが対戦を始めるのを待っています";
+    $("lobbyMsg").textContent = matchOn ? "対戦中です。終わったら次の対戦から参加できます" : "ホストが対戦を始めるのを待っています";
   }
 }
+
+/** 次の対戦に出られる枠（CPU か、名前と技が届いた人） */
+const ready = s => !!s && (s.kind === 2 || s.hello);
 
 document.querySelectorAll("#stockSeg button").forEach(b => b.addEventListener("click", () => {
   S.stocks = Number(b.dataset.v);
@@ -304,9 +355,10 @@ document.querySelectorAll("#stockSeg button").forEach(b => b.addEventListener("c
 
 $("startBtn").addEventListener("click", () => { if (S.role === "host") startMatch(); });
 $("leaveBtn").addEventListener("click", () => leaveToTitle());
+// ✕: ホスト（練習も）は対戦をやめてロビーへ（ルームはそのまま）。クライアントはルームから抜ける（同じ番号で入りなおせる）
 $("quitBtn").addEventListener("click", () => {
-  const text = S.role === "host" && !S.offline ? "ルームを閉じてタイトルに戻りますか？" : "対戦をやめてタイトルに戻りますか？";
-  if (confirm(text)) leaveToTitle();
+  if (S.role === "host") { if (confirm("対戦をやめてロビーに戻りますか？")) hostBackToLobby(); }
+  else if (confirm("ルームから抜けてタイトルに戻りますか？（同じ番号で入りなおせます）")) leaveToTitle();
 });
 
 // ---- ホスト ----
@@ -318,7 +370,7 @@ function startHost(net, code) {
   S.room = code;
   S.slots = [{ kind: 1, name: myName(), loadout: me.loadout.slice(), peerId: null, hello: true }, null, null, null];
   S.sim = null;
-  S.stocks = S.stocks || 3;
+  if (!(S.stocks >= 0)) S.stocks = 3;   // 0 = ストック無限
   $("gameRoom").textContent = code ? `ルーム ${code}` : "練習";
   show("lobby");
   renderLobby();
@@ -327,15 +379,15 @@ function startHost(net, code) {
 }
 
 function randomLoadout() {
-  const ids = MOVES.map(m => m.id).sort(() => Math.random() - 0.5).slice(0, 4);
+  const ids = SELECTABLE.map(m => m.id).sort(() => Math.random() - 0.5).slice(0, 4);
   if (!ids.includes("cheat") && Math.random() < 0.6) ids[3] = "cheat";
   return [...new Set(ids)].length === 4 ? ids : DEFAULT_LOADOUT.slice();
 }
 
-function addCpu(at) {
+function addCpu(at, level = CPU_DEFAULT_LEVEL) {
   const i = at ?? S.slots.findIndex((s, k) => k > 0 && !s);
   if (i < 0 || S.slots[i]) return;
-  S.slots[i] = { kind: 2, name: `CPU${i + 1}`, loadout: randomLoadout(), peerId: null, hello: true };
+  S.slots[i] = { kind: 2, name: `CPU${i + 1}`, loadout: randomLoadout(), level, peerId: null, hello: true };
   renderLobby();
   broadcastLobby();
 }
@@ -349,8 +401,8 @@ function removeSlot(i) {
   broadcastLobby();
 }
 
+/** 対戦中・結果画面でも入れる（その対戦は観戦して、次の対戦から参加）。抜けた人も同じ番号で入りなおせる */
 function hostAccept(peerId) {
-  if (S.sim) return "started";
   const i = S.slots.findIndex((s, k) => k > 0 && !s);
   if (i < 0) return "full";
   S.slots[i] = { kind: 1, name: "", loadout: DEFAULT_LOADOUT.slice(), peerId, hello: false,
@@ -365,7 +417,7 @@ function hostMessage(peerId, msg) {
   if (i < 0) return;
   const s = S.slots[i];
   if (msg.t === "hi") {
-    if (S.sim) return;   // 対戦中は名前・技を変えない
+    if (S.sim && s.inMatch) return;   // 対戦に出ている間は名前・技を変えない（観戦中の人は変えてよい）
     const changed = !s.hello || s.name !== msg.n;
     s.name = msg.n || `P${i + 1}`;
     s.loadout = msg.l;
@@ -383,8 +435,8 @@ function hostLeave(peerId) {
   const i = S.slots.findIndex(s => s && s.peerId === peerId);
   if (i < 0) return;
   const name = S.slots[i].name || `P${i + 1}`;
+  if (S.sim && S.slots[i].inMatch) S.sim.removeSlot(i);
   S.slots[i] = null;
-  if (S.sim) S.sim.removeSlot(i);
   toast(`${name} さんが抜けました`);
   renderLobby();
   broadcastLobby();
@@ -395,7 +447,7 @@ function hostPhase() { return S.sim ? S.sim.phase : "lobby"; }
 function broadcastLobby() {
   if (S.role !== "host" || !S.net) return;
   S.lobbySeq = (S.lobbySeq || 0) + 1;
-  const P = S.slots.map(s => (s ? { k: s.kind, n: s.name || "…" } : { k: 0 }));
+  const P = S.slots.map(s => (s ? { k: s.kind, n: s.name || "…", m: S.sim && s.inMatch ? 1 : 0, lv: s.level ?? 0 } : { k: 0 }));
   const base = { t: "lb", s: S.lobbySeq, ph: PHASES.indexOf(hostPhase()), st: S.stocks, P };
   S.slots.forEach((s, i) => { if (s?.peerId) S.net.send(s.peerId, { ...base, you: i }); });
 }
@@ -404,8 +456,10 @@ function startMatch() {
   const players = [];
   S.slots.forEach((s, i) => {
     if (!s) return;
+    s.inMatch = ready(s);   // 名前と技がまだ届いていない人は、この対戦は観戦
+    if (!s.inMatch) return;
     if (i === 0) s.loadout = me.loadout.slice();
-    players.push({ slot: i, name: s.name, loadout: s.loadout, cpu: s.kind === 2 });
+    players.push({ slot: i, name: s.name, loadout: s.loadout, cpu: s.kind === 2, level: s.level });
     if (s.kind === 1 && i > 0) s.tracker = new PressTracker();
   });
   if (players.length < 2) return;
@@ -421,7 +475,7 @@ function hostStep() {
   const sim = S.sim;
   const inputs = [EMPTY_INPUT, EMPTY_INPUT, EMPTY_INPUT, EMPTY_INPUT];
   S.slots.forEach((s, i) => {
-    if (!s) return;
+    if (!s || !s.inMatch) return;   // 途中から入った人（観戦中）の入力は使わない
     const F = sim.fighters[i];
     if (!F) return;
     if (i === 0) {
@@ -439,6 +493,7 @@ function hostStep() {
 
 function hostBackToLobby() {
   S.sim = null;
+  for (const s of S.slots) if (s) s.inMatch = false;
   show("lobby");
   renderLobby();
   broadcastLobby();
@@ -460,7 +515,7 @@ function startClient(net, code) {
   renderLobby();
   sendHello();
   clearInterval(S.helloTimer);
-  S.helloTimer = setInterval(() => { if (S.phase === "lobby") sendHello(); }, HELLO_EVERY_MS);
+  S.helloTimer = setInterval(sendHello, HELLO_EVERY_MS);
 }
 
 function sendHello() {
@@ -473,7 +528,7 @@ function clientMessage(msg) {
     S.lobbySeqSeen = msg.s;
     S.you = msg.you;
     S.stocks = msg.st;
-    S.roster = msg.P.map(p => (p.k ? { k: p.k, n: p.n } : null));
+    S.roster = msg.P.map(p => (p.k ? { k: p.k, n: p.n, m: p.m, lv: p.lv } : null));
     renderer.roster = S.roster.map(p => p && { name: p.n });
     renderer.self = S.you;
     setClientPhase(msg.ph);
@@ -508,10 +563,17 @@ function setClientPhase(ph) {
 }
 
 function clientLost(text) {
+  const code = S.room;
   S.net = null;
   resetSession();
   show("title");
-  $("titleMsg").textContent = text;
+  $("roomInput").value = code;   // 同じ番号ですぐ入りなおせるように
+  $("titleMsg").textContent = `${text}「ルームに入る」で入りなおせます。`;
+}
+
+/** クライアントで、今の対戦に出ていない（途中から入って観戦している） */
+function spectating() {
+  return S.role === "client" && S.phase !== "lobby" && !S.roster[S.you]?.m;
 }
 
 // ---- 対戦画面 ----
@@ -573,6 +635,11 @@ function clientView() {
 }
 
 function updateButtons(view) {
+  const spec = spectating();
+  $("controls").hidden = spec;
+  $("spectate").hidden = !spec;
+  $("pcHint").hidden = isTouch || spec;
+  renderer.self = spec ? -1 : S.role === "client" ? S.you : 0;
   const F = view?.F[renderer.self];
   document.querySelectorAll(".mbtn").forEach(b => {
     const i = Number(b.dataset.bit);
@@ -660,6 +727,7 @@ function resetSession() {
 }
 
 function leaveToTitle() {
+  if (S.role === "client") $("roomInput").value = S.room;
   S.net?.close();
   resetSession();
   show("title");
