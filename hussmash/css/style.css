@@ -95,6 +95,8 @@ button {
   padding: 12px;
 }
 .logo { display: flex; align-items: center; gap: 10px; }
+.ver { margin: 0 0 0 6px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lobby-left .ver { margin: 0; align-self: center; }
 .logo img { width: 64px; height: 56px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); transform: rotate(-6deg); }
 .logo h1 {
   margin: 0;
@@ -160,6 +162,21 @@ h2 small { color: var(--muted); font-weight: 500; margin-left: 6px; font-size: 1
 .room-box b { font-size: clamp(36px, 7vw, 56px); letter-spacing: 0.15em; font-weight: 900; color: var(--accent-2); line-height: 1.1; }
 .room-box .practice-label { letter-spacing: 0.05em; font-size: 36px; }
 .host-ctl { display: flex; flex-direction: column; gap: 8px; }
+/* ホスト以外の人の「準備OK」。押すたびにオン / オフ */
+.ready-btn {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  font-size: 18px; font-weight: 800;
+}
+.ready-btn .box { width: 28px; height: 28px; border-radius: 7px; border: 3px solid var(--muted); display: grid; place-items: center; }
+.ready-btn[aria-pressed="true"] { border-color: #43d17a; background: rgba(67, 209, 122, 0.18); }
+.ready-btn[aria-pressed="true"] .box { border-color: #43d17a; background: #43d17a; }
+.ready-btn[aria-pressed="true"] .box::after { content: "✓"; color: #10301d; font-size: 20px; font-weight: 900; line-height: 1; }
+.ready-btn:active { transform: scale(0.98); }
+.slot-list .tag.ok { color: #10301d; background: #43d17a; }
 .seg-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
 .seg { display: flex; background: rgba(0, 0, 0, 0.3); border-radius: 10px; padding: 3px; }
 .seg button { background: none; padding: 6px 14px; border-radius: 8px; font-size: 15px; color: var(--muted); }
@@ -305,19 +322,51 @@ h2 small { color: var(--muted); font-weight: 500; margin-left: 6px; font-size: 1
 .set-btn.here img { opacity: 1; }
 .set-btn.here small { color: var(--accent-2); }
 
-/* 結果 */
-.result-head { text-align: center; font-size: 22px; }
-.rank-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.rank-list li {
-  display: flex; align-items: center; gap: 10px;
+/* 結果: 左に順位（タップで選ぶ）、右に選んだ人の成績（相手ごと・技ごと） */
+.result-panel {
+  width: min(900px, 100%);
+  max-height: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.result-top { display: flex; align-items: center; gap: 8px; }
+.result-head { margin: 0 4px; font-size: 20px; }
+.result-top .msg { flex: 1; margin: 0; text-align: left; }
+.secondary.small { width: auto; padding: 8px 18px; }
+.result-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 8px; }
+.rank-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.rank-row {
+  width: 100%;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px;
   background: rgba(0, 0, 0, 0.3);
+  border: 2px solid transparent;
   border-left: 6px solid var(--c);
   border-radius: 10px;
-  padding: 6px 12px;
-  font-size: 15px;
+  padding: 4px 8px;
+  text-align: left;
 }
-.rank-list .no { font-size: 22px; font-weight: 900; width: 2.2em; color: var(--accent-2); }
-.rank-list li:first-child { background: rgba(255, 201, 60, 0.18); }
+.rank-row.sel { border-color: #fff; border-left-color: var(--c); }
+.rank-list li:first-child .rank-row { background: rgba(255, 201, 60, 0.18); }
+.rank-row .no { grid-row: span 2; min-width: 2.2em; font-size: 20px; font-weight: 900; color: var(--accent-2); white-space: nowrap; }
+.rank-row .nm { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-row .nums { font-size: 12px; color: var(--muted); }
+.rank-row .nums b { color: var(--ink); font-size: 14px; margin-right: 1px; }
+.result-detail { background: rgba(0, 0, 0, 0.25); border-radius: 10px; padding: 6px 10px; font-size: 13px; }
+.result-detail h3 { margin: 2px 0 4px; font-size: 14px; color: var(--accent-2); }
+.result-detail h4 { margin: 8px 0 3px; font-size: 12px; color: var(--muted); font-weight: 700; }
+.st-table { width: 100%; border-collapse: collapse; }
+.st-table th { font-size: 11px; color: var(--muted); font-weight: 400; text-align: right; padding: 0 4px; }
+.st-table th:first-child, .st-table td:first-child { text-align: left; }
+.st-table td { text-align: right; padding: 3px 4px; border-top: 1px solid var(--line); white-space: nowrap; }
+.st-table td:first-child { white-space: normal; }
+.st-table tr.dim td { opacity: 0.45; }
+.st-who { display: inline-flex; align-items: center; gap: 5px; }
+.st-who i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+.st-who img { width: 30px; height: 26px; object-fit: cover; border-radius: 4px; flex: none; }
+.st-note { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 
 /* ---- 対戦画面 ---- */
 #game { padding: 0; touch-action: none; }

@@ -1,11 +1,13 @@
 // PeerJS（公開サーバー 0.peerjs.com）で WebRTC の P2P 接続を張る。
-// ルーム番号 5 桁 → ホストの Peer ID「hussmash-v1-12345」。クライアントはそこへつなぐ。
+// ルーム番号 5 桁 → ホストの Peer ID「hussmash-v2-12345」。クライアントはそこへつなぐ。
+// v の番号は version.js の PROTOCOL（版の違う人どうしは、同じ番号でも別のルームになってつながらない）。
 // 接続は reliable: false、serialization: "raw"（PeerJS に JSON / BinaryPack の解読をさせず、
 // 届いた生の文字列を自分で長さを見てから読む）。それ以外の形でつないできた相手はすぐ切る。
 
+import { PROTOCOL } from "./version.js";
 import { parse, checkFromClient, checkFromHost, MAX_FROM_CLIENT, MAX_FROM_HOST } from "./protocol.js";
 
-const ID_PREFIX = "hussmash-v1-";
+const ID_PREFIX = `hussmash-v${PROTOCOL}-`;
 const TIMEOUT_MS = 8000;        // これだけ何も届かなければ切れたとみなす
 const OPEN_TIMEOUT_MS = 15000;  // つながるまでの待ち時間
 const MAX_PENDING = 6;          // まだ開いていない接続の上限（大量の接続要求への備え）
@@ -34,7 +36,7 @@ class Limiter {
 function errorText(err) {
   switch (err?.type) {
     case "unavailable-id": return "その番号のルームはすでに使われています。";
-    case "peer-unavailable": return "ルームが見つかりません。番号を確かめてください。";
+    case "peer-unavailable": return "ルームが見つかりません。番号と、ホストとバージョンが同じか（タイトルの v○○）を確かめてください。";
     case "browser-incompatible": return "このブラウザは WebRTC に対応していません。";
     case "network": case "socket-error": case "socket-closed": case "server-error":
       return "接続サーバーにつながりませんでした。通信環境を確かめてください。";
@@ -130,7 +132,8 @@ export function hostRoom(code, handlers) {
     const api = {
       code,
       send(id, obj) { const p = peers.get(id); if (p) sendRaw(p.conn, obj); },
-      broadcast(obj) { const s = JSON.stringify(obj); for (const p of peers.values()) if (p.conn.open) { try { p.conn.send(s); } catch { /* 無視 */ } } },
+      /** JSON にした文字列をそのまま送る（スナップショットは全員ぶんを 1 回だけ JSON にして使い回す） */
+      sendText(id, s) { const p = peers.get(id); if (p?.conn.open) { try { p.conn.send(s); } catch { /* 無視 */ } } },
       kick: drop,
       close() {
         clearInterval(watch);

@@ -129,7 +129,53 @@ export class Input {
   }
 }
 
-/** 押した回数の差から「このフレームで押したボタン」のビットを作る（ホスト側で使う） */
+/**
+ * ホスト: クライアントから届いた 1 フレームごとの入力（番号付き）を、番号順にちょうど 1 つずつ使う。
+ * クライアントは同じ入力の並びで自分のキャラを先に動かしているので、使う並びがずれなければ結果も一致する。
+ *   - 通信の揺れを吸収するため、届いた最新より BUFFER フレームぶん遅れて使い始める
+ *   - 次の番号がまだ届いていなければ、番号は進めずに直前の入力を続ける（そのぶん遅れて使うようになり、揺れに強くなる）
+ *   - たまりすぎたら（止まっていたものが一気に届いたなど）押した瞬間だけ残して読み飛ばす
+ */
+const BUFFER = 2, BACKLOG_MAX = 8, KEEP = 64;
+export class InputQueue {
+  constructor() { this.q = new Map(); this.newest = -1; this.resync(); }
+  /** 使い始めを、届いている最新に合わせ直す（対戦の始まり） */
+  resync() { this.next = -1; this.acked = -1; this.last = [0, 0, 0, 0]; this.carry = 0; }
+  /** s: いちばん新しい入力の番号、frames: [[x, y, held, pressed], ...]（古い順、最後が s） */
+  push(s, frames) {
+    const first = s - frames.length + 1;
+    frames.forEach((f, k) => { if (first + k >= this.next && !this.q.has(first + k)) this.q.set(first + k, f); });
+    this.newest = Math.max(this.newest, s);
+    if (this.q.size > KEEP) {
+      for (const k of [...this.q.keys()].sort((a, b) => a - b).slice(0, this.q.size - KEEP)) this.q.delete(k);
+    }
+  }
+  /** 1 フレームぶんの入力を取り出す（{ x, y, held, pressed }）。acked = 使い終わった最後の番号 */
+  take() {
+    if (this.newest < 0) return { x: 0, y: 0, held: 0, pressed: 0 };
+    if (this.next < 0 || this.newest - this.next >= BUFFER + BACKLOG_MAX) {
+      const to = this.newest - BUFFER + 1;
+      for (const k of [...this.q.keys()].sort((a, b) => a - b)) {
+        if (k >= to) break;
+        if (this.next >= 0) this.carry |= this.q.get(k)[3];
+        this.last = this.q.get(k);
+        this.q.delete(k);
+      }
+      this.next = to;
+    }
+    const f = this.q.get(this.next);
+    if (!f) { const [x, y, held] = this.last; return { x: x / 100, y: y / 100, held, pressed: 0 }; }
+    this.q.delete(this.next);
+    this.last = f;
+    this.acked = this.next++;
+    const [x, y, held, p] = f;
+    const pressed = p | this.carry;
+    this.carry = 0;
+    return { x: x / 100, y: y / 100, held, pressed };
+  }
+}
+
+/** 押した回数の差から「このフレームで押したボタン」のビットを作る */
 export class PressTracker {
   constructor() { this.last = null; }
   pressed(c) {

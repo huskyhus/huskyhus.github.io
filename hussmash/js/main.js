@@ -1,22 +1,27 @@
 // 画面の流れと、ホスト / クライアントの進行。
 //   タイトル → ルームを作る（ホスト）/ ルームに入る（クライアント）/ 練習（通信なしのホスト）→ ロビー → 対戦 → 結果 → ロビー
-// ホストは対戦を計算し（sim.js）、30 回/秒スナップショットを配る。クライアントは入力を 60 回/秒送り、届いたスナップショットを補間して描く。
+// ホストは対戦を計算し（sim.js）、60 回/秒スナップショットを配る。クライアントは入力を 60 回/秒送り、届いたスナップショットを補間して描く。
+// クライアントの自分のキャラだけは、ホストの結果を待たずに手元で先に動かす（予測）。ホストの結果が届くたびに、その状態から
+// ホストがまだ使っていない自分の入力をやり直して合わせる（照合）。当たり・ダメージ・撃墜を決めるのはホストだけ。
 // 通信はすべて state の同期なので（ロビーの状態も対戦の状態も毎回まるごと送る）、何通か落ちても次の 1 通で元に戻る。
 
 import { MOVE_BY_ID, SELECTABLE, GROUPS, DEFAULT_LOADOUT, BUTTONS, stickerSrc, repairLoadout, moveStats } from "./moves.js";
-import { Sim, cpuInput, EMPTY_INPUT, PHASES, CPU_LEVEL_NAMES, CPU_DEFAULT_LEVEL } from "./sim.js";
-import { expandSnapshot, cleanName } from "./protocol.js";
+import { Sim, cpuInput, EMPTY_INPUT, PHASES, EVENTS, FLAG, CPU_LEVEL_NAMES, CPU_DEFAULT_LEVEL, fighterState, loadFighter, predictSim } from "./sim.js";
+import { expandSnapshot, cleanName, INPUT_FRAMES } from "./protocol.js";
 import { hostRoom, joinRoom, randomRoom, isRoomCode } from "./net.js";
 import { Renderer, COLORS } from "./render.js";
-import { Input, PressTracker } from "./input.js";
+import { Input, PressTracker, InputQueue } from "./input.js";
 import { unlockAudio, playSong, isOn as bgmOn, setOn as setBgm } from "./bgm.js";
 import { sfx, isMuted, setMuted } from "./sfx.js";
+import { VERSION } from "./version.js";
 
 const $ = id => document.getElementById(id);
 const KEY = { name: "hussmash.name", loadout: "hussmash.loadout" };
 const STEP = 1000 / 60;
 const LOBBY_EVERY_MS = 400, HELLO_EVERY_MS = 800;
-const INTERP_DELAY = 5;   // クライアントは何フレーム遅れて描くか（揺れを吸収するため）
+const INTERP_DELAY = 3;   // クライアントは相手のキャラを何フレーム遅れて描くか（揺れを吸収するため。自分のキャラは予測して遅れなし）
+const REPLAY_MAX = 90;    // 照合でやり直す入力の上限（これより遅れていたらホストの状態をそのまま使う）
+const SNAP_DIST = 150;    // 予測とホストの結果がこれ以上ずれたら、なめらかに寄せずにその場へ移す（撃墜・復活など）
 
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 保存できなくても遊べる */ } };
@@ -43,7 +48,7 @@ const S = {
   room: "",
   screen: "title",
   // ホスト
-  slots: [null, null, null, null],   // { kind: 1 人 / 2 CPU, name, loadout, peerId, input, seq, tracker, hello }
+  slots: [null, null, null, null],   // { kind: 1 人 / 2 CPU, name, loadout, peerId, inq（届いた入力）, hello, ready }
   stocks: 3,
   sim: null,
   // クライアント
@@ -52,7 +57,11 @@ const S = {
   phase: "lobby",
   snaps: [],
   clockOffset: null,
-  inSeq: 0,
+  ready: false,       // 自分が「準備OK」を押しているか
+  inSeq: 0,           // 自分の入力の番号（1 フレームに 1 つ）
+  inHist: [],         // 送った入力 { s, i: [x, y, held, pressed] }（照合でやり直すため、ホストが使い終わるまで持っておく）
+  inTracker: null,
+  pred: null,         // 予測: { sim, F, ox, oy }（ox, oy = ずれをなめらかに寄せるための見た目のずらし）
   // 共通
   lastEvent: 0,
   lastCount: -1,
@@ -297,10 +306,12 @@ function renderLobby() {
   $("hostCtl").hidden = !host;
   document.querySelectorAll("#stockSeg button").forEach(b => b.classList.toggle("on", Number(b.dataset.v) === S.stocks));
 
-  const roster = host ? S.slots.map(s => s && { k: s.kind, n: s.name, hello: s.hello, lv: s.level }) : S.roster;
+  $("readyBtn").hidden = host;
+  $("readyBtn").setAttribute("aria-pressed", String(S.ready));
+  const roster = host ? S.slots.map((s, i) => s && { k: s.kind, n: s.name, hello: s.hello, lv: s.level, r: isReady(s, i) })
+    : S.roster.map((p, i) => (p && i === S.you ? { ...p, r: S.ready } : p));   // 自分の準備OK は押したらすぐ反映
   const self = host ? 0 : S.you;
-  const filled = host ? S.slots.filter(ready).length : roster.filter(Boolean).length;
-  const matchOn = !host && S.phase !== "lobby";
+  const matchOn = !host && (S.phase === "countdown" || S.phase === "fight" || S.phase === "game");
   $("slotList").replaceChildren(...roster.map((p, i) => {
     const li = el("li", { class: p ? "" : "empty", style: `--c: ${COLORS[i]}` });
     li.append(el("div", { class: "face" }, [el("img", { src: "avatars/husky.png", alt: "" })]));
@@ -324,8 +335,8 @@ function renderLobby() {
     } else {
       const tag = p.k === 2 ? `CPU: ${CPU_LEVEL_NAMES[p.lv]}`
         : host && p.hello === false ? "接続中…"
-        : matchOn && !p.m ? "次の対戦から" : matchOn ? "対戦中" : "準備OK";
-      li.append(el("span", { class: "tag", text: tag }));
+        : matchOn && !p.m ? "次の対戦から" : matchOn ? "対戦中" : p.r ? "準備OK" : "準備中";
+      li.append(el("span", { class: "tag" + (tag === "準備OK" ? " ok" : ""), text: tag }));
     }
     if (host && i > 0) {
       const b = el("button", { class: "mini", type: "button", text: p.k === 2 ? "外す" : "退出させる" });
@@ -335,16 +346,41 @@ function renderLobby() {
     return li;
   }));
   if (host) {
-    $("startBtn").disabled = filled < 2;
-    $("lobbyMsg").textContent = filled < 2 ? (S.offline ? "CPU を追加してください" : "参加を待っています（CPU を入れることもできます）")
-      : S.stocks === 0 ? "ストック∞: 対戦は ✕ でロビーに戻るまで続きます" : "";
+    const st = startState();
+    $("startBtn").disabled = !st.ok;
+    $("lobbyMsg").textContent = st.msg || (S.stocks === 0 ? "ストック∞: 対戦は ✕ でロビーに戻るまで続きます" : "");
   } else {
-    $("lobbyMsg").textContent = matchOn ? "対戦中です。終わったら次の対戦から参加できます" : "ホストが対戦を始めるのを待っています";
+    $("lobbyMsg").textContent = matchOn ? "対戦中です。終わったら次の対戦から参加できます"
+      : S.ready ? "ホストが対戦を始めるのを待っています" : "準備ができたら「準備OK」を押してください";
   }
 }
 
-/** 次の対戦に出られる枠（CPU か、名前と技が届いた人） */
-const ready = s => !!s && (s.kind === 2 || s.hello);
+/** 準備OKか（ホスト自身と CPU はいつも OK。ほかの人は、名前と技が届いていて「準備OK」を押している） */
+const isReady = (s, i) => !!s && (s.kind === 2 || i === 0 || (s.hello && s.ready));
+
+/** ホスト: 対戦を始められるか（2 人以上いて、全員が準備OK）と、始められないときの案内 */
+function startState() {
+  const L = S.slots.map((s, i) => s && { s, i }).filter(Boolean);
+  if (L.length < 2) return { ok: false, msg: S.offline ? "CPU を追加してください" : "参加を待っています（CPU を入れることもできます）" };
+  const wait = L.filter(({ s, i }) => !isReady(s, i)).map(({ s, i }) => `P${i + 1} ${s.name || "…"}`);
+  return wait.length ? { ok: false, msg: `準備OKを待っています: ${wait.join("、")}` } : { ok: true, msg: "" };
+}
+
+/** ホスト: 結果画面の「もう一度」も、全員が準備OK のときだけ押せる */
+function syncAgain() {
+  if (S.role !== "host" || $("result").hidden) return;
+  const st = startState();
+  $("againBtn").disabled = !st.ok;
+  $("resultMsg").textContent = st.msg;
+}
+
+$("readyBtn").addEventListener("click", () => {
+  if (S.role !== "client") return;
+  S.ready = !S.ready;
+  sfx("ui");
+  sendHello();   // すぐ知らせる（このあとも自己紹介のたびに送る）
+  renderLobby();
+});
 
 document.querySelectorAll("#stockSeg button").forEach(b => b.addEventListener("click", () => {
   S.stocks = Number(b.dataset.v);
@@ -368,7 +404,7 @@ function startHost(net, code) {
   S.offline = !net;
   S.net = net;
   S.room = code;
-  S.slots = [{ kind: 1, name: myName(), loadout: me.loadout.slice(), peerId: null, hello: true }, null, null, null];
+  S.slots = [{ kind: 1, name: myName(), loadout: me.loadout.slice(), peerId: null, hello: true, ready: true }, null, null, null];
   S.sim = null;
   if (!(S.stocks >= 0)) S.stocks = 3;   // 0 = ストック無限
   $("gameRoom").textContent = code ? `ルーム ${code}` : "練習";
@@ -405,8 +441,8 @@ function removeSlot(i) {
 function hostAccept(peerId) {
   const i = S.slots.findIndex((s, k) => k > 0 && !s);
   if (i < 0) return "full";
-  S.slots[i] = { kind: 1, name: "", loadout: DEFAULT_LOADOUT.slice(), peerId, hello: false,
-    input: EMPTY_INPUT, seq: -1, tracker: new PressTracker() };
+  S.slots[i] = { kind: 1, name: "", loadout: DEFAULT_LOADOUT.slice(), peerId, hello: false, ready: false,
+    inq: new InputQueue() };
   renderLobby();
   broadcastLobby();
   return i;
@@ -417,17 +453,16 @@ function hostMessage(peerId, msg) {
   if (i < 0) return;
   const s = S.slots[i];
   if (msg.t === "hi") {
-    if (S.sim && s.inMatch) return;   // 対戦に出ている間は名前・技を変えない（観戦中の人は変えてよい）
-    const changed = !s.hello || s.name !== msg.n;
-    s.name = msg.n || `P${i + 1}`;
-    s.loadout = msg.l;
+    // 対戦に出ている人の名前・技は、カウントダウンと対戦の間だけ変えない（結果画面の間にロビーで変えたものは次の対戦に使う）
+    const playing = S.sim && s.inMatch && (S.sim.phase === "countdown" || S.sim.phase === "fight");
+    const before = `${s.hello}|${s.name}|${s.ready}`;
+    if (!playing || !s.hello) { s.name = msg.n || `P${i + 1}`; s.loadout = msg.l; }
+    s.ready = msg.r;
     if (!s.hello) toast(`${s.name} さんが入りました`);
     s.hello = true;
-    if (changed) { renderLobby(); broadcastLobby(); }
+    if (before !== `${s.hello}|${s.name}|${s.ready}`) { renderLobby(); broadcastLobby(); syncAgain(); }
   } else if (msg.t === "in") {
-    if (msg.s <= s.seq) return;   // 古い（順番が入れ替わって届いた）入力は捨てる
-    s.seq = msg.s;
-    s.raw = msg;
+    s.inq.push(msg.s, msg.i);   // 番号で並べ直して、1 フレームに 1 つずつ使う（重複・古いものは捨てる）
   }
 }
 
@@ -440,6 +475,7 @@ function hostLeave(peerId) {
   toast(`${name} さんが抜けました`);
   renderLobby();
   broadcastLobby();
+  syncAgain();
 }
 
 function hostPhase() { return S.sim ? S.sim.phase : "lobby"; }
@@ -447,20 +483,20 @@ function hostPhase() { return S.sim ? S.sim.phase : "lobby"; }
 function broadcastLobby() {
   if (S.role !== "host" || !S.net) return;
   S.lobbySeq = (S.lobbySeq || 0) + 1;
-  const P = S.slots.map(s => (s ? { k: s.kind, n: s.name || "…", m: S.sim && s.inMatch ? 1 : 0, lv: s.level ?? 0 } : { k: 0 }));
+  const P = S.slots.map((s, i) => (s ? { k: s.kind, n: s.name || "…", m: S.sim && s.inMatch ? 1 : 0, lv: s.level ?? 0, r: isReady(s, i) ? 1 : 0 } : { k: 0 }));
   const base = { t: "lb", s: S.lobbySeq, ph: PHASES.indexOf(hostPhase()), st: S.stocks, P };
   S.slots.forEach((s, i) => { if (s?.peerId) S.net.send(s.peerId, { ...base, you: i }); });
 }
 
 function startMatch() {
+  if (!startState().ok) return;   // 全員が準備OK のときだけ
   const players = [];
   S.slots.forEach((s, i) => {
     if (!s) return;
-    s.inMatch = ready(s);   // 名前と技がまだ届いていない人は、この対戦は観戦
-    if (!s.inMatch) return;
+    s.inMatch = true;
     if (i === 0) s.loadout = me.loadout.slice();
     players.push({ slot: i, name: s.name, loadout: s.loadout, cpu: s.kind === 2, level: s.level });
-    if (s.kind === 1 && i > 0) s.tracker = new PressTracker();
+    if (s.kind === 1 && i > 0) s.inq.resync();
   });
   if (players.length < 2) return;
   S.localTracker = new PressTracker();
@@ -483,12 +519,21 @@ function hostStep() {
       inputs[0] = { x: r.x, y: r.y, held: r.held, pressed: S.localTracker.pressed(r.c) };
     } else if (s.kind === 2) {
       inputs[i] = cpuInput(F, sim);
-    } else if (s.raw) {
-      const r = s.raw;
-      inputs[i] = { x: r.x / 100, y: r.y / 100, held: r.h, pressed: s.tracker.pressed(r.c) };
+    } else {
+      inputs[i] = s.inq.take();
     }
   });
   sim.step(inputs);
+}
+
+/** スナップショットを全員に。対戦に出ている人には、その人のファイターのまるごとの状態と、使い終わった入力の番号（Y）を足す */
+function broadcastSnapshot() {
+  const base = JSON.stringify(S.sim.snapshot());
+  S.slots.forEach((s, i) => {
+    if (!s?.peerId) return;
+    const F = s.inMatch && S.sim.fighters[i];
+    S.net.sendText(s.peerId, F ? `${base.slice(0, -1)},"Y":${JSON.stringify([s.inq.acked, ...fighterState(F)])}}` : base);
+  });
 }
 
 function hostBackToLobby() {
@@ -509,7 +554,11 @@ function startClient(net, code) {
   S.roster = [null, null, null, null];
   S.phase = "lobby";
   S.snaps = [];
+  S.ready = false;
   S.inSeq = 0;
+  S.inHist = [];
+  S.inTracker = new PressTracker();
+  S.pred = null;
   $("gameRoom").textContent = `ルーム ${code}`;
   show("lobby");
   renderLobby();
@@ -519,7 +568,7 @@ function startClient(net, code) {
 }
 
 function sendHello() {
-  S.net?.send({ t: "hi", n: myName(), l: me.loadout });
+  S.net?.send({ t: "hi", n: myName(), l: me.loadout, r: S.ready ? 1 : 0 });
 }
 
 function clientMessage(msg) {
@@ -528,7 +577,7 @@ function clientMessage(msg) {
     S.lobbySeqSeen = msg.s;
     S.you = msg.you;
     S.stocks = msg.st;
-    S.roster = msg.P.map(p => (p.k ? { k: p.k, n: p.n, m: p.m, lv: p.lv } : null));
+    S.roster = msg.P.map(p => (p.k ? { k: p.k, n: p.n, m: p.m, lv: p.lv, r: p.r } : null));
     renderer.roster = S.roster.map(p => p && { name: p.n });
     renderer.self = S.you;
     setClientPhase(msg.ph);
@@ -546,8 +595,9 @@ function clientMessage(msg) {
     else S.clockOffset += (o - S.clockOffset) * 0.05;
     if (snap !== S.snaps[S.snaps.length - 1]) return;   // 遅れて届いた古いもの（補間には使う）
     setClientPhase(snap.ph);
+    reconcile(snap);
     handleEvents(snap);
-    if (snap.ph === "result") showResult(snap.R);
+    if (snap.ph === "result") showResult(snap);
   }
 }
 
@@ -576,6 +626,71 @@ function spectating() {
   return S.role === "client" && S.phase !== "lobby" && !S.roster[S.you]?.m;
 }
 
+// ---- クライアント: 自分のキャラの予測と照合 ----
+// 入力は 1 フレームに 1 つ番号を付けて作り、直近 INPUT_FRAMES フレームぶんをまとめて送る（何通か落ちても次の 1 通で埋まる）。
+// ホストはそれを番号順にちょうど 1 つずつ使うので、邪魔が入らなければホストの結果と手元の予測は一致する。
+
+const simInput = i => ({ x: i[0] / 100, y: i[1] / 100, held: i[2], pressed: i[3] });
+
+/** 1 フレームぶんの入力を作り、予測を 1 フレーム進める */
+function clientTick() {
+  const r = input.read();
+  const i = [Math.round(r.x * 100), Math.round(r.y * 100), r.held, S.inTracker.pressed(r.c)];
+  S.inHist.push({ s: ++S.inSeq, i });
+  if (S.inHist.length > REPLAY_MAX + INPUT_FRAMES) S.inHist.shift();
+  const P = S.pred;
+  if (!P) return;
+  P.sim.stepSolo(S.you, simInput(i));
+  // 自分のジャンプ・技の出し始めの音と土ぼこりは、予測で出す（ホストから届く同じものは handleEvents で飛ばす）
+  for (const e of P.sim.events) {
+    const k = EVENTS[e.k];
+    if (k === "jump") { renderer.event({ ...e, k }, null); sfx("jump"); }
+    else if (k === "start") sfx("start");
+  }
+  P.sim.events.length = 0;
+}
+
+function sendInputs() {
+  const last = S.inHist[S.inHist.length - 1];
+  if (last) S.net?.send({ t: "in", s: last.s, i: S.inHist.slice(-INPUT_FRAMES).map(h => h.i) });
+}
+
+/** ホストの結果（Y）が届いたら、その状態から、ホストがまだ使っていない入力をやり直す */
+function reconcile(snap) {
+  const Y = snap.Y;
+  if (!Y || snap.ph !== "fight" || spectating()) { S.pred = null; return; }
+  let P = S.pred;
+  if (!P) {
+    const sim = predictSim(S.you);
+    P = S.pred = { sim, F: sim.fighters[S.you], ox: 0, oy: 0 };
+  }
+  const F = P.F;
+  const shownX = F.x + P.ox, shownY = F.y + P.oy;
+  loadFighter(F, Y.state);
+  if (Y.ack >= 0) {
+    S.inHist = S.inHist.filter(h => h.s > Y.ack);
+    for (const h of S.inHist.slice(-REPLAY_MAX)) P.sim.stepSolo(S.you, simInput(h.i));
+  }
+  P.sim.events.length = 0;
+  // 見た目は今の位置から、数フレームかけて正しい位置へ寄せる（大きくずれたときはその場へ）
+  P.ox = shownX - F.x; P.oy = shownY - F.y;
+  if (Math.hypot(P.ox, P.oy) > SNAP_DIST || F.state === "dead") P.ox = P.oy = 0;
+}
+
+/** 予測した自分のキャラを、スナップショットの形で */
+function predictedView(P) {
+  const F = P.F;
+  P.ox *= 0.75; P.oy *= 0.75;
+  return {
+    x: F.x + P.ox, y: F.y + P.oy, face: F.face, st: F.state, mv: F.move ? F.move.def : null, mf: F.move ? F.move.f : 0,
+    dmg: Math.round(F.dmg), stocks: F.stocks,
+    flags: (F.invuln > 0 ? FLAG.invuln : 0) | (F.guarding ? FLAG.guard : 0) | (F.helpless ? FLAG.helpless : 0)
+      | (F.sleeping ? FLAG.sleep : 0) | (F.counter ? FLAG.counter : 0) | (F.hover > 0 ? FLAG.hover : 0)
+      | (F.grounded ? FLAG.ground : 0),
+    guardHp: Math.round(F.guardHp), cd: F.cd.slice(), charge: Math.round(F.charge),
+  };
+}
+
 // ---- 対戦画面 ----
 
 function enterGame() {
@@ -594,6 +709,7 @@ function handleEvents(view) {
   for (const e of view.E) {
     if (e.id <= S.lastEvent) continue;
     S.lastEvent = Math.max(S.lastEvent, e.id);
+    if (S.pred && e.s === S.you && (e.k === "jump" || e.k === "start")) continue;   // 予測で出した
     renderer.event(e, view);
     if (e.k === "start" || e.k === "jump") { if (e.s === renderer.self || e.k === "start") sfx(e.k); }
     else sfx(e.k, e.p);
@@ -634,6 +750,15 @@ function clientView() {
   return view;
 }
 
+/** クライアントの描く状態: 相手は補間、自分は予測 */
+function clientFrameView() {
+  const v = clientView();
+  if (!v || !S.pred || !v.F[S.you]) return v;
+  const F = v.F.slice();
+  F[S.you] = predictedView(S.pred);
+  return { ...v, F };
+}
+
 function updateButtons(view) {
   const spec = spectating();
   $("controls").hidden = spec;
@@ -650,7 +775,7 @@ function updateButtons(view) {
   });
 }
 
-let lastT = performance.now(), acc = 0, sendAcc = 0, hostFrames = 0;
+let lastT = performance.now(), acc = 0, clientAcc = 0;
 function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.1, (now - lastT) / 1000);
@@ -659,17 +784,17 @@ function loop(now) {
 
   let view = null;
   if (S.role === "host" && S.sim) {
-    view = expandSnapshot(S.sim.snapshot());
+    view = expandSnapshot({ ...S.sim.snapshot(), ph: S.sim.phase });   // 送るときの ph は番号なので、名前に戻す
     handleEvents(view);
-    if (view.ph === "result" && !S.resultShown) showResult(view.R);
+    if (view.ph === "result" && !S.resultShown) showResult(view);
   } else if (S.role === "client") {
-    sendAcc += dt * 1000;
-    if (sendAcc >= STEP - 1) {
-      sendAcc = Math.min(sendAcc - STEP, STEP);
-      const r = input.read();
-      S.net?.send({ t: "in", s: ++S.inSeq, x: Math.round(r.x * 100), y: Math.round(r.y * 100), h: r.held, c: r.c });
-    }
-    view = clientView();
+    // 60 回/秒、1 フレームに 1 つ入力を作って予測を進める（描画が 30 回/秒の端末でも 1 回に 2 フレームぶん）
+    clientAcc += dt * 1000;
+    let n = 0;
+    while (clientAcc >= STEP && n < 6) { clientTick(); clientAcc -= STEP; n++; }
+    if (n >= 6) clientAcc = 0;
+    if (n) sendInputs();
+    view = clientFrameView();
   }
   renderer.frame(view, dt);
   updateButtons(view);
@@ -689,32 +814,85 @@ ticker.onmessage = () => {
   while (acc >= STEP && n < 6) {
     hostStep();
     acc -= STEP; n++;
-    hostFrames++;
-    if (S.net && hostFrames % 2 === 0) S.net.broadcast(S.sim.snapshot());
+    if (S.net) broadcastSnapshot();
   }
   if (n >= 6) acc = 0;
 };
 
 // ---- 結果 ----
+// 左に順位と撃墜数・与えたダメージ。行をタップすると、右にその人の成績（相手ごと・技ごと）が出る（はじめは自分）
 
-function showResult(R) {
-  if (S.resultShown) return;
+let resultView = null, resultSel = -1;
+
+function showResult(view) {
+  if (S.resultShown || S.screen !== "game") return;
   S.resultShown = true;
-  const names = S.role === "host" ? S.slots.map(s => s?.name) : S.roster.map(p => p?.n);
-  $("rankList").replaceChildren(...R.map((slot, k) => el("li", { style: `--c: ${COLORS[slot]}` }, [
-    el("span", { class: "no", text: `${k + 1}位` }),
-    el("span", { text: `P${slot + 1} ${names[slot] || ""}` }),
-  ])));
+  resultView = view;
+  resultSel = view.R.includes(renderer.self) ? renderer.self : view.R[0];
+  renderResult();
   const host = S.role === "host";
   $("againBtn").hidden = !host;
-  $("toLobbyBtn").hidden = !host;
-  $("resultMsg").textContent = host ? "" : "ホストの操作を待っています";
+  $("resultMsg").textContent = host ? "" : "次の対戦はホストが始めます";
   $("result").hidden = false;
+  syncAgain();
   input.setEnabled(false);
 }
 
+const resultNames = () => (S.role === "host" ? S.slots.map(s => s?.name) : S.roster.map(p => p?.n));
+const pct = v => `${v}%`;
+
+function renderResult() {
+  const { R, S: St } = resultView;
+  const names = resultNames();
+  const who = slot => `P${slot + 1} ${names[slot] || ""}`;
+  $("rankList").replaceChildren(...R.map((slot, k) => {
+    const st = St?.[slot];
+    const b = el("button", { type: "button", class: "rank-row" + (slot === resultSel ? " sel" : ""), style: `--c: ${COLORS[slot]}` }, [
+      el("span", { class: "no", text: `${k + 1}位` }),
+      el("span", { class: "nm", text: who(slot) + (slot === renderer.self ? "（あなた）" : "") }),
+      st ? el("span", { class: "nums" }, [
+        "撃墜 ", el("b", { text: String(st.kos) }), "　落下 ", el("b", { text: String(st.falls) }),
+        "　与えたダメージ ", el("b", { text: pct(st.dmg) }),
+      ]) : null,
+    ]);
+    b.addEventListener("click", () => { resultSel = slot; sfx("ui"); renderResult(); });
+    return el("li", {}, [b]);
+  }));
+
+  const st = St?.[resultSel];
+  if (!st) { $("resultDetail").replaceChildren(); return; }
+  const table = (head, rows) => el("table", { class: "st-table" }, [
+    el("tr", {}, head.map(h => el("th", { text: h }))),
+    ...rows,
+  ]);
+  const foes = R.filter(s => s !== resultSel).map(s => el("tr", { class: st.foe[s].dmg || st.foe[s].ko ? "" : "dim" }, [
+    el("td", {}, [el("span", { class: "st-who", style: `--c: ${COLORS[s]}` }, [el("i"), who(s)])]),
+    el("td", { text: pct(st.foe[s].dmg) }),
+    el("td", { text: String(st.foe[s].ko) }),
+  ]));
+  const moves = st.mv.map((m, i) => el("tr", { class: m.hits ? "" : "dim" }, [
+    el("td", {}, [el("span", { class: "st-who" }, [el("img", { src: stickerSrc(m.move.sticker), alt: "" }), `${BUTTONS[i]} ${m.move.name}`])]),
+    el("td", { text: `${m.hits} 回` }),
+    el("td", { text: pct(m.dmg) }),
+    el("td", { text: String(m.ko) }),
+  ]));
+  $("resultDetail").replaceChildren(
+    el("h3", { text: `${who(resultSel)} の成績` }),
+    el("h4", { text: "相手ごと" }),
+    table(["相手", "与えたダメージ", "撃墜"], foes),
+    el("h4", { text: "技ごと" }),
+    table(["技", "当てた", "ダメージ", "撃墜"], moves),
+    el("p", { class: "st-note", text: `受けたダメージ ${pct(st.taken)}　撃墜された ${st.falls - st.sds}　自滅 ${st.sds}` }),
+  );
+}
+
 $("againBtn").addEventListener("click", () => { $("result").hidden = true; startMatch(); });
-$("toLobbyBtn").addEventListener("click", () => { $("result").hidden = true; hostBackToLobby(); });
+// ロビーに戻る: ホストはルームの全員をロビーへ。クライアントは自分だけロビーへ（ホストが次の対戦を始めたら自動で始まる）
+$("toLobbyBtn").addEventListener("click", () => {
+  $("result").hidden = true;
+  if (S.role === "host") hostBackToLobby();
+  else { show("lobby"); renderLobby(); }
+});
 
 // ---- 退出 ----
 
@@ -722,7 +900,7 @@ function resetSession() {
   clearInterval(S.lobbyTimer);
   clearInterval(S.helloTimer);
   S.role = null; S.net = null; S.sim = null; S.offline = false;
-  S.snaps = []; S.clockOffset = null; S.lobbySeqSeen = 0;
+  S.snaps = []; S.clockOffset = null; S.lobbySeqSeen = 0; S.pred = null;
   S.slots = [null, null, null, null];
 }
 
@@ -773,6 +951,7 @@ addEventListener("beforeunload", () => S.net?.close());
 
 // ---- 起動 ----
 
+document.querySelectorAll("[data-ver]").forEach(e => { e.textContent = `v${VERSION}`; });
 renderLoadout();
 syncToggles();
 show("title");

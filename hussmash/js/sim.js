@@ -1,4 +1,5 @@
-// 対戦のシミュレーション。ホスト（と練習モード）だけが動かし、結果をスナップショットにして配る。
+// 対戦のシミュレーション。ホスト（と練習モード）が動かし、結果をスナップショットにして配る。
+// クライアントは自分のキャラ 1 体だけを同じ計算で先に動かす（予測。stepSolo / loadFighter）。
 // 1 ステップ = 1/60 秒。座標は y が下向き。ファイターの (x, y) は足もとの中心。
 
 import { MOVES, MOVE_BY_ID, MOVE_INDEX } from "./moves.js";
@@ -54,6 +55,9 @@ class Fighter {
     this.airUsed = new Set();
     this.charge = 0;
     this.lastHitBy = -1;
+    this.lastHitMs = -1;   // 最後に受けた技が、相手のどのボタンの技か（撃墜を技ごとに数えるため）
+    // 成績（結果画面用）: 与えたダメージ・撃墜・撃墜された・自滅・受けたダメージ、相手ごと [ダメージ, 撃墜]、ボタンの技ごと [当てた回数, ダメージ, 撃墜]
+    this.stats = { dmg: 0, kos: 0, falls: 0, sds: 0, taken: 0, foe: [0, 1, 2, 3].map(() => [0, 0]), mv: [0, 1, 2, 3].map(() => [0, 0, 0]) };
     this.ai = { cool: 30, holdSlot: -1, holdT: 0 };
     this.clearFrameFlags();
   }
@@ -81,6 +85,7 @@ export class Sim {
     this.timer = COUNTDOWN;
     this.outOrder = [];
     this.inputs = [EMPTY_INPUT, EMPTY_INPUT, EMPTY_INPUT, EMPTY_INPUT];
+    this.predict = false;
   }
 
   get list() { return this.fighters.filter(Boolean); }
@@ -104,6 +109,17 @@ export class Sim {
     for (const p of this.projs) this.updateProj(p);
     this.projs = this.projs.filter(p => !p.dead);
     this.events = this.events.filter(e => this.frame - e.frame < 45);
+  }
+
+  /**
+   * 予測用（クライアントが自分のキャラだけ手元で先に動かす）: slot の 1 体だけを 1 フレーム進める。
+   * 相手への当たり・押し合い・飛び道具・撃墜はホストに任せるので、ここでは計算しない
+   */
+  stepSolo(slot, inp) {
+    this.frame++;
+    this.inputs[slot] = inp;
+    this.updateFighter(this.fighters[slot], inp);
+    this.projs.length = 0;
   }
 
   // ---- ファイター ----
@@ -289,7 +305,15 @@ export class Sim {
   }
 
   ko(F) {
+    if (this.predict) return;   // 予測の中では撃墜しない（撃墜を決めるのはホストだけ）
     const cx = clamp(F.x, BLAST.x0, BLAST.x1), cy = clamp(F.y, BLAST.top, BLAST.bottom);
+    const A = F.lastHitBy >= 0 && F.lastHitBy !== F.slot ? this.fighters[F.lastHitBy] : null;
+    F.stats.falls++;
+    if (A) {
+      A.stats.kos++;
+      A.stats.foe[F.slot][1]++;
+      if (F.lastHitMs >= 0) A.stats.mv[F.lastHitMs][2]++;
+    } else F.stats.sds++;   // 誰にも触られずに落ちた
     this.emit("ko", cx, cy, F.slot, F.lastHitBy);
     F.move = null; F.charge = 0;
     if (!this.infinite) F.stocks--;
@@ -316,6 +340,7 @@ export class Sim {
     F.invuln = RESPAWN_INVULN;
     F.guardHp = GUARD_MAX;
     F.lastHitBy = -1;
+    F.lastHitMs = -1;
     F.airUsed.clear();
   }
 
@@ -393,12 +418,13 @@ export class Sim {
       if (m.hitSet.has(key)) continue;
       m.hitSet.add(key);
       const dir = h.around ? (sign(T.x - F.x) || F.face) : F.face;
-      this.applyHit(F, T, h, dir, false);
+      this.applyHit(F, T, h, dir, false, m.slot);
       if (F.state !== "move") return;   // カウンターされた
     }
   }
 
-  applyHit(A, T, h, dirX, isProj) {
+  /** ms: 当てた技が A のどのボタンの技か（成績用。わからなければ -1） */
+  applyHit(A, T, h, dirX, isProj, ms = -1) {
     if (T.invuln > 0) return false;
     const mx = (A && !isProj ? (A.x + T.x) / 2 : T.x), my = T.y - BODY.h / 2;
     if (T.counter && !h.grab) {
@@ -407,7 +433,7 @@ export class Sim {
       this.emit("counter", T.x, my, T.slot, 0);
       if (A && !isProj && A.alive) {
         this.applyHit(T, A, { dmg: Math.max(8, Math.round(h.dmg * 1.3)), base: 7, grow: 15, ang: 40 },
-          sign(A.x - T.x) || T.face, false);
+          sign(A.x - T.x) || T.face, false, T.move ? T.move.slot : -1);
       }
       return true;
     }
@@ -421,7 +447,15 @@ export class Sim {
       if (T.guardHp <= 0) this.guardBreak(T);
       return true;
     }
+    const before = T.dmg;
     T.dmg = Math.min(999, T.dmg + h.dmg);
+    const dealt = T.dmg - before;
+    T.stats.taken += dealt;
+    if (A && A !== T) {
+      A.stats.dmg += dealt;
+      A.stats.foe[T.slot][0] += dealt;
+      if (ms >= 0) { A.stats.mv[ms][0]++; A.stats.mv[ms][1] += dealt; }
+    }
     if (h.drain && A) this.heal(A, h.dmg * h.drain);
     let kb = h.fixed ? h.base : h.base + h.grow * KB_GROWTH * T.dmg / 100;
     kb = Math.min(kb, 50);
@@ -438,7 +472,7 @@ export class Sim {
     const hl = Math.min(15, Math.floor(3 + h.dmg * 0.4));
     T.hitlag = hl;
     if (A && !isProj) A.hitlag = hl;
-    if (A) T.lastHitBy = A.slot;
+    if (A) { T.lastHitBy = A.slot; T.lastHitMs = ms; }
     this.emit("hit", mx, my, T.slot, kb, h.dmg);
     return true;
   }
@@ -447,7 +481,7 @@ export class Sim {
 
   spawn(F, kind, o) {
     if (this.projs.length >= 24) return;
-    this.projs.push({ id: ++this.projId, kind, owner: F.slot, t: 0, dir0: sign(o.vx) || F.face, hitSet: new Set(), ...o });
+    this.projs.push({ id: ++this.projId, kind, owner: F.slot, ms: F.move ? F.move.slot : -1, t: 0, dir0: sign(o.vx) || F.face, hitSet: new Set(), ...o });
   }
 
   updateProj(p) {
@@ -481,7 +515,7 @@ export class Sim {
       p.hitSet.add(key);
       const h = lastFire ? p.last : p;
       const dir = p.around ? (sign(T.x - p.x) || 1) : sign(p.vx) || p.dir0;
-      const hit = this.applyHit(O, T, h, dir, true);
+      const hit = this.applyHit(O, T, h, dir, true, p.ms);
       if (hit && p.kind === "wave") { p.dead = true; return; }
     }
   }
@@ -494,6 +528,7 @@ export class Sim {
       if (p.noReflect || p.owner === F.slot || p.dead) continue;
       if (!overlap(box, { x0: p.x - p.w / 2, x1: p.x + p.w / 2, y0: p.y - p.h / 2, y1: p.y + p.h / 2 })) continue;
       p.owner = F.slot;
+      p.ms = F.move ? F.move.slot : -1;   // はね返した飛び道具は、はね返した技の成績にする
       p.dir0 = F.face;
       p.vx = F.face * Math.max(Math.abs(p.vx), 11) * (p.kind === "boomerang" ? 1 : 1.3);
       p.dmg = Math.round(p.dmg * 1.3);
@@ -530,8 +565,81 @@ export class Sim {
       E: this.events.slice(-24).map(e => [e.id, e.k, r(e.x), r(e.y), e.s, r(e.p), r(e.q)]),
       I: this.infinite ? 1 : 0,
       R: this.phase === "game" || this.phase === "result" ? this.ranking() : [],
+      // 成績は対戦が終わってから送る（並びは STATS_RANGES）
+      ...(this.phase === "game" || this.phase === "result" ? { S: this.fighters.map(F => F && [
+        r(F.stats.dmg), F.stats.kos, F.stats.falls, F.stats.sds, r(F.stats.taken),
+        ...F.stats.foe.flatMap(([d, k]) => [r(d), k]), ...F.stats.mv.flatMap(([n, d, k]) => [n, r(d), k]),
+        ...F.loadout.map(id => MOVE_INDEX[id]),
+      ]) } : {}),
     };
   }
+}
+
+// 結果画面の成績: 与えたダメージ, 撃墜, 撃墜された, 自滅, 受けたダメージ, 相手ごと [ダメージ, 撃墜] × 4, ボタンの技ごと [当てた回数, ダメージ, 撃墜] × 4, 技 × 4
+export const STATS_RANGES = [
+  [0, 99999], [0, 999], [0, 999], [0, 999], [0, 99999],
+  ...Array(4).fill([[0, 99999], [0, 999]]).flat(),
+  ...Array(4).fill([[0, 9999], [0, 99999], [0, 999]]).flat(),
+  ...Array(4).fill([0, MOVES.length - 1]),
+];
+
+// ---- 予測用: ファイターのまるごとの状態 ----
+// ホストは各クライアントに、その人のファイターの状態をそのまま（小数も丸めずに）送る。
+// クライアントはこれを読み込んで、ホストがまだ使っていない自分の入力をやり直し、今の位置を出す。
+// 並び: x, y, vx, vy, face, grounded, jumps, state, move, moveSlot, moveF, fire, air, dir, cd × 4,
+//       hitstun, hitlag, invuln, dizzy, respawnT, hover, guardHp, helpless, fastfall, airUsed（ボタンごとのビット）,
+//       charge, dmg, stocks, lastHitBy, frameFlags, loadout × 4（技の番号）
+// 範囲の 3 つ目が true の欄は小数のまま（それ以外は整数）
+export const FSTATE_RANGES = [
+  [-5000, 5000, true], [-5000, 5000, true], [-200, 200, true], [-200, 200, true], [-1, 1], [0, 1], [0, 9],
+  [0, STATES.length - 1], [-1, MOVES.length - 1], [0, 3], [0, 9999], [-1, 9999], [0, 1], [-1, 1],
+  [0, 9999], [0, 9999], [0, 9999], [0, 9999],
+  [0, 999], [0, 99], [0, 999], [0, 999], [0, 999], [0, 999], [-999, 999, true], [0, 1], [0, 1], [0, 15],
+  [0, 60, true], [0, 999, true], [0, 99], [-1, 3], [0, 15],
+  [0, MOVES.length - 1], [0, MOVES.length - 1], [0, MOVES.length - 1], [0, MOVES.length - 1],
+];
+
+export function fighterState(F) {
+  const m = F.move;
+  const b = v => (v ? 1 : 0);
+  return [
+    F.x, F.y, F.vx, F.vy, F.face, b(F.grounded), F.jumps,
+    STATES.indexOf(F.state), m ? MOVE_INDEX[m.id] : -1, m ? m.slot : 0, m ? m.f : 0, m?.fire ?? -1, b(m?.air), m?.dir ?? 0,
+    ...F.cd,
+    F.hitstun, F.hitlag, F.invuln, F.dizzy, F.respawnT, F.hover, F.guardHp, b(F.helpless), b(F.fastfall),
+    F.loadout.reduce((bits, id, i) => bits | (F.airUsed.has(id) ? 1 << i : 0), 0),
+    F.charge, F.dmg, F.stocks, F.lastHitBy,
+    b(F.noGravity) | b(F.guarding) << 1 | b(F.counter) << 2 | b(F.sleeping) << 3,
+    ...F.loadout.map(id => MOVE_INDEX[id]),
+  ];
+}
+
+/** fighterState で作った配列（検査済み）を F に読み込む */
+export function loadFighter(F, a) {
+  F.loadout = a.slice(33, 37).map(i => MOVES[i].id);
+  [F.x, F.y, F.vx, F.vy] = a;
+  F.face = a[4] || 1;
+  F.grounded = !!a[5];
+  F.jumps = a[6];
+  F.state = STATES[a[7]];
+  const def = a[8] >= 0 ? MOVES[a[8]] : null;
+  F.move = def && { id: def.id, def, slot: a[9], f: a[10], hitSet: new Set(),
+    fire: a[11] >= 0 ? a[11] : undefined, air: !!a[12], dir: a[13] || undefined };
+  F.cd = a.slice(14, 18);
+  [F.hitstun, F.hitlag, F.invuln, F.dizzy, F.respawnT, F.hover, F.guardHp] = a.slice(18, 25);
+  F.helpless = !!a[25];
+  F.fastfall = !!a[26];
+  F.airUsed = new Set(F.loadout.filter((id, i) => a[27] & (1 << i)));
+  [F.charge, F.dmg, F.stocks, F.lastHitBy] = a.slice(28, 32);
+  F.noGravity = !!(a[32] & 1); F.guarding = !!(a[32] & 2); F.counter = !!(a[32] & 4); F.sleeping = !!(a[32] & 8);
+}
+
+/** 予測用のシミュレーション（自分 1 体だけ。撃墜しない） */
+export function predictSim(slot) {
+  const sim = new Sim([{ slot, name: "", loadout: ["jab", "jab", "jab", "jab"] }], { stocks: 3 });
+  sim.predict = true;
+  sim.phase = "fight";
+  return sim;
 }
 
 // ---- CPU ----

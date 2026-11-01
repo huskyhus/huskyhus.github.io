@@ -64,6 +64,7 @@
       <button id="helpBtn" class="text-btn" type="button">あそびかた</button>
       <button id="bgmBtn" class="text-btn" type="button">🎵 BGM</button>
       <button id="sfxBtn" class="text-btn" type="button">🔊 効果音</button>
+      <span class="ver" data-ver></span>
     </div>
   </div>
 </section>
@@ -93,7 +94,11 @@
       </div>
       <button id="startBtn" class="primary" type="button">対戦開始！</button>
     </div>
+    <button id="readyBtn" class="ready-btn" type="button" aria-pressed="false" hidden>
+      <span class="box" aria-hidden="true"></span><span>準備OK</span>
+    </button>
     <p id="lobbyMsg" class="msg" role="status"></p>
+    <p class="ver" data-ver></p>
   </div>
   <div class="lobby-right">
     <ul id="slotList" class="slot-list"></ul>
@@ -120,14 +125,17 @@
 
 <!-- 結果 -->
 <section id="result" class="overlay" hidden>
-  <div class="panel">
-    <h2 class="result-head">結果</h2>
-    <ol id="rankList" class="rank-list"></ol>
-    <div class="row">
-      <button id="againBtn" class="primary" type="button">もう一度</button>
-      <button id="toLobbyBtn" class="secondary" type="button">ロビーへ</button>
+  <div class="result-panel">
+    <div class="result-top">
+      <h2 class="result-head">結果</h2>
+      <p id="resultMsg" class="msg"></p>
+      <button id="againBtn" class="primary small" type="button">もう一度</button>
+      <button id="toLobbyBtn" class="secondary small" type="button">ロビーに戻る</button>
     </div>
-    <p id="resultMsg" class="msg"></p>
+    <div class="result-body">
+      <ol id="rankList" class="rank-list scroll"></ol>
+      <div id="resultDetail" class="result-detail scroll"></div>
+    </div>
   </div>
 </section>
 
