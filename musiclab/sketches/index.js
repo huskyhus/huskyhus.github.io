@@ -21,6 +21,7 @@ export const SKETCHES = [
   "hustower-normal-7",
   "hustower-normal-8",
   "hustower-battle",
+  "hustower-battle-kai",
   "hustower-battle-2",
   "hustower-battle-3",
   "hustower-battle-4",

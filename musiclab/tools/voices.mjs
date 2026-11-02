@@ -51,7 +51,9 @@ const pitched = LAYERS.map((_, i) => i).filter(i => roles[i] !== "drum");
 // ---------------------------------------------------------------- 声部を動かして、鳴る音を集める
 
 const events = LAYERS.map(() => []);   // 声部ごとの { start, end, midi }（時間は 16 分音符単位）
-const fx = { echo: { setWet() {}, setTime() {} }, space: { setLevel() {} } };
+let leadWet = LAYERS[0].echo?.wet ?? 0;
+const wetOfBar = [];   // 小節ごとの、リードのエコーの深さ（セクションの頭で play が決める）
+const fx = { echo: { setWet(v) { leadWet = v; }, setTime() {} }, space: { setLevel() {} } };
 bars.forEach((b, bar) => {
   for (let pos = 0; pos < 16; pos++) {
     const t = bar * 16 + pos;
@@ -66,6 +68,7 @@ bars.forEach((b, bar) => {
       if (l.kit) return;
       l.play(x, (start, dur, midi) => events[i].push({ start, end: start + dur, midi }), fx);
     });
+    if (pos === 0) wetOfBar[bar] = leadWet;
   }
 });
 
@@ -164,6 +167,53 @@ for (const a of lines) for (const z of lines) if (a < z && (roles[a] !== "bass" 
     prev = [pa, pz];
   }
 }
+
+// 低音とのぶつかり: 16 分音符ごとに、いちばん最初のベースとほかの声部を比べる（どちらかが鳴り始めた所）
+//   低音域の 2 度: C4 より下の音が、ベースと短 2 度・長 2 度・短 9 度（和音の音どうしでも濁る）
+//   旋律と低音:   旋律（拍の頭か 4 分音符以上）が、ベースと短 2 度・長 7 度（音名で数える。離れていてもぶつかって聞こえる）
+issues["低音域の 2 度（ベースと濁る）"] = [];
+issues["旋律と低音の半音（短 9 度・長 7 度）"] = [];
+for (let k = 0; k < total; k++) {
+  const low = sounding(mainBass, k).length ? Math.min(...sounding(mainBass, k)) : null;
+  if (low == null) continue;
+  const c = bars[Math.floor(k / 16)].chord;
+  const fresh = onsets(mainBass, k).length > 0;
+  for (const i of pitched) {
+    if (roles[i] === "bass") continue;
+    for (const m of sounding(i, k)) {
+      if (!fresh && !onsets(i, k).includes(m)) continue;
+      if (m < 60 && [1, 2, 13].includes(m - low)) add("低音域の 2 度（ベースと濁る）", `${Math.floor(k / 16) + 1} 小節 ${LAYERS[i].name} ${nm(m)} / ベース ${nm(low)}（${c.name}）`);
+    }
+  }
+  const held = events[LEAD].find(e => e.start <= k + 0.1 && e.end > k + 0.1);
+  if (held && (k % 4 === 0 || held.end - held.start >= 3.5) && [1, 11].includes(mod12(held.midi - low)) && (fresh && held.start === k || k % 4 === 0)) {
+    add("旋律と低音の半音（短 9 度・長 7 度）", `${where(k)} 旋律 ${nm(held.midi)} / ベース ${nm(low)}（${c.name}）`);
+  }
+}
+
+// 隣り合う半音: 拍の頭で、低音以外の 2 声部がちょうど半音で並ぶ所（和音の音どうしでも、近いと濁る）
+issues["隣り合う半音"] = [];
+for (let k = 0; k < total; k += 4) {
+  const notes = pitched.filter(i => roles[i] !== "bass").flatMap(i => sounding(i, k).map(m => ({ i, m })));
+  for (const p of notes) for (const q of notes) {
+    if (q.m - p.m === 1) add("隣り合う半音", `${where(k)} ${LAYERS[p.i].name} ${nm(p.m)} / ${LAYERS[q.i].name} ${nm(q.m)}（${bars[Math.floor(k / 16)].chord.name}）`);
+  }
+}
+
+// エコーの残り: 小節の終わりの音のエコーが次の小節へかかり、次の和音の音と半音になる所（楽譜には書かれない濁り）
+issues["エコーの残りが次の和音とぶつかる"] = [];
+LAYERS.forEach((l, i) => {
+  if (!l.echo || l.kit) return;
+  for (const e of events[i]) {
+    const at = e.end + l.echo.steps, from = Math.floor((e.end - 0.01) / 16), to = Math.floor(at / 16);   // 音の終わりから、エコーの間隔ぶん残る
+    if (to === from || to >= bars.length) continue;
+    const wet = i === LEAD ? wetOfBar[from] : l.echo.wet;
+    if (wet < 0.1) continue;
+    const c = bars[to].chord, pcs = c.tones.map(x => mod12(c.root + x));
+    if (pcs.includes(mod12(e.midi)) || !pcs.some(p => [1, 11].includes(mod12(e.midi - p)))) continue;
+    add("エコーの残りが次の和音とぶつかる", `${to + 1} 小節 ${l.name} ${nm(e.midi)}（${bars[from].chord.name} → ${c.name}、深さ ${wet.toFixed(2)}）`);
+  }
+});
 
 // ---------------------------------------------------------------- 出力
 
