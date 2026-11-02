@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>musictester のテスト</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 24px; background: #fff; color: #222; }
+  .ok { color: #17803d; }
+  .ng { color: #b91c1c; white-space: pre-wrap; }
+  li { margin: 2px 0; }
+</style>
+</head>
+<body>
+<h1 id="summary">実行中…</h1>
+<ul id="list"></ul>
+<script type="module">
+  import "./all.js";
+  import { runAll } from "./harness.js";
+  const results = runAll();
+  const list = document.getElementById("list");
+  for (const r of results) {
+    const li = document.createElement("li");
+    li.className = r.error ? "ng" : "ok";
+    li.textContent = r.error ? `✗ ${r.name}\n${r.error.message}` : `✓ ${r.name}`;
+    list.append(li);
+  }
+  const failed = results.filter(r => r.error).length;
+  document.getElementById("summary").textContent = `${results.length - failed} / ${results.length} 件成功`;
+</script>
+</body>
+</html>

@@ -1,0 +1,1282 @@
+{
+  "format": "musictester-song",
+  "schemaVersion": 1,
+  "title": "スーパーハスタワー",
+  "settings": {
+    "key": {
+      "tonic": 0,
+      "mode": "major"
+    },
+    "bpm": 124
+  },
+  "sections": [
+    {
+      "id": "s1",
+      "name": "イントロ",
+      "bars": [
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 1,
+                "size": 3,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 6,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 8,
+                "letter": 5,
+                "quality": "maj7"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 10,
+                "letter": 6,
+                "quality": "maj"
+              }
+            }
+          ]
+        },
+        {
+          "chords": []
+        },
+        {
+          "chords": []
+        },
+        {
+          "chords": []
+        },
+        {
+          "chords": []
+        }
+      ],
+      "parts": {
+        "melody": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 62,
+            "high": 81,
+            "style": "lyrical"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "bass": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 31,
+            "high": 52,
+            "style": "auto"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "drums": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "style": "8beat"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "counter": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 53,
+            "high": 72,
+            "style": "sustain"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "harmony": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 1,
+            "low": 48,
+            "high": 81,
+            "style": "third"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        }
+      },
+      "note": "I–vi7–♭VI△7–♭VII。♭VI と ♭VII は同主短調からの借用。原曲では最初の 1 回だけ鳴らす 4 小節（5〜8 小節目は空き）。"
+    },
+    {
+      "id": "s2",
+      "name": "A",
+      "bars": [
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 1,
+                "size": 3,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 5,
+                "size": 3,
+                "harmonic": true,
+                "inversion": 1
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 6,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 4,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 1,
+                "size": 3,
+                "harmonic": false,
+                "inversion": 1
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 5,
+                "size": 3,
+                "harmonic": true
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 2,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 5,
+                "size": 3,
+                "harmonic": true
+              }
+            }
+          ]
+        }
+      ],
+      "parts": {
+        "melody": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 62,
+            "high": 81,
+            "style": "lyrical"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "bass": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 31,
+            "high": 52,
+            "style": "auto"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "drums": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "style": "8beat"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "counter": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 53,
+            "high": 72,
+            "style": "sustain"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "harmony": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 1,
+            "low": 48,
+            "high": 81,
+            "style": "third"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        }
+      },
+      "note": "I–V⁶–vi7–IV△7–I⁶–V–ii7–V。低音は分数コードで線にする。"
+    },
+    {
+      "id": "s3",
+      "name": "B（サビ）",
+      "bars": [
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 6,
+                "size": 3,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 4,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 1,
+                "size": 3,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 5,
+                "size": 3,
+                "harmonic": true,
+                "inversion": 1
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 6,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 4,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 2,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 5,
+                "size": 4,
+                "harmonic": true
+              }
+            }
+          ]
+        }
+      ],
+      "parts": {
+        "melody": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 62,
+            "high": 81,
+            "style": "lyrical"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "bass": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 31,
+            "high": 52,
+            "style": "auto"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "drums": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "style": "8beat"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "counter": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 53,
+            "high": 72,
+            "style": "sustain"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "harmony": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 1,
+            "low": 48,
+            "high": 81,
+            "style": "third"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        }
+      },
+      "note": "vi–IV△7–I–V⁶ / vi7–IV△7–ii7–V7。"
+    },
+    {
+      "id": "s4",
+      "name": "A'",
+      "bars": [
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 1,
+                "size": 3,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 5,
+                "size": 3,
+                "harmonic": true,
+                "inversion": 1
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 6,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 4,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 1,
+                "size": 3,
+                "harmonic": false,
+                "inversion": 1
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 5,
+                "size": 3,
+                "harmonic": true
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 7,
+                "letter": 4,
+                "quality": "m7"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "sec",
+                "target": 4,
+                "size": 4
+              }
+            }
+          ]
+        }
+      ],
+      "parts": {
+        "melody": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 62,
+            "high": 81,
+            "style": "lyrical"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "bass": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 31,
+            "high": 52,
+            "style": "auto"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "drums": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "style": "8beat"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "counter": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 53,
+            "high": 72,
+            "style": "sustain"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "harmony": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 1,
+            "low": 48,
+            "high": 81,
+            "style": "third"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        }
+      },
+      "note": "I–V⁶–vi7–IV△7–I⁶–V–v7–I7（IV への ii–V）。Gm7–C7 で次の Fmaj7 へ向かう。"
+    },
+    {
+      "id": "s5",
+      "name": "C（丸サ）",
+      "bars": [
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 4,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 4,
+                "letter": 2,
+                "quality": "7b9"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 6,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "sec",
+                "target": 4,
+                "size": 4,
+                "inversion": 2
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 4,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 4,
+                "letter": 2,
+                "quality": "7b9"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "scale",
+                "deg": 6,
+                "size": 4,
+                "harmonic": false
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 8,
+                "letter": 5,
+                "quality": "7"
+              }
+            }
+          ]
+        }
+      ],
+      "parts": {
+        "melody": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 62,
+            "high": 81,
+            "style": "lyrical"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "bass": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 31,
+            "high": 52,
+            "style": "auto"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "drums": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "style": "8beat"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "counter": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 53,
+            "high": 72,
+            "style": "sustain"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "harmony": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 1,
+            "low": 48,
+            "high": 81,
+            "style": "third"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        }
+      },
+      "note": "IV△7–III7(♭9)–vi7–I7⁶₄ → ♭VI7（変ニ長調の V7）。A♭7 は大サビへの転調の入口。"
+    },
+    {
+      "id": "s6",
+      "name": "大サビ",
+      "bars": [
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 10,
+                "letter": 6,
+                "quality": "min"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 6,
+                "letter": 4,
+                "quality": "maj7"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 1,
+                "letter": 1,
+                "quality": "maj"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 8,
+                "letter": 5,
+                "quality": "maj",
+                "inversion": 1
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 10,
+                "letter": 6,
+                "quality": "m7"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 6,
+                "letter": 4,
+                "quality": "maj7"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 3,
+                "letter": 2,
+                "quality": "m7"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 8,
+                "letter": 5,
+                "quality": "7"
+              }
+            }
+          ]
+        }
+      ],
+      "parts": {
+        "melody": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 62,
+            "high": 81,
+            "style": "lyrical"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "bass": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 31,
+            "high": 52,
+            "style": "auto"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "drums": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "style": "8beat"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "counter": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 53,
+            "high": 72,
+            "style": "sustain"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "harmony": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 1,
+            "low": 48,
+            "high": 81,
+            "style": "third"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        }
+      },
+      "note": "変ニ長調（半音上）の度数: vi–IV△7–I–V⁶ / vi7–IV△7–ii7–V7。表示のディグリーと機能は主調ハ長調から見たもの。"
+    },
+    {
+      "id": "s7",
+      "name": "大サビ結び",
+      "bars": [
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 1,
+                "letter": 1,
+                "quality": "add9"
+              }
+            }
+          ]
+        },
+        {
+          "chords": [
+            {
+              "startBeat": 0,
+              "beats": 4,
+              "chord": {
+                "kind": "abs",
+                "semi": 1,
+                "letter": 1,
+                "quality": "7"
+              }
+            }
+          ]
+        },
+        {
+          "chords": []
+        },
+        {
+          "chords": []
+        },
+        {
+          "chords": []
+        },
+        {
+          "chords": []
+        },
+        {
+          "chords": []
+        },
+        {
+          "chords": []
+        }
+      ],
+      "parts": {
+        "melody": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 62,
+            "high": 81,
+            "style": "lyrical"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "bass": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 31,
+            "high": 52,
+            "style": "auto"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "drums": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "style": "8beat"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "counter": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 0.5,
+            "low": 53,
+            "high": 72,
+            "style": "sustain"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        },
+        "harmony": {
+          "locked": false,
+          "seed": 1,
+          "params": {
+            "density": 1,
+            "low": 48,
+            "high": 81,
+            "style": "third"
+          },
+          "notes": [],
+          "basis": "",
+          "history": [],
+          "historyIndex": -1
+        }
+      },
+      "note": "変ニ長調の度数: I(add9) → ♭II7。D♭7 は G7 の裏コードで、ハ長調の A へ半音下りて戻る。2 小節（3〜8 小節目は空き）。"
+    }
+  ],
+  "arrangement": [
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7"
+  ],
+  "mix": {
+    "master": 0.8,
+    "parts": {
+      "chords": {
+        "volume": 0.6,
+        "timbre": "pad",
+        "mute": false,
+        "solo": false
+      },
+      "melody": {
+        "volume": 0.75,
+        "timbre": "square",
+        "mute": false,
+        "solo": false
+      },
+      "bass": {
+        "volume": 0.8,
+        "timbre": "round",
+        "mute": false,
+        "solo": false
+      },
+      "drums": {
+        "volume": 0.7,
+        "timbre": "standard",
+        "mute": false,
+        "solo": false
+      },
+      "counter": {
+        "volume": 0.5,
+        "timbre": "triangle",
+        "mute": false,
+        "solo": false
+      },
+      "harmony": {
+        "volume": 0.45,
+        "timbre": "triangle",
+        "mute": false,
+        "solo": false
+      }
+    }
+  }
+}

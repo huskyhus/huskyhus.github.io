@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>musictester - コード進行から作曲を学ぶ</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="file-warning" hidden>
+  ファイルを直接開くと動きません（ブラウザが ES モジュールの読み込みを止めるため）。
+  このフォルダで <code>node tools/serve.js</code> を実行し、http://localhost:8010/ を開いてください。
+</div>
+<script>
+  if (location.protocol === "file:") document.getElementById("file-warning").hidden = false;
+</script>
+
+<header class="topbar">
+  <h1 class="logo">music<b>tester</b></h1>
+  <label class="field grow-title"><span>曲名</span><input id="title" type="text" maxlength="60"></label>
+  <div class="field-group">
+    <label class="field"><span>調 <button type="button" class="help" id="help-key" aria-label="調の解説">?</button></span>
+      <span class="joined">
+        <select id="tonic" aria-label="主音"></select>
+        <select id="mode" aria-label="長調か短調か">
+          <option value="major">メジャー（長調）</option>
+          <option value="minor">マイナー（短調）</option>
+        </select>
+      </span>
+    </label>
+    <label class="field"><span>BPM <button type="button" class="help" id="help-bpm" aria-label="BPM の解説">?</button></span>
+      <span class="joined bpm">
+        <input id="bpm-range" type="range" min="40" max="240" aria-label="BPM のスライダー">
+        <input id="bpm" type="number" min="40" max="240" aria-label="BPM">
+      </span>
+    </label>
+  </div>
+  <div class="transport" role="group" aria-label="再生">
+    <button type="button" id="play-song" class="btn primary">▶ 曲全体</button>
+    <button type="button" id="play-section" class="btn primary">▶ セクション</button>
+    <button type="button" id="loop" class="btn toggle" aria-pressed="false">⟳ ループ</button>
+    <button type="button" id="stop" class="btn" disabled>■ 停止</button>
+  </div>
+  <button type="button" id="open-io" class="btn">保存 / 読込</button>
+</header>
+
+<main class="workspace">
+  <aside class="col-left">
+    <section class="panel" id="palette-panel" aria-label="コードパレット"></section>
+    <section class="panel" id="dictionary-panel" aria-label="有名なコード進行"></section>
+  </aside>
+  <div class="col-main">
+    <section class="panel" id="section-panel" aria-label="セクション"></section>
+    <section class="panel" id="arrangement-panel" aria-label="曲の構成"></section>
+    <section class="panel" id="guide-panel" aria-label="理論ガイド"></section>
+    <section class="panel" id="parts-panel" aria-label="パートとミキサー"></section>
+  </div>
+</main>
+<dialog id="io-dialog" class="io-dialog" aria-label="保存と読み込み"></dialog>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
