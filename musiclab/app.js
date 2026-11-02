@@ -69,8 +69,9 @@ function select(name) {
   showError(null);
   engine.params = paramsFor(name, s);
   setBpm(s.bpm || 120);
+  startBar = 0;
   renderSketch(s);
-  if (engine.playing) engine.play(s);
+  if (engine.playing) startPlay(s);
 }
 
 // ---------------------------------------------------------------- スケッチの表示
@@ -82,7 +83,42 @@ function renderSketch(s) {
   const defs = Object.entries(s.params || {});
   $("paramsCard").style.display = defs.length ? "" : "none";
   $("params").replaceChildren(...defs.flatMap(([k, def]) => paramControl(k, def)));
+  renderSeek(s);
 }
+
+// ---------------------------------------------------------------- 再生する位置（シークバー）
+
+let startBar = 0;       // 再生を始める小節（止めると、ここへ戻る）
+let seeking = false;    // つまみを動かしている間は、再生位置で上書きしない
+
+/** スケッチの小節数（0 なら終わりのない曲で、シークバーを出さない） */
+function barCount(s) {
+  return typeof s?.bars === "function" ? s.bars(engine.params) : s?.bars || 0;
+}
+
+function renderSeek(s) {
+  const bars = barCount(s);
+  $("seekRow").style.display = bars ? "" : "none";
+  $("seek").max = Math.max(0, bars - 1);
+  startBar = Math.min(startBar, Math.max(0, bars - 1));
+  $("seek").value = startBar;
+  showSeek(startBar);
+}
+
+/** 小節の番号と、小節にセクションの名前があればそれも出す */
+function showSeek(bar) {
+  const s = sketches.get(current);
+  const section = s?.data?.[bar]?.section;
+  $("seekOut").textContent = `${bar + 1} / ${barCount(s)} 小節${section ? ` ・ ${section}` : ""}`;
+}
+
+$("seek").oninput = e => { seeking = true; showSeek(Number(e.target.value)); };
+$("seek").onchange = e => {
+  seeking = false;
+  startBar = Number(e.target.value);
+  const s = sketches.get(current);
+  if (engine.playing && !(s instanceof Error)) startPlay(s);
+};
 
 /** params の 1 項目 → [ラベル, 操作部品] */
 function paramControl(k, def) {
@@ -132,10 +168,16 @@ function updatePlay() {
   $("play").textContent = engine.playing ? "■ 停止" : "▶ 再生";
 }
 
+/** startBar から鳴らす。曲の途中でテンポを変えるスケッチがあるので、テンポは画面で選んだ値に戻してから */
+function startPlay(s) {
+  engine.setBpm(baseBpm);
+  engine.play(s, { bar: startBar });
+}
+
 function togglePlay() {
   const s = sketches.get(current);
   if (engine.playing) engine.stop();
-  else if (!(s instanceof Error)) { showError(null); engine.play(s); }
+  else if (!(s instanceof Error)) { showError(null); startPlay(s); }
   updatePlay();
 }
 
@@ -160,7 +202,10 @@ function resetParams() {
   renderSketch(s);
 }
 
+let baseBpm = 120;      // 画面で選んだテンポ（スケッチが曲の途中で変えても、次の再生はここから）
+
 function setBpm(v) {
+  baseBpm = v;
   $("bpm").value = v;
   $("bpmOut").textContent = v;
   engine.setBpm(v);
@@ -196,6 +241,11 @@ function draw() {
   $("pos").textContent = now ? `${now.bar + 1}${engine.loopBars ? ` / ${engine.loopBars}` : ""} 小節 ・ ${Math.floor(now.pos / 4) + 1} 拍` : "-";
   [...beats.children].forEach((el, i) => el.classList.toggle("on", !!now && now.pos === i));
   $("status").textContent = engine.status;
+  if (!seeking) {
+    const bar = now ? now.bar : startBar;
+    if (Number($("seek").value) !== bar) $("seek").value = bar;
+    showSeek(bar);
+  }
   // スケッチがパラメータを書き換えたとき（自動巡回など）に画面へ反映
   for (const el of document.querySelectorAll(".param")) if (document.activeElement !== el) el.sync();
   // スケッチがテンポを変えたとき（曲の切り替えなど）も

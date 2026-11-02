@@ -71,6 +71,10 @@
   #beats i { width: 10px; height: 10px; border-radius: 3px; background: var(--line); }
   #beats i:nth-child(4n + 1) { background: color-mix(in srgb, var(--line), var(--ink) 25%); }
   #beats i.on { background: var(--accent); }
+  #seekRow { margin-top: 12px; }
+  /* 表示の文字の長さでバーの幅が変わると、ドラッグ中につまみがずれるので、文字は下の段に置く */
+  #seek { display: block; width: 100%; margin: 0; accent-color: var(--accent); }
+  #seekOut { display: block; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
   #status { min-height: 1.6em; margin: 10px 0 0; font-size: 14px; }
   .rows { display: grid; grid-template-columns: max-content 1fr; gap: 10px 14px; align-items: center; font-size: 14px; }
   .rows label { color: var(--muted); }
@@ -106,6 +110,10 @@
         <span id="pos">-</span>
         <span id="beats" aria-hidden="true"></span>
       </div>
+      <div id="seekRow">
+        <input type="range" id="seek" min="0" step="1" value="0" aria-label="再生する位置（小節）" title="ここから再生する">
+        <output id="seekOut"></output>
+      </div>
       <p id="status"></p>
     </section>
 
@@ -136,6 +144,7 @@
     </section>
   </main>
 </div>
-<script type="module" src="app.js"></script>
+<!-- app.js を変えたら v を上げる（古い app.js がブラウザのキャッシュに残らないように） -->
+<script type="module" src="app.js?v=2"></script>
 </body>
 </html>

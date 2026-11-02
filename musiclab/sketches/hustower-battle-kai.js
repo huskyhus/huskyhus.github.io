@@ -475,11 +475,24 @@ const SUB = {
 };
 
 /**
- * 対旋律の歌い方（秒）: 順次に動く音はスラー気味に、次の音の頭まで消え際を伸ばして隙間を作らない。
- * 跳躍と同じ音の連打の前は CUT_GAP だけ切って、フレーズの区切りを聞かせる。どの音も速く立ち上げ、頭に短いアクセントを足す
+ * 対旋律のフレーズの区切り: { セクションの中の小節: [その音のあとで切る、行の中の番号] }。
+ * A' は「ラーシドレー（切る）シソラードーシー（切る）レードドー（切る）ミードーララー（切る）レーシー」
  */
-const TONGUE_ATTACK = 0.006, TONGUE_RELEASE = 0.02, TONGUE_OVERLAP = 0.005;
-const CUT_GAP = 0.07, CUT_RELEASE = 0.015;
+const A_CUTS = { 1: [0], 3: [0], 4: [0], 6: [0] };
+const B_CUTS = { 1: [4], 5: [6] };
+const COUNTER_CUTS = {
+  [A2.name]: A_CUTS, [A3.name]: A_CUTS,
+  [B2.name]: { 1: [2], 5: [4] },
+  [B3.name]: B_CUTS, [B4.name]: B_CUTS, [B_TOP.name]: B_CUTS,
+};
+
+/**
+ * 対旋律の歌い方（秒）: 基本はスラー気味に、次の音の頭まで消え際を伸ばして隙間を作らない（跳躍でも）。
+ * 区切りの音（COUNTER_CUTS）は CUT_GAP だけ切る。同じ音が続く所は REPEAT_GAP だけ空けて弾き直す。
+ * どの音も速く立ち上げ、頭に短いアクセントを足す
+ */
+const TONGUE_ATTACK = 0.006, TONGUE_RELEASE = 0.02, TONGUE_OVERLAP = TONGUE_RELEASE;
+const CUT_GAP = 0.07, REPEAT_GAP = 0.03, CUT_RELEASE = 0.015;
 const ACCENT = 0.25, ACCENT_LENGTH = 0.05;
 
 /**
@@ -500,8 +513,8 @@ const COUNTER = {
     }
     const end = pos + n.steps, unit = b.counter.length === 16 ? 1 : 2;
     const after = end < 16 ? b.counter[end / unit] : b.next?.counter?.[0];
-    const gap = after ? Math.abs(after.midi - n.midi) : 0;
-    const cut = after && (gap === 0 || gap > 2);
+    const marked = COUNTER_CUTS[b.section]?.[b.index]?.includes(pos / unit);
+    const gap = !after ? 0 : marked ? CUT_GAP : after.midi === n.midi ? REPEAT_GAP : 0;
     layerOf("counter").play(x, (t, dur, m, mul = 1, opts = {}) => {
       // 編成の声部が 2 本で鳴らす音は、1 本目だけを元の音量で鳴らす
       if (opts.detune > 0) return;
@@ -510,9 +523,9 @@ const COUNTER = {
       delete o.detune;
       delete o.slideFrom;
       delete o.slideTime;
-      if (after) o.release = cut ? CUT_RELEASE : TONGUE_RELEASE;
+      if (after) o.release = gap ? CUT_RELEASE : TONGUE_RELEASE;
       const full = n.steps * s16;
-      voice(t, !after ? dur : cut ? full - CUT_GAP : full + TONGUE_OVERLAP, m, level, o);
+      voice(t, !after ? dur : gap ? full - gap : full + TONGUE_OVERLAP, m, level, o);
       voice(t, ACCENT_LENGTH, m, level * ACCENT, { attack: 0.002, release: 0.03 });
     }, fx);
   },
