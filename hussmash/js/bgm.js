@@ -1,10 +1,10 @@
 // BGM。musiclab の仕組み（music/ にコピーしたエンジンとスケッチ）をそのまま使い、Web Audio で合成して鳴らす。
 // music/ の中は musiclab と同じファイルなので、曲を直したら musiclab からコピーし直す。
-//   タイトル・ロビー: 学園都市のハスタワー / 対戦: 戦闘曲 1「ハスタワー」
+//   タイトル・ロビー: 学園都市のハスタワー / 対戦: 戦闘曲 1 改「ハスタワー」
 
 import { Engine, defaultParams } from "../music/lib/engine.js";
 import ACADEMY from "../music/sketches/hustower-academy.js";
-import BATTLE from "../music/sketches/hustower-battle.js";
+import BATTLE from "../music/sketches/hustower-battle-kai.js";
 
 const ON_KEY = "hussmash.bgmOn";
 const VOLUME = 0.3;

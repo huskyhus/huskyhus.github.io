@@ -42,12 +42,18 @@ try {
       paramsOf: (n, s) => defaultParams(s),
     };
     ctx.state = song.setup ? song.setup(ctx) : {};
-    let now = 0.05;
-    for (let i = 0; i < steps; i++) {
-      song.step({ t: now, step: i, bar: Math.floor(i / 16), pos: i % 16 }, ctx);
-      now += ctx.sixteenth;
-    }
-    await send("/__log", name + ": 音を予約しました。描画しています");
+    // 再生と同じように、少し先の 1 小節ずつ音を予約する（全部を先に予約すると、まだ鳴らない音まで毎回処理して、とても遅くなる）
+    let now = 0.05, step = 0;
+    const schedule = () => {
+      for (let n = 0; n < 16 && step < steps; n++, step++) {
+        song.step({ t: now, step, bar: Math.floor(step / 16), pos: step % 16 }, ctx);
+        now += ctx.sixteenth;
+      }
+      if (step % (16 * 20) === 0) send("/__log", name + ": " + step / 16 + " / " + bars + " 小節");
+      if (step >= steps) return;
+      ac.suspend(Math.max(now - 0.3, ac.currentTime + 0.01)).then(() => { schedule(); ac.resume(); });
+    };
+    schedule();
     const buf = await ac.startRendering();
     const frames = Math.min(buf.length, Math.ceil((now + ${TAIL}) * sr));
     const L = buf.getChannelData(0), R = buf.getChannelData(1), pcm = new Float32Array(frames * 2);
@@ -96,12 +102,12 @@ const server = createServer((req, res) => {
     const chunks = [];
     req.on("data", d => chunks.push(d));
     req.on("end", async () => {
-      res.end();
       const body = Buffer.concat(chunks);
       try {
         if (url === "/__log") console.log(body.toString());
         if (url === "/__error") throw new Error(body.toString());
-        if (url.startsWith("/__pcm/")) await writeMp3(url.slice("/__pcm/".length), body);
+        if (url.startsWith("/__pcm/")) await writeMp3(url.slice("/__pcm/".length), body);   // 書き終えてから返事をする
+        res.end();
         if (url === "/__done") finish(0);
       } catch (e) {
         console.error(e.message);
