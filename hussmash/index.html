@@ -57,7 +57,7 @@
     <p id="titleMsg" class="msg" role="status"></p>
   </div>
   <div class="title-right">
-    <h2>持っていく技 <small>23 種から 4 つ</small></h2>
+    <h2>持っていく技 <small>232 種から 4 つ</small></h2>
     <div id="loadoutView" class="loadout-view"></div>
     <button id="editBtn" class="secondary" type="button">技を選ぶ</button>
     <div class="row">
@@ -116,6 +116,7 @@
       <div id="editSlots" class="edit-slots"></div>
       <button id="editDone" class="primary small" type="button">決定</button>
     </div>
+    <div id="moveTabs" class="move-tabs scroll-x"></div>
     <div class="editor-body">
       <ul id="moveGrid" class="move-grid scroll"></ul>
       <div id="moveDetail" class="move-detail scroll"></div>
@@ -146,8 +147,10 @@
     <ul class="howto">
       <li><b>目的</b>相手を画面の外までふっとばすと撃墜。ストックを最後まで残した人の勝ち。% が高いほどよく飛ぶ</li>
       <li><b>移動</b>画面の左側をさわってぐりぐり。上にはじくとジャンプ（空中でもう 1 回）。空中で下に倒すと急降下</li>
-      <li><b>技</b>右側の A / B / X / Y。どのボタンに何を入れるかはタイトルの「技を選ぶ」で。技はボタンより多く 23 種あり、4 つしか持っていけない</li>
-      <li><b>読みあい</b>相手の持ち技は、使われるまでわからない（使うと頭の上にステッカーが出る）。カウンターを持っているか、ガードを割るつかみを持っているか…</li>
+      <li><b>技</b>右側の A / B / X / Y。ステッカー 1 枚 = 技 1 つで、全部で 232 種。4 つだけ持っていける。どのボタンに何を入れるかはタイトルの「技を選ぶ」で</li>
+      <li><b>読みあい</b>相手の持ち技は、使われるまでわからない（使うと頭の上にステッカーが出る。ただし「とんだ誤解」はうその技を出す）。
+        攻撃はつかみに勝ち、つかみはガード・カウンターに勝ち、ガード・カウンターは攻撃に勝つ。ほかに、つかみ返し・見破り（回避やカウンターを無視）・アーマー（小さい攻撃でひるまない）など</li>
+      <li><b>状態</b>頭の上の小さな印が、いま付いている状態。<span style="color:#ffb3b3">赤い印</span>は悪い状態（攻撃↓・鈍足・やけど・技封じ・混乱・もろい）、それ以外はよい状態</li>
       <li><b>復帰</b>場外に落ちたら、ジャンプや復帰技で台のふちまで戻れば自動でよじ登る。復帰技を持っていくかどうかも作戦</li>
       <li><b>PC</b>移動 ←→ / AD、ジャンプ Space / ↑ / W、急降下 ↓ / S、技 L = A・K = B・I = X・J = Y</li>
       <li><b>通信</b>ルームを作った人（ホスト）の端末で対戦を計算し、ほかの人とは P2P（WebRTC）で直接つながります</li>

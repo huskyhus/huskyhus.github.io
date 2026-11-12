@@ -251,6 +251,12 @@ h2 small { color: var(--muted); font-weight: 500; margin-left: 6px; font-size: 1
 .edit-slot b { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; color: #222; text-align: center; line-height: 22px; }
 .edit-slot img { width: 34px; height: 29px; object-fit: cover; border-radius: 4px; flex: none; }
 .edit-slot span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move-tabs { display: flex; gap: 4px; overflow-x: auto; flex: none; padding-bottom: 2px; touch-action: pan-x; scrollbar-width: thin; }
+.move-tabs .tab {
+  flex: none; font-size: 11px; font-weight: 700; white-space: nowrap;
+  padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.3); color: var(--muted);
+}
+.move-tabs .tab.on { background: var(--accent-2); color: #222; border-color: var(--accent-2); }
 .editor-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 8px; }
 .move-grid {
   list-style: none; margin: 0; padding: 2px;

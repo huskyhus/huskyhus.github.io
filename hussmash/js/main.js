@@ -5,8 +5,8 @@
 // ホストがまだ使っていない自分の入力をやり直して合わせる（照合）。当たり・ダメージ・撃墜を決めるのはホストだけ。
 // 通信はすべて state の同期なので（ロビーの状態も対戦の状態も毎回まるごと送る）、何通か落ちても次の 1 通で元に戻る。
 
-import { MOVE_BY_ID, SELECTABLE, GROUPS, DEFAULT_LOADOUT, BUTTONS, stickerSrc, repairLoadout, moveStats } from "./moves.js";
-import { Sim, cpuInput, EMPTY_INPUT, PHASES, EVENTS, FLAG, CPU_LEVEL_NAMES, CPU_DEFAULT_LEVEL, fighterState, loadFighter, predictSim } from "./sim.js";
+import { MOVE_BY_ID, MOVES, SELECTABLE, GROUPS, DEFAULT_LOADOUT, BUTTONS, stickerSrc, repairLoadout, moveStats } from "./moves.js";
+import { Sim, cpuInput, EMPTY_INPUT, PHASES, EVENTS, CPU_LEVEL_NAMES, CPU_DEFAULT_LEVEL, fighterState, loadFighter, predictSim, viewFlags, statusBits } from "./sim.js";
 import { expandSnapshot, cleanName, INPUT_FRAMES } from "./protocol.js";
 import { hostRoom, joinRoom, randomRoom, isRoomCode } from "./net.js";
 import { Renderer, COLORS } from "./render.js";
@@ -197,11 +197,12 @@ $("sfxBtn").addEventListener("click", () => { firstGesture(); setMuted(!isMuted(
 
 // 操作は 2 つだけ: 「技をタップして見る」→「入れたいボタン（A / B / X / Y）を押す」。
 // 上の 4 つのボタン欄をタップすると、そこに入っている技を見る。
-let editFocus = null, editFlash = -1;
+let editFocus = null, editFlash = -1, editTab = "all";
 
 function openEditor(slot = 0) {
   editFocus = me.loadout[slot];
   editFlash = -1;
+  editTab = "all";
   renderEditor();
   $("editor").hidden = false;
   $("moveGrid").querySelector(".focus")?.scrollIntoView({ block: "nearest" });
@@ -226,15 +227,22 @@ function renderEditor() {
     return b;
   }));
 
+  // 分類のタブ（すべて / 攻撃 / 強攻撃 …）。数が多いので、見たい分類だけに絞れる
+  $("moveTabs").replaceChildren(...[{ role: "all", name: `すべて ${SELECTABLE.length}` }, ...GROUPS.map(g => ({ role: g.role, name: `${g.name} ${g.ids.length}` }))].map(t => {
+    const b = el("button", { type: "button", class: "tab" + (t.role === editTab ? " on" : ""), text: t.name });
+    b.addEventListener("click", () => { editTab = t.role; sfx("ui"); renderEditor(); $("moveGrid").scrollTop = 0; });
+    return b;
+  }));
   const items = [];
   for (const g of GROUPS) {
-    items.push(el("li", { class: "grp", text: g.name }));
+    if (editTab !== "all" && g.role !== editTab) continue;
+    items.push(el("li", { class: "grp", text: `${g.name}（${g.ids.length}）` }));
     for (const id of g.ids) {
       const m = MOVE_BY_ID[id];
       if (!m || m.banned) continue;
       const at = me.loadout.indexOf(id);
       const b = el("button", { type: "button", class: (at >= 0 ? "equipped" : "") + (id === editFocus ? " focus" : "") }, [
-        el("img", { src: stickerSrc(m.sticker), alt: "" }),
+        el("img", { src: stickerSrc(m.sticker), alt: "", loading: "lazy" }),
         el("div", { text: m.name }),
         el("small", { text: m.kind }),
         at >= 0 ? el("span", { class: "eq", text: BUTTONS[at] }) : null,
@@ -414,10 +422,16 @@ function startHost(net, code) {
   if (net) S.lobbyTimer = setInterval(broadcastLobby, LOBBY_EVERY_MS);
 }
 
+/** CPU の技: 攻撃 2 つ（うち 1 つは強攻撃かも）+ なんでも 1 つ + 復帰（たいてい）。毎回ちがう相手になる */
 function randomLoadout() {
-  const ids = SELECTABLE.map(m => m.id).sort(() => Math.random() - 0.5).slice(0, 4);
-  if (!ids.includes("cheat") && Math.random() < 0.6) ids[3] = "cheat";
-  return [...new Set(ids)].length === 4 ? ids : DEFAULT_LOADOUT.slice();
+  const of = roles => SELECTABLE.filter(m => roles.includes(m.ai || "atk")).map(m => m.id);
+  const pick = (pool, out) => { const c = pool.filter(id => !out.includes(id)); return c[Math.floor(Math.random() * c.length)]; };
+  const out = [];
+  out.push(pick(of(["atk"]), out));
+  out.push(pick(of(Math.random() < 0.6 ? ["ko", "grab"] : ["atk"]), out));
+  out.push(pick(SELECTABLE.map(m => m.id), out));
+  out.push(Math.random() < 0.7 ? pick(of(["rec"]).concat(SELECTABLE.filter(m => m.rec).map(m => m.id)), out) : pick(SELECTABLE.map(m => m.id), out));
+  return new Set(out).size === 4 && out.every(Boolean) ? out : DEFAULT_LOADOUT.slice();
 }
 
 function addCpu(at, level = CPU_DEFAULT_LEVEL) {
@@ -683,11 +697,9 @@ function predictedView(P) {
   P.ox *= 0.75; P.oy *= 0.75;
   return {
     x: F.x + P.ox, y: F.y + P.oy, face: F.face, st: F.state, mv: F.move ? F.move.def : null, mf: F.move ? F.move.f : 0,
-    dmg: Math.round(F.dmg), stocks: F.stocks,
-    flags: (F.invuln > 0 ? FLAG.invuln : 0) | (F.guarding ? FLAG.guard : 0) | (F.helpless ? FLAG.helpless : 0)
-      | (F.sleeping ? FLAG.sleep : 0) | (F.counter ? FLAG.counter : 0) | (F.hover > 0 ? FLAG.hover : 0)
-      | (F.grounded ? FLAG.ground : 0),
+    dmg: Math.round(F.dmg), stocks: F.stocks, flags: viewFlags(F),
     guardHp: Math.round(F.guardHp), cd: F.cd.slice(), charge: Math.round(F.charge),
+    sb: statusBits(F), bub: F.bub >= 0 ? MOVES[F.bub] : null, barrier: Math.round(F.barrier),
   };
 }
 
@@ -941,7 +953,7 @@ for (const ev of ["gesturestart", "gesturechange", "gestureend"]) document.addEv
 document.addEventListener("dblclick", e => e.preventDefault());
 document.addEventListener("contextmenu", e => e.preventDefault());
 document.addEventListener("touchmove", e => {
-  if (e.touches.length > 1 || !e.target.closest?.(".scroll")) e.preventDefault();
+  if (e.touches.length > 1 || !e.target.closest?.(".scroll, .scroll-x")) e.preventDefault();
 }, { passive: false });
 document.addEventListener("wheel", e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
 addEventListener("keydown", e => {

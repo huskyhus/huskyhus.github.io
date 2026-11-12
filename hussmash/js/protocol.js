@@ -5,7 +5,7 @@
 // 検査を通ったものは「新しく作り直したオブジェクト」なので、知らないキーや __proto__ などは残らない。
 
 import { MOVES, MOVE_BY_ID, isValidLoadout } from "./moves.js";
-import { PHASES, STATES, EVENTS, PROJ_KINDS, MAX_PLAYERS, FSTATE_RANGES, STATS_RANGES } from "./sim.js";
+import { PHASES, STATES, EVENTS, PROJ_KINDS, MAX_PLAYERS, FSTATE_RANGES, STATS_RANGES, STATUS } from "./sim.js";
 
 export const MAX_FROM_CLIENT = 1024;   // クライアント → ホスト（入力・自己紹介）の 1 通の上限（文字数）
 export const MAX_FROM_HOST = 8192;     // ホスト → クライアント（スナップショット）の 1 通の上限
@@ -84,10 +84,12 @@ export function checkFromClient(o) {
 
 const F_RANGES = [
   [-3000, 5000], [-3000, 5000], [-1, 1], [0, STATES.length - 1],
-  [-1, MOVES.length - 1], [0, 999], [0, 999], [0, 9], [0, 127], [0, 60],
+  [-1, MOVES.length - 1], [0, 999], [0, 999], [0, 9], [0, 1023], [0, 60],
   [0, 999], [0, 999], [0, 999], [0, 999], [0, 60],
+  [0, 2 ** STATUS.length - 1], [-1, MOVES.length - 1], [0, 99],   // 状態のビット・頭の上のステッカー・バリア
 ];
-const P_RANGES = [[0, 2 ** 31], [0, PROJ_KINDS.length - 1], [-3000, 5000], [-3000, 5000], [0, 3], [-1, 1], [0, 999]];
+// 飛び道具: id, 見た目, x, y, 持ち主, 向き, 経過, 技の番号, 幅, 高さ
+const P_RANGES = [[0, 2 ** 31], [0, PROJ_KINDS.length - 1], [-3000, 5000], [-3000, 5000], [0, 3], [-1, 1], [0, 999], [-1, MOVES.length - 1], [0, 999], [0, 999]];
 const E_RANGES = [[0, 2 ** 31], [0, EVENTS.length - 1], [-3000, 5000], [-3000, 5000], [-1, 3], [-1, 999], [0, 999]];
 const Y_RANGES = [[-1, 2 ** 31], ...FSTATE_RANGES];   // 受け取る人のファイター: ホストが使い終わった入力の番号 + まるごとの状態
 
@@ -181,8 +183,10 @@ export function expandSnapshot(s) {
     F: s.F.map(a => a && {
       x: a[0], y: a[1], face: a[2] || 1, st: STATES[a[3]], mv: a[4] >= 0 ? MOVES[a[4]] : null, mf: a[5],
       dmg: a[6], stocks: a[7], flags: a[8], guardHp: a[9], cd: a.slice(10, 14), charge: a[14],
+      sb: a[15], bub: a[16] >= 0 ? MOVES[a[16]] : null, barrier: a[17],
     }),
-    P: s.P.map(p => ({ id: p[0], kind: PROJ_KINDS[p[1]], x: p[2], y: p[3], owner: p[4], dir: p[5] || 1, t: p[6] })),
+    P: s.P.map(p => ({ id: p[0], kind: PROJ_KINDS[p[1]], x: p[2], y: p[3], owner: p[4], dir: p[5] || 1, t: p[6],
+      mv: p[7] >= 0 ? MOVES[p[7]] : null, w: p[8], h: p[9] })),
     E: s.E.map(e => ({ id: e[0], k: EVENTS[e[1]], x: e[2], y: e[3], s: e[4], p: e[5], q: e[6] })),
   };
 }

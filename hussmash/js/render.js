@@ -1,7 +1,7 @@
 // 描画（Canvas 2D）。ホストもクライアントも、スナップショットを開いた形（protocol.expandSnapshot）を描くだけ。
 // 動くカメラ・背景・ステージ・ファイター・技の見た目・飛び道具・エフェクト・上部の % 表示。
 
-import { STAGE, BLAST, BODY } from "./sim.js";
+import { STAGE, BLAST, BODY, STATUS, STATUS_NAME, NEGATIVE } from "./sim.js";
 import { MOVES, stickerSrc } from "./moves.js";
 
 export const COLORS = ["#ff5a5a", "#4aa3ff", "#ffc93c", "#43d17a"];
@@ -10,7 +10,16 @@ const SPRITE_H = 112, SPRITE_W = 80;
 
 const img = src => { const i = new Image(); i.src = src; return i; };
 const HUSKY = img("avatars/husky.png");
-const STICKERS = Object.fromEntries(MOVES.map(m => [m.id, img(stickerSrc(m.sticker))]));
+// ステッカーは使われたときに読みこむ（232 枚を最初に全部読まない）
+const STICKER_CACHE = {};
+const stickerImg = m => (m ? (STICKER_CACHE[m.id] ??= img(stickerSrc(m.sticker))) : null);
+// 状態の印（頭の上に出す 1 文字と色）
+const STATUS_ICON = {
+  pow: ["攻", "#ff7a59"], tough: ["防", "#59a8ff"], haste: ["速", "#7dffb0"], regen: ["癒", "#6dffa0"], weak: ["弱", "#ff6b6b"],
+  slow: ["遅", "#ff6b6b"], burn: ["炎", "#ff6b6b"], seal: ["封", "#ff6b6b"], confuse: ["混", "#ff6b6b"], frail: ["脆", "#ff6b6b"],
+  light: ["軽", "#c7f0ff"], ghost: ["隠", "#cfcfff"], quick: ["急", "#ffe36b"], dbl: ["倍", "#ffb02e"], armor: ["鎧", "#d0d0d0"],
+  mini: ["小", "#ffc0e0"], earn: ["稼", "#ffd84a"], nullp: ["無", "#c9a6ff"], ward: ["守", "#9fe8ff"], nograb: ["離", "#9fe8ff"],
+};
 const ready = i => i.complete && i.naturalWidth > 0;
 
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -86,6 +95,18 @@ export class Renderer {
       case "heal": if (Math.random() < 0.5) this.popText(e.x + (Math.random() - 0.5) * 50, e.y - 10, "+", "#6dffa0", 30); break;
       case "reflect": this.burst(e.x, e.y, "#c9a6ff", 16, 10, 22, 4); this.popText(e.x, e.y - 40, "不可能です！", "#d6c0ff", 30); break;
       case "swap": this.popText(e.x, e.y - 70, "おまえもな！", "#ffffff", 36); this.burst(e.x, e.y, color, 30, 12, 30, 5); break;
+      case "warp": this.burst(e.x, e.y, color, 16, 8, 22, 4); this.flashes.push({ x: e.x, y: e.y, r: 50, life: 10, max: 10, color }); break;
+      case "buff":
+      case "debuff": {
+        const k = STATUS[e.p];
+        const text = k ? STATUS_NAME[k] : e.k === "buff" ? "すっきり" : "強化が消えた";
+        this.popText(e.x, e.y - 10, text, e.k === "buff" ? "#a6ffcf" : "#ff9a9a", 24);
+        break;
+      }
+      case "parry": this.popText(e.x, e.y - 60, e.p ? "ジャスト！" : "受け流し！", "#fff7a0", 38); this.flashes.push({ x: e.x, y: e.y, r: 110, life: 12, max: 12, color: "#fff7a0" }); this.shake = 8; break;
+      case "boom": this.flashes.push({ x: e.x, y: e.y, r: Math.max(30, e.p * 10), life: 14, max: 14, color: "#ffd9a0" }); this.burst(e.x, e.y, "#ffcf7a", 14, 10, 24, 4); break;
+      case "pickup": this.popText(e.x, e.y - 30, `+${e.p}%`, "#6dffa0", 28); this.burst(e.x, e.y, "#6dffa0", 12, 6, 20, 3); break;
+      case "absorb": this.burst(e.x, e.y, "#c9a6ff", 10, 6, 16, 3); break;
       case "jump": this.burst(e.x, e.y, "rgba(255,255,255,0.7)", e.p ? 6 : 4, 3, 16, 3); break;
     }
   }
@@ -227,7 +248,10 @@ export class Renderer {
       ctx.beginPath(); ctx.ellipse(F.x, STAGE.y + 2, Math.max(10, 34 - hgt * 0.05), 7, 0, 0, Math.PI * 2); ctx.fill();
     }
 
+    const sb = F.sb || 0;
+    const st = k => (sb >> STATUS.indexOf(k)) & 1;
     if ((flags & 1) && Math.floor(t * 20) % 2 === 0) ctx.globalAlpha = 0.45;
+    if (st("ghost")) ctx.globalAlpha *= slot === this.self ? 0.55 : 0.3;
     if (flags & 4) ctx.filter = "brightness(0.6)";
 
     // 体
@@ -238,12 +262,15 @@ export class Renderer {
     else if (!(flags & 64)) sq = 0.96;
     else sq = 1 + Math.sin(t * 5 + slot) * 0.02;
     if (flags & 8) rot = -Math.PI / 2 * F.face * 0.9;   // 寝ている
+    const mini = st("mini") ? 0.65 : 1;
+    const low = flags & 256 ? 0.55 : 1;   // 体が低い（お辞儀・すべりこみ）
+    ctx.scale(mini, mini * low);
     ctx.translate(0, -SPRITE_H / 2);
     ctx.rotate(rot);
     ctx.scale(F.face < 0 ? -1 : 1, sq);
     if (ready(HUSKY)) {
-      ctx.shadowColor = (flags & 16) ? "#ffffff" : color;
-      ctx.shadowBlur = (flags & 16) ? 28 : 12;
+      ctx.shadowColor = (flags & 16) ? "#ffffff" : (flags & 128) || st("armor") ? "#e8e8e8" : st("pow") ? "#ff6040" : color;
+      ctx.shadowBlur = (flags & 16) ? 28 : (flags & 128) || st("armor") ? 24 : st("pow") ? 20 : 12;
       ctx.drawImage(HUSKY, -SPRITE_W / 2, -SPRITE_H / 2, SPRITE_W, SPRITE_H);
       ctx.shadowBlur = 0;
     } else {
@@ -268,6 +295,16 @@ export class Renderer {
       ctx.strokeStyle = "rgba(200,245,255,0.9)";
       ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(F.x, F.y - 48, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    // バリア
+    if (flags & 512) {
+      const r = 50 + Math.min(20, (F.barrier || 0));
+      ctx.strokeStyle = "rgba(255,236,140,0.85)"; ctx.lineWidth = 3; ctx.fillStyle = "rgba(255,236,140,0.12)";
+      ctx.beginPath(); ctx.arc(F.x, F.y - 48, r + Math.sin(t * 6) * 2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+    if (st("haste") && F.st !== "dead") {
+      ctx.fillStyle = "rgba(125,255,176,0.35)";
+      for (let i = 1; i <= 2; i++) ctx.fillRect(F.x - F.face * (18 + i * 14), F.y - 80 + i * 10, 10, 50);
     }
     if (F.st === "dizzy") {
       ctx.fillStyle = "#ffe36b";
@@ -306,7 +343,22 @@ export class Renderer {
     ctx.fill();
 
     // 使った技のステッカーを頭の上に出す（相手の持ち技がここでわかる）
-    if (F.st === "move" && F.mv && F.mf < 45) this.drawStickerBubble(F, top - 30);
+    // 状態の印
+    if (sb) {
+      const keys = STATUS.filter(k => st(k));
+      ctx.font = `bold 14px ${FONT}`;
+      ctx.textAlign = "center";
+      keys.forEach((k, i) => {
+        const [ch, c] = STATUS_ICON[k];
+        const x = F.x + (i - (keys.length - 1) / 2) * 20, y = top - 26;
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = NEGATIVE.has(k) ? "#ff6b6b" : c; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = c;
+        ctx.fillText(ch, x, y + 5);
+      });
+    }
+    if (F.st === "move" && F.mv && F.mf < 45) this.drawStickerBubble(F, top - (sb ? 56 : 30));
     ctx.restore();
   }
 
@@ -324,7 +376,7 @@ export class Renderer {
 
   drawStickerBubble(F, y) {
     const { ctx } = this;
-    const im = STICKERS[F.mv.id];
+    const im = stickerImg(F.bub || F.mv);
     const pop = Math.min(1, F.mf / 6);
     const s = (0.6 + 0.4 * pop) * (F.mf > 38 ? 1 - (F.mf - 38) / 7 : 1);
     if (s <= 0) return;
@@ -441,10 +493,11 @@ export class Renderer {
         ctx.translate(p.x, p.y);
         ctx.rotate(p.t * 0.4);
         ctx.shadowColor = color; ctx.shadowBlur = 14;
-        const im = STICKERS.wasureru;
-        if (ready(im)) ctx.drawImage(im, -26, -22, 52, 44);
+        const im = stickerImg(p.mv);
+        if (im && ready(im)) ctx.drawImage(im, -26, -22, 52, 44);
         break;
       }
+      default: this.drawProjVis(p, color);
       case "bolt": {
         const from = 40;
         if (p.t < from) {
@@ -479,6 +532,92 @@ export class Renderer {
       }
     }
     ctx.restore();
+  }
+
+  /** 足した技の飛び道具（見た目ごと） */
+  drawProjVis(p, color) {
+    const { ctx } = this;
+    const w = p.w || 40, h = p.h || 40;
+    const t = p.t;
+    ctx.translate(p.x, p.y);
+    switch (p.kind) {
+      case "sticker":
+      case "minion": {
+        const im = stickerImg(p.mv);
+        const s = p.kind === "minion" ? Math.min(w, h) * 1.3 : Math.max(w, h) * 1.15;
+        ctx.rotate(p.kind === "minion" ? Math.sin(t * 0.4) * 0.15 : Math.sin(t * 0.2) * 0.25);
+        ctx.shadowColor = color; ctx.shadowBlur = 14;
+        ctx.fillStyle = "#fff";
+        roundRect(ctx, -s / 2 - 3, -s * 0.43 - 3, s + 6, s * 0.86 + 6, 8); ctx.fill();
+        ctx.shadowBlur = 0;
+        if (im && ready(im)) ctx.drawImage(im, -s / 2, -s * 0.43, s, s * 0.86);
+        break;
+      }
+      case "orb": case "spark": case "note": case "heart": case "star": case "coin": case "ice": case "sun": case "ball": case "letter": {
+        const glyph = { orb: "●", spark: "✦", note: "♪", heart: "♥", star: "★", coin: "◎", ice: "❄", sun: "☀", ball: "●", letter: "✉" }[p.kind];
+        const fill = { orb: color, spark: "#fff6a8", note: "#cfe3ff", heart: "#ff7fb0", star: "#ffe36b", coin: "#ffd84a", ice: "#bff3ff", sun: "#ffb02e", ball: "#ffd23c", letter: "#ffffff" }[p.kind];
+        const size = Math.max(w, h) * (p.kind === "sun" ? 1.2 : 1.05);
+        ctx.rotate(p.kind === "star" || p.kind === "coin" ? t * 0.2 : 0);
+        ctx.shadowColor = color; ctx.shadowBlur = 16;
+        ctx.font = `900 ${Math.round(size)}px ${FONT}`;
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = fill;
+        ctx.fillText(glyph, 0, 0);
+        break;
+      }
+      case "ring": {
+        const k = 0.6 + 0.4 * Math.sin(t * 0.5);
+        ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.globalAlpha = 0.85;
+        ctx.beginPath(); ctx.ellipse(0, 0, w / 2 * k, h / 2 * k, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.font = `bold 26px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#fff";
+        ctx.fillText("🔔", 0, 0);
+        break;
+      }
+      case "boom": {
+        const k = Math.min(1, t / 8);
+        ctx.globalAlpha = 0.7 * (1 - k);
+        ctx.fillStyle = "#ffcf7a";
+        ctx.beginPath(); ctx.ellipse(0, 0, w / 2 * (0.6 + 0.4 * k), h / 2 * (0.6 + 0.4 * k), 0, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
+      case "bubble": case "cloud": case "aura": {
+        const fill = p.kind === "bubble" ? "rgba(120,200,255,0.25)" : p.kind === "cloud" ? "rgba(220,220,255,0.3)" : "rgba(255,255,255,0.08)";
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = p.kind === "aura" ? color : "rgba(255,255,255,0.6)";
+        ctx.globalAlpha = p.kind === "aura" ? 0.6 : 1;
+        ctx.lineWidth = 2;
+        ctx.setLineDash(p.kind === "aura" ? [8, 8] : []);
+        ctx.lineDashOffset = -t;
+        ctx.beginPath(); ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.setLineDash([]);
+        if (p.kind === "bubble") { ctx.rotate(t * 0.1); ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.beginPath(); ctx.arc(0, 0, w / 4, 0, Math.PI * 1.5); ctx.stroke(); }
+        break;
+      }
+      case "wall": {
+        ctx.fillStyle = "#fffbe8"; ctx.strokeStyle = color; ctx.lineWidth = 3;
+        roundRect(ctx, -w / 2, -h / 2, w, h, 6); ctx.fill(); ctx.stroke();
+        break;
+      }
+      case "mine": {
+        ctx.fillStyle = color; ctx.globalAlpha = 0.9;
+        roundRect(ctx, -w / 2, -h / 2, w, h, 5); ctx.fill();
+        ctx.fillStyle = Math.floor(t / 10) % 2 ? "#ff4d4d" : "#fff";
+        ctx.beginPath(); ctx.arc(0, -h / 2, 4, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
+      case "item": {
+        ctx.translate(0, Math.sin(t * 0.15) * 3);
+        ctx.font = `900 ${Math.round(w * 1.1)}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.shadowColor = "#6dffa0"; ctx.shadowBlur = 12;
+        ctx.fillText(["🍎", "🍌", "🍇", "🍓"][p.id % 4], 0, 0);
+        break;
+      }
+      case "wind": case "beam": {
+        ctx.fillStyle = color; ctx.globalAlpha = 0.5;
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+        break;
+      }
+    }
   }
 
   drawEffects(dt) {

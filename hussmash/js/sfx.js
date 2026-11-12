@@ -78,5 +78,20 @@ export function sfx(name, p = 0) {
     case "go": tone(ac, { type: "square", f0: 990, dur: 0.4, vol: 0.14 }); break;
     case "game": tone(ac, { type: "sawtooth", f0: 520, f1: 260, dur: 0.6, vol: 0.15 }); break;
     case "ui": tone(ac, { type: "triangle", f0: 880, dur: 0.06, vol: 0.08 }); break;
+    case "warp": tone(ac, { type: "sine", f0: 1600, f1: 400, dur: 0.12, vol: 0.12 }); break;
+    case "buff": tone(ac, { type: "triangle", f0: 660, f1: 1320, dur: 0.18, vol: 0.1 }); break;
+    case "debuff": tone(ac, { type: "sawtooth", f0: 500, f1: 180, dur: 0.2, vol: 0.08 }); break;
+    case "parry":
+      tone(ac, { type: "square", f0: 1760, dur: 0.05, vol: 0.12 });
+      tone(ac, { type: "triangle", f0: 2640, dur: 0.2, vol: 0.1, at: 0.04 });
+      break;
+    case "boom": {
+      const k = Math.min(1, p / 30);
+      hiss(ac, { dur: 0.2 + 0.3 * k, vol: 0.25 + 0.2 * k, freq: 500, q: 0.6 });
+      tone(ac, { type: "sine", f0: 120, f1: 40, dur: 0.3, vol: 0.3 });
+      break;
+    }
+    case "pickup": tone(ac, { type: "square", f0: 988, dur: 0.06, vol: 0.08 }); tone(ac, { type: "square", f0: 1318, dur: 0.12, vol: 0.08, at: 0.06 }); break;
+    case "absorb": tone(ac, { type: "sine", f0: 900, f1: 300, dur: 0.1, vol: 0.1 }); break;
   }
 }
