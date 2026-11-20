@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>強化学習の数学的定式化</title>
+<meta name="description" content="マルコフ決定過程、ベルマン作用素の縮小性、方策反復、確率近似による Q 学習の収束、線形関数近似の TD(λ)、LQR と方策反復、バンディットの後悔を数学的に定式化する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>数学的に定式化すると</h1>
+  <p class="g-lead">強化学習の理論は、マルコフ決定過程に対する動的計画法（ベルマン作用素の不動点）と、それをサンプルから近似する確率近似の理論の組み合わせである。デモの谷の台車は決定論的だが、初期状態がランダムで、学習則（Sarsa(λ)、タイルコーディング）は確率近似として解析される。</p>
+</header>
+<main class="g-body mathdoc">
+  <ol class="toc-local">
+    <li><a href="#q1">マルコフ決定過程と価値関数</a></li>
+    <li><a href="#q2">ベルマン作用素と価値反復</a></li>
+    <li><a href="#q3">方策反復</a></li>
+    <li><a href="#q4">Q 学習と確率近似</a></li>
+    <li><a href="#q5">線形関数近似と TD(λ)</a></li>
+    <li><a href="#q6">LQR は MDP である</a></li>
+    <li><a href="#q7">探索：バンディットの後悔</a></li>
+  </ol>
+
+  <h2 id="q1">1. マルコフ決定過程と価値関数</h2>
+  <div class="env defn"><b>定義 1</b>
+    マルコフ決定過程（MDP）は組 \((\mathcal{S},\mathcal{A},p,r,\gamma)\) で、\(p(\cdot\mid s,a)\) は遷移確率、\(r(s,a)\) は報酬、\(\gamma\in[0,1)\) は割引率。（定常マルコフ）方策 \(\pi(a\mid s)\) に対し
+    $$ V^\pi(s) = \mathbb{E}^\pi\Big[\sum_{t\ge0}\gamma^tr(S_t,A_t)\ \Big|\ S_0 = s\Big],\qquad Q^\pi(s,a) = r(s,a) + \gamma\,\mathbb{E}_{s'\sim p(\cdot|s,a)}V^\pi(s'). $$
+    最適価値は \(V^*(s) = \sup_\pi V^\pi(s)\)、\(Q^*\) も同様。
+  </div>
+  <p>デモの谷の台車は、\(\mathcal{S} = [-1.2, 0.6]\times[-0.07, 0.07]\)、\(\mathcal{A} = \{-1, 0, 1\}\)、決定論的な遷移、\(r\equiv-1\)、ゴール \(x\ge0.5\) を吸収状態とする割引なし（\(\gamma = 1\)）のエピソード的問題（確率的最短路問題）である。この場合 \(-V^*(s)\) は \(s\) からゴールまでの最小歩数で、有限性はすべての状態からゴールに到達可能であることによる（ゴールに必ず到達する「適正な」方策が存在し、不適正な方策の費用は無限大になる、という Bertsekas–Tsitsiklis の条件）。</p>
+
+  <h2 id="q2">2. ベルマン作用素と価値反復</h2>
+  <div class="env thm"><b>定理 2</b>
+    有界関数の空間 \(B(\mathcal{S})\) 上の作用素
+    $$ (\mathcal{T}V)(s) = \max_{a}\Big\{r(s,a) + \gamma\int V(s')\,p(ds'\mid s,a)\Big\} $$
+    は \(\|\cdot\|_\infty\) について係数 \(\gamma\) の縮小写像である。したがって唯一の不動点 \(V^*\) を持ち（ベルマン最適方程式）、任意の \(V_0\) から \(V_{k+1} = \mathcal{T}V_k\) は \(\|V_k - V^*\|_\infty\le\gamma^k\|V_0 - V^*\|_\infty\) で収束する。\(V^*\) に関して貪欲な方策は最適である。
+  </div>
+  <p class="proof">\(|\max_af(a) - \max_ag(a)|\le\max_a|f(a) - g(a)|\) と、確率測度による積分が \(\|\cdot\|_\infty\) を増やさないことから \(\|\mathcal{T}V - \mathcal{T}W\|_\infty\le\gamma\|V - W\|_\infty\)。バナッハの不動点定理。最適性は、貪欲方策の価値が \(\mathcal{T}\) の不動点に等しいことと、任意の方策の価値が \(\mathcal{T}^\pi V^\pi = V^\pi\le\mathcal{T}V^\pi\) から単調性で \(V^*\) 以下になることによる。</p>
+  <p>解説 3 ページの迷路（\(\gamma = 1\)、ゴールは吸収）では、\(\mathcal{T}\) は縮小ではないが、\(n\) 回の適用で（ゴールからの最短距離が \(n\) 以下の状態について）値が確定するので、高々状態数の回数で収束する。</p>
+
+  <h2 id="q3">3. 方策反復</h2>
+  <div class="env thm"><b>定理 3（方策改善定理）</b>
+    方策 \(\pi\) と、\(Q^\pi\) に関して貪欲な方策 \(\pi'\)（\(\pi'(s)\in\arg\max_aQ^\pi(s,a)\)）について \(V^{\pi'}\ge V^\pi\)（各点で）。等号が全状態で成り立つのは \(\pi\) が最適なときに限る。
+  </div>
+  <p class="proof">\(V^\pi(s)\le Q^\pi(s,\pi'(s)) = (\mathcal{T}^{\pi'}V^\pi)(s)\)。\(\mathcal{T}^{\pi'}\) は単調で、繰り返し適用すると \(V^{\pi'}\) に収束するので \(V^\pi\le V^{\pi'}\)。</p>
+  <p>有限 MDP では方策は有限個なので、評価（\(V^{\pi_k}\) を求める）と改善（貪欲化）の反復は有限回で最適方策に到達する。この反復はベルマン最適方程式に対するニュートン法と見なせる（Puterman–Brumelle）。</p>
+
+  <h2 id="q4">4. Q 学習と確率近似</h2>
+  <p>モデル \(p\) が未知のとき、観測した遷移 \((s_t, a_t, r_t, s_{t+1})\) から</p>
+  $$ Q_{t+1}(s_t,a_t) = Q_t(s_t,a_t) + \alpha_t\big(r_t + \gamma\max_{a'}Q_t(s_{t+1},a') - Q_t(s_t,a_t)\big) $$
+  <p>と更新する（他の成分は変えない）。これは \(Q^*\) を不動点とする縮小写像 \(\mathcal{H}Q(s,a) = r + \gamma\mathbb{E}\max_{a'}Q(s',a')\) の、雑音つきの反復である。</p>
+  <div class="env thm"><b>定理 4（Watkins–Dayan 1992、Tsitsiklis 1994、Jaakkola–Jordan–Singh 1994）</b>
+    有限 MDP、\(\gamma < 1\) で、すべての \((s,a)\) が無限回更新され、各成分の学習率が \(\sum_t\alpha_t(s,a) = \infty\)、\(\sum_t\alpha_t(s,a)^2 < \infty\) を満たすなら、\(Q_t\to Q^*\)（概収束）。
+  </div>
+  <p class="proof">非同期確率近似 \(Q_{t+1} = (1-\alpha_t)Q_t + \alpha_t(\mathcal{H}Q_t + w_t)\)（\(w_t\) はマルチンゲール差で、条件付き分散は \(\|Q_t\|_\infty^2\) で抑えられる）の一般的な収束定理を、\(\mathcal{H}\) が \(\|\cdot\|_\infty\) の縮小写像であることと合わせて適用する。ロビンス・モンローの条件のもとで雑音の影響は平均化され、ODE \(\dot Q = \mathcal{H}Q - Q\) の大域漸近安定な平衡点 \(Q^*\) に収束する（ODE 法、Borkar–Meyn 2000）。</p>
+  <p>デモの台車は \(\alpha\) を一定にしているので、この定理の仮定は満たさない（一定の学習率では、最適値のまわりで揺らぎ続ける）。</p>
+
+  <h2 id="q5">5. 線形関数近似と TD(λ)</h2>
+  <p>状態が連続なとき、\(Q(s,a)\approx\theta_a^\top\phi(s)\)（\(\phi:\mathcal{S}\to\{0,1\}^d\) はタイルコーディングの特徴量。各 \(s\) で 1 となる成分はちょうど \(n\) 個）と近似する。Sarsa(λ) は、適格度トレース \(e_t = \gamma\lambda e_{t-1} + \nabla_\theta Q(s_t,a_t)\)（デモは「置換」型：該当成分を 1 にする）を用いて</p>
+  $$ \theta_{t+1} = \theta_t + \alpha\,\delta_te_t,\qquad \delta_t = r_t + \gamma Q_\theta(s_{t+1},a_{t+1}) - Q_\theta(s_t,a_t). $$
+  <div class="env thm"><b>定理 5（Tsitsiklis–Van Roy 1997、方策評価の場合）</b>
+    固定した方策 \(\pi\) のもとでマルコフ連鎖がエルゴード的で、その定常分布を \(d\) とする。特徴量が線形独立、学習率がロビンス・モンロー条件を満たすとき、方策上の TD(λ) は概収束し、極限 \(\theta^*\) は射影ベルマン方程式 \(\Phi\theta = \Pi_d\mathcal{T}^{(\lambda)}\Phi\theta\) の唯一の解であり、
+    $$ \|\Phi\theta^* - V^\pi\|_d \le \frac{1}{\sqrt{1 - \kappa^2}}\,\|\Pi_dV^\pi - V^\pi\|_d,\qquad \kappa = \frac{\gamma(1-\lambda)}{1-\gamma\lambda}. $$
+  </div>
+  <p class="proof">\(\mathcal{T}^{(\lambda)}\) は \(\|\cdot\|_d\) について係数 \(\kappa\) の縮小で、\(d\) に関する直交射影 \(\Pi_d\) は非拡大なので \(\Pi_d\mathcal{T}^{(\lambda)}\) も縮小。誤差評価はピタゴラスの定理から。アルゴリズムの収束は、平均化した ODE の行列が負定値になることを示して確率近似の定理を適用する。</p>
+  <p>制御（方策が \(\theta\) とともに変わる場合）では状況が悪化する。Sarsa と線形近似は発散はしないが一点に収束するとは限らない（Gordon 2000）。方策外の学習（Q 学習）と関数近似とブートストラップの組み合わせは発散しうる（Baird 1995 の反例。「死の三つ組」）。デモの学習が安定しているのは、方策上の Sarsa(λ)、疎な二値特徴、小さな学習率の組み合わせによる経験的な事実であり、一般的な保証ではない。</p>
+
+  <h2 id="q6">6. LQR は MDP である</h2>
+  <p>\(x^+ = Ax + Bu\)、費用 \(x^\top Qx + u^\top Ru\)（\(R\succ0\)）を、状態空間 \(\mathbb{R}^n\)、行動空間 \(\mathbb{R}^m\)、決定論的遷移の MDP（報酬は費用の符号を変えたもの）と見る。\(V(x) = x^\top Px\) を仮定してベルマン方程式 \(V(x) = \min_u\{x^\top Qx + u^\top Ru + V(Ax + Bu)\}\) に代入すると、離散リッカチ方程式が得られる。</p>
+  <div class="env thm"><b>定理 6（Hewer 1971；連続時間は Kleinman 1968）</b>
+    \(K_0\) を安定化ゲイン（\(\rho(A - BK_0) < 1\)）とし、
+    $$ P_k = Q + K_k^\top RK_k + (A - BK_k)^\top P_k(A - BK_k)\quad(\text{方策評価：リアプノフ方程式}), $$
+    $$ K_{k+1} = (R + B^\top P_kB)^{-1}B^\top P_kA\quad(\text{方策改善}) $$
+    とすると、すべての \(K_k\) は安定化で、\(P_0\succeq P_1\succeq\cdots\to P\)（リッカチ方程式の安定化解）、収束は二次である。
+  </div>
+  <p class="proof">単調性は定理 3 の連続版（\(V^{K_{k+1}}\le V^{K_k}\)）。安定性は \(P_k\) が \(A - BK_{k+1}\) のリアプノフ関数になることから。二次収束は、この反復がリッカチ方程式に対するニュートン法と一致することによる。</p>
+  <p>モデルを使わずに、データ（状態・入力・費用の系列）から \(P_k\) を最小二乗で推定すれば、モデルなしの方策反復になる（Bradtke–Ydstie–Barto 1994）。解説 6 ページの図は、モデルを使った版を \(K_0 = [1, 1]\) から実行したもので、6 回で LQR のゲインに一致する。</p>
+
+  <h2 id="q7">7. 探索：バンディットの後悔</h2>
+  <p>\(K\) 本の腕の報酬分布の平均を \(\mu_1,\dots,\mu_K\)、\(\mu^* = \max\mu_i\) とし、\(T\) 回の試行の後悔を \(\mathcal{R}_T = T\mu^* - \mathbb{E}\sum_{t\le T}\mu_{A_t}\) と定める。</p>
+  <ul>
+    <li>一定の \(\varepsilon\) による ε-貪欲法は、毎回確率 \(\varepsilon\) で無作為に選ぶので \(\mathcal{R}_T = \Omega(\varepsilon T)\)（線形）。</li>
+    <li>\(\varepsilon = 0\)（貪欲法）は、最初の推定が外れたまま良い腕を二度と試さない事象の確率が正なので、やはり線形の後悔を持つ。</li>
+    <li>Lai–Robbins（1985）の下界：一貫性のある任意の方策について \(\liminf_T\mathcal{R}_T/\ln T\ge\sum_{i:\mu_i<\mu^*}(\mu^* - \mu_i)/\mathrm{KL}(\nu_i,\nu^*)\)。UCB（Auer–Cesa-Bianchi–Fischer 2002）は \(O(\ln T)\) を達成する。</li>
+  </ul>
+  <p>解説 4 ページの図（10 本の腕、正規分布）の ε = 0 と ε = 0.1 の曲線の違いは、この線形の後悔の傾きの違いである。楽観的な初期値（デモの台車で価値の初期値を 0 にすること）は、未知の行動の価値を上から見積もることで探索を促す点で、UCB と同じ「不確かなときは楽観的に」という原理に基づく。</p>
+
+  <h2>参考文献</h2>
+  <ul class="refs">
+    <li>R. Bellman, <i>Dynamic Programming</i>, Princeton Univ. Press, 1957.</li>
+    <li>D. P. Bertsekas, J. N. Tsitsiklis, <i>Neuro-Dynamic Programming</i>, Athena Scientific, 1996.</li>
+    <li>C. J. C. H. Watkins, P. Dayan, Q-learning, <i>Machine Learning</i> 8 (1992).</li>
+    <li>J. N. Tsitsiklis, Asynchronous stochastic approximation and Q-learning, <i>Machine Learning</i> 16 (1994).</li>
+    <li>J. N. Tsitsiklis, B. Van Roy, An analysis of temporal-difference learning with function approximation, <i>IEEE TAC</i> 42 (1997).</li>
+    <li>V. S. Borkar, S. P. Meyn, The O.D.E. method for convergence of stochastic approximation and reinforcement learning, <i>SIAM J. Control Optim.</i> 38 (2000).</li>
+    <li>G. A. Hewer, An iterative technique for the computation of the steady state gains for the discrete optimal regulator, <i>IEEE TAC</i> 16 (1971).</li>
+    <li>D. L. Kleinman, On an iterative technique for Riccati equation computations, <i>IEEE TAC</i> 13 (1968).</li>
+    <li>T. L. Lai, H. Robbins, Asymptotically efficient adaptive allocation rules, <i>Adv. Appl. Math.</i> 6 (1985).</li>
+    <li>R. S. Sutton, A. G. Barto, <i>Reinforcement Learning: An Introduction</i>, 2nd ed., MIT Press, 2018.</li>
+  </ul>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/auto-render.min.js"></script>
+<script>renderMathInElement(document.body, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "\\(", right: "\\)", display: false }], throwOnError: false });</script>
+</body>
+</html>

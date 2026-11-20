@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>障害物をよけて車線を変える</title>
+<meta name="description" content="高速道路の車線変更と障害物回避を、毎回最適化を解き直すモデル予測制御で行うデモ。LQR と飽和の組み合わせと比べる。">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/guide.css">
+<link rel="stylesheet" href="../css/series.css">
+</head>
+<body data-root="../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="top">
+  <nav class="crumbs"><a class="back" href="../">← 制御工学の見取り図</a><a class="back" href="guide/">解説を読む →</a></nav>
+  <p class="series-kicker" style="--sc: var(--link1)">モデル予測制御</p>
+  <h1>障害物をよけて車線を変える</h1>
+  <p class="lead">時速 72 km で走る車が、前方の障害物をよけます。ハンドルを切れる角度と速さには上限があり、道からはみ出してもいけません。モデル予測制御（MPC）は 0.1 秒ごとに「この先 3 秒の最適なハンドル操作」を解き直し、最初の一瞬だけを実行します。半透明の車は、同じ重みの LQR に上限を後からかけたもの。</p>
+  <p class="lead-link">はじめての人は <a href="guide/">解説（全 8 ページ）</a> から。</p>
+</header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card" aria-label="道路">
+      <div class="hud">
+        <span id="mBadge" class="badge ok">走行中</span>
+        <span>切れ角 <b id="mDelta">0.0</b>°</span>
+        <span>横加速度 <b id="mAcc">0.0</b> m/s²</span>
+        <span>QP <b id="mIt">0</b> 反復・<b id="mMs">0.0</b> ms</span>
+        <span>接触 MPC <b id="mHitM">0</b> / LQR <b id="mHitL">0</b></span>
+      </div>
+      <canvas id="mScene" style="aspect-ratio: 16 / 6; cursor: crosshair" aria-label="上から見た道路"></canvas>
+      <div class="transport">
+        <button id="mObs" class="primary" type="button">前に障害物を置く</button>
+        <label class="switch" style="margin:0"><input type="checkbox" id="mAuto" checked> 次々に障害物</label>
+        <button id="mLane" type="button">追い越し車線へ</button>
+        <button id="mWind" type="button">横風</button>
+        <button id="mReset" type="button">リセット</button>
+      </div>
+      <p class="hint">道路をクリックすると、その場所に障害物を置く。点は MPC が予測した 3 秒先までの通り道、薄い帯はその各時刻に通ってよい範囲（制約）。</p>
+      <canvas id="mPlot" style="aspect-ratio: 16 / 7"></canvas>
+      <div class="legend">
+        <span style="--c: var(--link1)">MPC</span>
+        <span class="dash" style="--c: var(--muted)">LQR ＋ 飽和</span>
+        <span class="dash" style="--c: var(--bad)">上限</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <aside class="panel card" aria-label="設定">
+      <h2>MPC</h2>
+      <div class="ctrl"><label for="mN">予測ホライズン（何秒先まで読むか）</label><output id="mNOut"></output><input type="range" id="mN" min="5" max="50" step="1" value="30"></div>
+      <div class="ctrl"><label for="mRr">ハンドル操作の重み（大きいほど穏やか）</label><output id="mRrOut"></output><input type="range" id="mRr" min="0" max="4" step="0.05" value="2"></div>
+      <div class="seg full" role="radiogroup" aria-label="MPC のモデル">
+        <input type="radio" name="mModel" id="mmK" value="kinematic" checked><label for="mmK">簡単なモデル</label>
+        <input type="radio" name="mModel" id="mmD" value="dynamic"><label for="mmD">横滑りも考えたモデル</label>
+      </div>
+      <h2>制約</h2>
+      <div class="ctrl"><label for="mAmax">横加速度の上限（乗り心地）</label><output id="mAmaxOut"></output><input type="range" id="mAmax" min="1" max="8" step="0.1" value="5"></div>
+      <div class="ctrl"><label for="mRmax">ハンドルを切る速さの上限</label><output id="mRmaxOut"></output><input type="range" id="mRmax" min="0.01" max="0.15" step="0.005" value="0.05"></div>
+      <div class="ctrl"><label for="mV">速さ</label><output id="mVOut"></output><input type="range" id="mV" min="10" max="35" step="1" value="20"></div>
+      <h2>現実</h2>
+      <div class="seg full" role="radiogroup" aria-label="実際の車">
+        <input type="radio" name="mPlant" id="mpK" value="kinematic" checked><label for="mpK">車は滑らない</label>
+        <input type="radio" name="mPlant" id="mpD" value="dynamic"><label for="mpD">タイヤが横滑りする</label>
+      </div>
+      <h2>比べる相手：LQR ＋ 飽和</h2>
+      <label class="switch"><input type="checkbox" id="mGhost" checked> 半透明の車を走らせる</label>
+      <div class="ctrl"><label for="mLook">何秒前に車線を変え始めるか</label><output id="mLookOut"></output><input type="range" id="mLook" min="0.5" max="5" step="0.1" value="2"></div>
+      <dl class="kv" id="mInfo"></dl>
+    </aside>
+  </div>
+</main>
+
+<section class="explain guide-cta">
+  <h2>解説</h2>
+  <ol class="toc" data-series="mpc"></ol>
+</section>
+<footer></footer>
+
+<script src="../js/linalg.js"></script>
+<script src="../js/plot.js"></script>
+<script src="../js/mpc/core.js"></script>
+<script src="../js/site.js"></script>
+<script src="../js/mpc/demo.js"></script>
+</body>
+</html>

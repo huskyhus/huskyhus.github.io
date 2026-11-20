@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ずれを直す</title>
+<meta name="description" content="LQR と時変 LQR、極の意味を図で説明する。各時刻で普通の LQR を解く方法との違いも実際に比べる。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+</head>
+<body data-root="../../" data-series="modern">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>ずれを直す：LQR と時変 LQR</h1>
+  <p class="g-lead">台本どおりには進まないので、2 ミリ秒ごとに「台本からのずれ」を測って直します。直し方の係数を、数学で最適に決めるのが LQR です。</p>
+</header>
+<main class="g-body">
+  <h2>8 つの数を見て、1 つの操作を決める</h2>
+  <p>振り子の「今の様子」は 8 つの数で完全に決まります。台車の位置、3 本の棒の角度、そしてそれぞれの速さ。この 8 つの組を<strong>状態</strong>と呼びます。</p>
+  <p>直し方はとても単純で、台本からの 8 つのずれに、それぞれ係数をかけて足したものを、台車の加速度に上乗せします。</p>
+  <div class="math"><span class="row">台車の加速度 ＝ 台本の加速度 − （<var>k</var>₁ × 位置のずれ ＋ <var>k</var>₂ × 角度 1 のずれ ＋ … ＋ <var>k</var>₈ × 速さ 3 のずれ）</span></div>
+  <p>位置や角度のずれにかける係数は PID の P、速さのずれにかける係数は D に当たります。問題は 8 つの係数 <var>k</var>₁〜<var>k</var>₈ をどう決めるかです。</p>
+
+  <h2>LQR：「ずれ」と「頑張りすぎ」の兼ね合い</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 240" role="img" aria-label="入力を安くすると速く直るが力を使い、高くするとゆっくり直るが力を使わない">
+      <line class="mut" x1="60" y1="110" x2="360" y2="110"/>
+      <line class="mut" x1="60" y1="30" x2="60" y2="190"/>
+      <text x="64" y="26" class="mu sm">ずれ</text>
+      <path class="s2" d="M 60 40 C 100 120, 120 118, 150 108 C 175 100, 200 112, 360 110"/>
+      <path class="sw" d="M 60 40 C 150 70, 250 100, 360 108"/>
+      <text x="210" y="220" text-anchor="middle" class="mu sm">時間 →</text>
+      <line class="mut" x1="420" y1="110" x2="720" y2="110"/>
+      <line class="mut" x1="420" y1="30" x2="420" y2="190"/>
+      <text x="424" y="26" class="mu sm">台車の加速度</text>
+      <path class="s2" d="M 420 110 L 425 186 C 440 186, 450 100, 480 96 C 500 94, 520 112, 720 110"/>
+      <path class="sw" d="M 420 110 L 425 140 C 480 140, 560 116, 720 110"/>
+      <text x="210" y="160" class="mu sm" fill="var(--link2)">r 小：すぐ直るが…</text>
+      <text x="570" y="160" class="mu sm">…大きな力を使う</text>
+      <text x="230" y="70" class="mu sm">r 大：穏やかだが遅い</text>
+    </svg>
+    <figcaption>青：入力（加速度）を安く見積もった場合。橙：高く見積もった場合。どちらが良いかは目的しだい。</figcaption>
+  </figure>
+  <p>LQR（線形二次レギュレータ）は、「ずれの大きさ」と「台車を動かす力の大きさ」に重みをつけて足した量を、未来にわたって合計し、それが最小になる係数を計算します。</p>
+  <ul>
+    <li>ずれに大きな重み（デモの q<sub>θ</sub>, q<sub>x</sub>）をつけると、きびきび直します。</li>
+    <li>力に大きな重み（デモの r）をつけると、穏やかに直します。雑音に過敏に反応しにくくなる反面、遅れて大きくずれることがあります。</li>
+  </ul>
+  <p>重みさえ決めれば、最適な係数は<strong>リッカチ方程式</strong>という行列の方程式を解くと一つに決まります。人が試行錯誤するのは「何を重視するか」だけで、係数そのものは計算が出してくれます。</p>
+
+  <h2>極：ずれがどれだけ速く消えるか</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 230" role="img" aria-label="複素平面の左側の極は減衰、右側の極は発散、虚部があると振動">
+      <rect class="area-bad" x="380" y="20" width="200" height="190"/>
+      <line class="mut" x1="180" y1="115" x2="580" y2="115"/>
+      <line class="mut" x1="380" y1="20" x2="380" y2="210"/>
+      <text x="584" y="120" class="mu sm">実部</text>
+      <text x="386" y="30" class="mu sm">虚部</text>
+      <circle class="f2" cx="260" cy="115" r="6"/>
+      <circle class="f2" cx="320" cy="70" r="6"/><circle class="f2" cx="320" cy="160" r="6"/>
+      <circle class="fb" cx="480" cy="115" r="6"/>
+      <path class="s2" d="M 200 190 Q 230 150, 260 150" style="stroke-width:1.5"/>
+      <path class="s2" d="M 40 60 C 70 160, 90 160, 130 175" />
+      <text x="40" y="200" class="mu sm">左：ずれが消えていく</text>
+      <path class="s2" d="M 40 30 Q 60 90 75 50 T 105 70 T 135 62 T 160 66" style="stroke-width:2"/>
+      <text x="40" y="18" class="mu sm">左上下の組：揺れながら消える</text>
+      <path class="sb" d="M 620 190 C 660 185, 690 150, 720 40"/>
+      <text x="600" y="210" class="mu sm">右：ずれが育つ（倒れる）</text>
+    </svg>
+    <figcaption>極は「ずれの育ち方」の速さを表す複素数。左にあれば消え、右にあれば育つ。左に遠いほど速く消える。</figcaption>
+  </figure>
+  <p>デモ右下の図は、真上で線形化した振り子の<strong>極</strong>です。灰色の × が何もしないとき（開ループ）、青い ● が LQR をかけたとき（閉ループ）。何もしなければ右側に 3 つあり（育つ速さ 16、9.5、4.2 /秒）、LQR をかけるとすべて左側に移ります。これが「倒れなくなった」ことの数学的な意味です。</p>
+
+  <h2>時変 LQR：振り上げの途中は係数を変え続ける</h2>
+  <p>真上で立たせ続けるだけなら、係数は一定で構いません。ところが振り上げの途中では、同じ「台車を右へ」が、棒が下向きのときと上向きのときで逆の効果を持ちます。棒が真横を通る瞬間には、台車を動かしても棒をほとんど回せません。だから<strong>係数を時刻ごとに変える</strong>必要があります。</p>
+  <figure class="fig">
+    <svg viewBox="0 0 760 140" role="img" aria-label="時変 LQR の係数はゴールから時間を逆向きにたどって計算する">
+      <line class="mut" x1="60" y1="70" x2="700" y2="70"/>
+      <text x="60" y="100" text-anchor="middle" class="mu sm">0 秒（下）</text>
+      <text x="700" y="100" text-anchor="middle" class="mu sm">3 秒（上）</text>
+      <circle class="fo" cx="700" cy="70" r="9"/>
+      <path class="s2" d="M 690 50 C 520 20, 240 20, 70 50" style="stroke-width:2.5"/>
+      <path class="s2" d="M 80 42 L 68 50 L 82 56" style="stroke-width:2.5"/>
+      <text x="380" y="18" text-anchor="middle" class="mu sm">真上での LQR から出発して、リッカチ方程式を時間の逆向きに 1 本でたどる</text>
+      <text x="380" y="125" text-anchor="middle" class="mu sm">各時刻の係数は、その先で振り子がどう変わっていくかまで織り込んでいる</text>
+    </svg>
+  </figure>
+  <p>時変 LQR は、ゴール（真上での LQR）から出発し、リッカチ方程式を<strong>時間の逆向きに</strong>台本に沿ってたどって、全時刻の係数を一度に計算します。各時刻の係数には、「この先 3 秒の間に振り子の効き方がどう変わっていくか」が織り込まれています。</p>
+
+  <h3>「各時刻で普通の LQR を解く」のとは違う</h3>
+  <p>時変 LQR は「台本の各点で、その瞬間だけを見て普通の LQR を解いている」ように見えるかもしれません。実はそれとは別物で、違いは実際に効いてきます。下の図で比べてみてください。</p>
+  <figure class="fig">
+    <canvas data-demo="gains" data-button="gainsBtn" style="aspect-ratio: 16 / 8"></canvas>
+    <div class="btnrow"><button id="gainsBtn" type="button">各時刻で普通の LQR を解いて比べる</button></div>
+    <figcaption>実線：時変 LQR の係数（角度にかかる 3 つの成分）。ボタンを押すと、各時刻の線形化で普通の LQR を解いた係数（「凍結」LQR）が点線で重なる。凍結 LQR は、台車がほとんど効かない瞬間に係数が 1 万を超えて跳ね上がる。</figcaption>
+  </figure>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>条件（各 10 回）</th><th>時変 LQR</th><th>各時刻で普通の LQR</th></tr></thead>
+      <tbody>
+        <tr><td>雑音なし、真の状態が見える</td><td class="num ok-txt">10 / 10</td><td class="num ok-txt">10 / 10</td></tr>
+        <tr><td>モーター雑音 0.5 m/s²、真の状態が見える</td><td class="num ok-txt">10 / 10（最大ずれ 0.09°）</td><td class="num warn-txt">7 / 10（3.6°）</td></tr>
+        <tr><td>デモの既定（雑音あり、EKF で推定）</td><td class="num ok-txt">10 / 10（0.25°）</td><td class="num warn-txt">6 / 10（3.5°）</td></tr>
+        <tr><td>モーター雑音 10 m/s²</td><td class="num ok-txt">10 / 10（1.9°）</td><td class="num warn-txt">6 / 10（8.7°）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>その瞬間だけを見て決めた係数は、「この先で効き方が変わる」ことを知りません。とくに台車がほとんど効かない瞬間には、係数を極端に大きくして無理やり直そうとし、雑音を増幅してしまいます。時変 LQR は、効きにくい瞬間を前もって知っているので、効く時間帯に回して直します。</p>
+  <div class="callout">
+    <p><b>数学として新しいの？</b></p>
+    <p>新しくはありません。有限時間の LQR はもともと係数が時間で変わる形をしていて、1960 年ごろのカルマンの仕事にすでに含まれています。このデモの新しさは理論ではなく、それをブラウザの中で、パラメータを変えるたびに数秒で組み立てて動かしている点です。</p>
+  </div>
+
+  <h3>デモの極の図は、振り上げ中に動く</h3>
+  <p>係数が時間で変わる系には、厳密な意味での「極」はありません。デモの極の図は、振り上げ中は各時刻で線形化を<strong>凍結した</strong>ときの固有値を表示しています（薄い点は 3 秒間の軌跡）。凍結した極がすべて左にあっても安定とは限らず、一瞬右にはみ出しても不安定とは限りません。あくまで「この瞬間、振り子と制御器がどんな関係にあるか」の目安として見てください。</p>
+
+  <details class="more">
+    <summary>もう少し詳しく（数式）</summary>
+    <p>台本 (<var>s</var>*, <var>u</var>*) のまわりで、制御周期 <var>T<sub>s</sub></var> = 2 ms ごとに線形化・零次ホールド離散化した系 δ<var>s</var><sub>k+1</sub> = <var>A<sub>k</sub></var> δ<var>s<sub>k</sub></var> + <var>B<sub>k</sub></var> δ<var>u<sub>k</sub></var> に対して、評価 Σ(δ<var>s</var><sup>T</sup><var>Q</var>δ<var>s</var> + <var>R</var> δ<var>u</var>²) を最小にする。</p>
+    <div class="math">
+      <span class="row"><var>K<sub>k</sub></var> = (<var>R</var> + <var>B<sub>k</sub></var><sup>T</sup><var>P</var><sub>k+1</sub><var>B<sub>k</sub></var>)<sup>−1</sup> <var>B<sub>k</sub></var><sup>T</sup><var>P</var><sub>k+1</sub><var>A<sub>k</sub></var>,　<var>P<sub>k</sub></var> = <var>Q</var> + <var>A<sub>k</sub></var><sup>T</sup><var>P</var><sub>k+1</sub>(<var>A<sub>k</sub></var> − <var>B<sub>k</sub></var><var>K<sub>k</sub></var>),　<var>P<sub>N</sub></var> = 倒立での定常解</span>
+      <span class="row"><var>u</var> = <var>u</var>*(<var>t</var>) − <var>K<sub>k</sub></var>(<var>ŝ<sub>k</sub></var> − <var>s</var>*<sub>k</sub>)</span>
+    </div>
+    <p>「凍結」LQR は、各 <var>k</var> で離散リッカチ代数方程式 <var>P</var> = <var>Q</var> + <var>A<sub>k</sub></var><sup>T</sup><var>P</var><var>A<sub>k</sub></var> − … を解いたもの。(<var>A<sub>k</sub></var>, <var>B<sub>k</sub></var>) が不可制御に近づくと <var>P</var> が発散的に大きくなる。時変 LQR は区間全体での可制御性（グラミアンが正則）だけを要求するので、この問題が起きない。</p>
+    <p>重みは <var>Q</var> = <var>T<sub>s</sub></var>·diag(<var>q<sub>x</sub></var>, <var>q</var><sub>θ</sub>, <var>q</var><sub>θ</sub>, <var>q</var><sub>θ</sub>, 2, 2, 2, 2)、<var>R</var> = <var>T<sub>s</sub></var>·<var>r</var>。定常の LQR は離散リッカチ方程式を倍化法（SDA）で解く。</p>
+  </details>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../data/seed.js"></script>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/model.js"></script>
+<script src="../../js/planner.js"></script>
+<script src="../../js/control.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/guide-demos.js"></script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>現実はもっと厳しい</title>
+<meta name="description" content="雑音、量子化、むだ時間、モデル誤差、摩擦。それぞれにどこまで耐えられるかを、デモで測った結果とともに説明する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+</head>
+<body data-root="../../" data-series="modern">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>現実はもっと厳しい：雑音・誤差・遅れ</h1>
+  <p class="g-lead">計算の中の振り子は完璧ですが、本物は違います。デモでは 5 種類の不完全さを入れて、どこまで耐えられるかを試せます。</p>
+</header>
+<main class="g-body">
+  <h2>5 種類の不完全さ</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 330" role="img" aria-label="雑音、量子化、むだ時間、モデル誤差、摩擦の模式図">
+      <!-- 雑音 -->
+      <text x="20" y="24" class="b">① 雑音</text>
+      <path class="ink" d="M 20 80 C 60 50, 100 50, 140 70 S 200 100, 230 80"/>
+      <path class="sw" style="stroke-width:1.5" d="M 20 84 L 28 74 L 36 86 L 44 66 L 52 72 L 60 58 L 68 66 L 76 54 L 84 64 L 92 52 L 100 62 L 108 56 L 116 70 L 124 60 L 132 74 L 140 66 L 148 82 L 156 74 L 164 88 L 172 80 L 180 94 L 188 84 L 196 96 L 204 84 L 212 92 L 220 78 L 230 84"/>
+      <text x="20" y="122" class="mu sm">センサーの値もモーターの出力も</text>
+      <text x="20" y="138" class="mu sm">毎回少しずつぶれる</text>
+      <!-- 量子化 -->
+      <text x="270" y="24" class="b">② 量子化</text>
+      <path class="ink" d="M 270 100 L 490 50"/>
+      <path class="sw" d="M 270 100 L 300 100 L 300 92 L 330 92 L 330 86 L 360 86 L 360 78 L 390 78 L 390 72 L 420 72 L 420 64 L 450 64 L 450 58 L 480 58 L 480 50 L 490 50"/>
+      <text x="270" y="122" class="mu sm">角度センサーは決まった刻みでしか</text>
+      <text x="270" y="138" class="mu sm">測れない（例：1 回転 4096 刻み）</text>
+      <!-- むだ時間 -->
+      <text x="520" y="24" class="b">③ むだ時間</text>
+      <line class="mut" x1="520" y1="80" x2="740" y2="80"/>
+      <circle class="f2" cx="550" cy="80" r="6"/>
+      <text x="550" y="66" text-anchor="middle" class="mu sm">計算</text>
+      <circle class="fw" cx="690" cy="80" r="6"/>
+      <text x="690" y="66" text-anchor="middle" class="mu sm">効く</text>
+      <path class="sw" d="M 560 92 Q 620 112 682 92"/>
+      <text x="520" y="122" class="mu sm">指令を出してから台車が実際に</text>
+      <text x="520" y="138" class="mu sm">動き出すまでの遅れ</text>
+      <!-- モデル誤差 -->
+      <text x="20" y="190" class="b">④ モデル誤差</text>
+      <line class="mut" x1="40" y1="290" x2="240" y2="290"/>
+      <line class="s2" x1="90" y1="290" x2="90" y2="210"/>
+      <circle class="f2" cx="90" cy="210" r="8"/>
+      <text x="90" y="310" text-anchor="middle" class="mu sm">計算の中</text>
+      <line class="sw" x1="180" y1="290" x2="180" y2="200"/>
+      <circle class="fw" cx="180" cy="200" r="11"/>
+      <text x="180" y="310" text-anchor="middle" class="mu sm">本物（少し重く長い）</text>
+      <!-- 摩擦 -->
+      <text x="300" y="190" class="b">⑤ 関節の摩擦</text>
+      <circle class="mut" cx="380" cy="250" r="30"/>
+      <path class="sb" d="M 420 230 A 45 45 0 0 1 420 270"/>
+      <path class="sb" d="M 412 266 L 420 270 L 426 262"/>
+      <text x="300" y="310" class="mu sm">回るのを邪魔する力。</text>
+      <text x="300" y="326" class="mu sm">速く回るほど強い</text>
+      <!-- まとめ -->
+      <rect class="box" x="520" y="180" width="220" height="130" rx="10"/>
+      <text x="532" y="206" class="mu sm">制御器と推定器が知っているのは</text>
+      <text x="532" y="224" class="mu sm">「名目」のモデルだけ。</text>
+      <text x="532" y="250" class="mu sm">①〜⑤を知らないまま、</text>
+      <text x="532" y="268" class="mu sm">振り上げて立たせ続けられるか？</text>
+    </svg>
+  </figure>
+
+  <h2>測ってみた</h2>
+  <p>デモの既定の設定（角度の雑音 0.02°、位置の雑音 0.1 mm、モーターの雑音 0.5 m/s²、EKF の q<sub>a</sub> = 3）を基準に、1 つの項目だけをきびしくして、振り上げ＋3 秒の倒立を各 10 回試しました。モデル誤差は試行ごとに実機を引き直しています。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>項目</th><th>耐えた</th><th>崩れ始め</th><th>全滅</th></tr></thead>
+      <tbody>
+        <tr><td>角度の観測雑音 σ<sub>θ</sub></td><td class="num ok-txt">0.3° で 10/10</td><td class="num warn-txt">1° で 7/10</td><td class="num bad-txt">3° で 0/10</td></tr>
+        <tr><td>エンコーダの分解能</td><td class="num ok-txt">512 刻みで 10/10</td><td class="num warn-txt">256 で 1/10</td><td class="num bad-txt">128 で 0/10</td></tr>
+        <tr><td>台車位置の観測雑音 σ<sub>x</sub></td><td class="num ok-txt">30 mm でも 10/10</td><td></td><td></td></tr>
+        <tr><td>モーター出力の雑音 σ<sub>u</sub></td><td class="num ok-txt">30 m/s² で 10/10</td><td class="num warn-txt">60 で 4/10</td><td class="num bad-txt">100 で 0/10</td></tr>
+        <tr><td>むだ時間（補償なし）</td><td class="num ok-txt">12 ms で 10/10</td><td></td><td class="num bad-txt">16 ms で 0/10</td></tr>
+        <tr><td>むだ時間（予測で補償）</td><td class="num ok-txt">40 ms でも 10/10</td><td></td><td></td></tr>
+        <tr><td>質量のばらつき（1σ）</td><td class="num ok-txt">10% で 10/10</td><td class="num warn-txt">20% で 7/10</td><td class="num bad-txt">30% で 4/10</td></tr>
+        <tr><td>長さのばらつき（1σ）</td><td class="num ok-txt">3% で 10/10</td><td class="num warn-txt">5% で 9/10、7% で 7/10</td><td class="num bad-txt">10% で 3/10</td></tr>
+        <tr><td>関節の摩擦（実機/モデル）</td><td class="num ok-txt">3 倍で 10/10</td><td></td><td class="num bad-txt">5 倍で 0/10</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>デモの「実機らしく」ボタン（角度の雑音 0.01°・4096 刻みのエンコーダ・むだ時間 4 ms と補償・質量 ±5%・長さ ±1%・摩擦 2 倍）では、20 回中 20 回成功しました。</p>
+
+  <h2>わかったこと</h2>
+  <h3>1. いちばん効くのは角度センサーの質</h3>
+  <p>速さは角度からしか推定できないので、角度の雑音や刻みの粗さは、そのまま速さの推定誤差になり、大きな係数で増幅されて台車に伝わります。逆に、台車の位置の雑音はほとんど効きません。台車は自分で出した加速度の指令どおりに動くので、推定器はほぼ正確に位置を予想でき、センサーをあまり頼らずに済むからです。</p>
+
+  <h3>2. 遅れは崖のように効く</h3>
+  <figure class="fig">
+    <svg viewBox="0 0 760 170" role="img" aria-label="遅れが 12 ミリ秒までは成功、16 ミリ秒で全滅。予測で補償すると 40 ミリ秒でも成功">
+      <line class="mut" x1="60" y1="130" x2="720" y2="130"/>
+      <line class="mut" x1="60" y1="20" x2="60" y2="130"/>
+      <text x="56" y="34" text-anchor="end" class="mu sm">100%</text>
+      <text x="56" y="134" text-anchor="end" class="mu sm">0%</text>
+      <text x="730" y="134" class="mu sm">遅れ</text>
+      <polyline class="sb" points="60,30 135,30 210,30 285,30 360,130 435,130 585,130 720,130"/>
+      <polyline class="so" points="60,30 135,30 210,30 285,30 360,30 435,30 585,30 720,30" style="stroke-dasharray: 6 4"/>
+      <g class="mu sm"><text x="60" y="152" text-anchor="middle" class="mu sm">0</text><text x="135" y="152" text-anchor="middle" class="mu sm">4</text><text x="210" y="152" text-anchor="middle" class="mu sm">8</text><text x="285" y="152" text-anchor="middle" class="mu sm">12</text><text x="360" y="152" text-anchor="middle" class="mu sm">16</text><text x="435" y="152" text-anchor="middle" class="mu sm">20</text><text x="585" y="152" text-anchor="middle" class="mu sm">30</text><text x="720" y="152" text-anchor="middle" class="mu sm">40 ms</text></g>
+      <text x="470" y="22" class="mu sm">予測で補償（緑の点線）</text>
+      <text x="380" y="118" class="mu sm">補償なし（赤）</text>
+    </svg>
+  </figure>
+  <p>12 ms までは何ともないのに、16 ms で一度も立たなくなります。倒れる速さ（0.06 秒で e 倍）に対して、遅れが無視できなくなる境目があるからです。</p>
+  <p>対策は「今の状態」ではなく、「指令が効くころの状態」を予想して計算することです。まだ効いていない指令を運動方程式に流し込めば、遅れの分だけ先の状態を予測できます（スミス予測器と同じ発想）。これで 40 ms でもすべて成功しました。ただしこれは、モデルが正しいほど効く方法です。</p>
+
+  <h3>3. 摩擦は「台本そのもの」を狂わせる</h3>
+  <p>摩擦が 3 倍までは問題ないのに、5 倍では、真の状態が見えていても 1 回も立ちません。摩擦は振り上げの 3 秒間ずっと同じ向きに働き続けるので、台本が前提にしていた動きから、少しずつ確実にずれていきます。直し方（時変 LQR）は「小さなずれ」を前提にした方法なので、ずれが大きく育つと追いつけません。</p>
+  <p>対策は、摩擦を測ってモデルに入れて台本を計算し直すこと（システム同定）、あるいは動きながら台本を作り直し続けること（7 ページのモデル予測制御）です。</p>
+
+  <h3>4. 推定器に「モデルは完璧じゃない」と教える</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>条件（各 10 回）</th><th>q<sub>a</sub> = 0（モデルを完全に信じる）</th><th>q<sub>a</sub> = 3 rad/s²</th></tr></thead>
+      <tbody>
+        <tr><td>摩擦 2 倍</td><td class="num">10/10（最大ずれ 13°）</td><td class="num">10/10（5.0°）</td></tr>
+        <tr><td>摩擦 3 倍</td><td class="num bad-txt">0/10</td><td class="num ok-txt">10/10（12°）</td></tr>
+        <tr><td>質量のばらつき 10%</td><td class="num warn-txt">6/10</td><td class="num ok-txt">10/10</td></tr>
+        <tr><td>「実機らしく」（20 回）</td><td class="num warn-txt">16/20</td><td class="num ok-txt">20/20</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>同じ制御器、同じ実機でも、推定器の「自信の持ち方」を 1 つ変えるだけで結果が大きく変わります。モデルを信じすぎた推定器は、観測が「何か違う」と言っていても無視してしまいます。</p>
+
+  <h2>倒れたら、立て直す</h2>
+  <p>どれだけ頑張っても倒れることはあります。デモでは倒れたとき、次の 3 段階で自動的にやり直します（「倒れたら自動で立て直す」）。</p>
+  <ol>
+    <li><b>揺れのエネルギーを抜く</b>：台車が振り子に与える仕事率は「台車の加速度 × 振り子の動き方で決まる量」なので、その符号を見て、常にエネルギーを奪う向きに台車を動かします。7 ページで紹介するエネルギー法を逆向きに使った形です。</li>
+    <li><b>下で静める</b>：十分に揺れが小さくなったら、下にぶら下がった状態での LQR に引き継ぎ、ぴたりと止めます。</li>
+    <li><b>同じ台本でもう一度</b>：台本はいつも「下で静止」から始まるので、計算し直さずにそのまま使えます。</li>
+  </ol>
+  <p>落ちてくる振り子を止めようとすると、台車はつい大きく動いてしまい、レールの端にぶつかります。ぶつかると振り子に衝撃が入って、また揺れ出します。そこで、<strong>「今ブレーキをかけてもレールの内側で止まれない」となったら、他の目的より停止を優先する</strong>安全フィルタを入れました。この一手で、レールへの衝突が 10 回中 10 回から 0 回になりました。</p>
+  <p>倒立中に強く叩いて倒した 10 回では、10 回とも立て直せました。倒れてから振り上げをやり直すまで平均 10 秒ほどです（「実機らしく」の設定でも 10 回中 10 回、平均 7 秒）。</p>
+  <div class="callout">
+    <p><b>揺れたまま、その場で計画し直せないの？</b></p>
+    <p>原理的にはできます。今の揺れている状態から真上までの台本を新しく解けば、下で止まるのを待たずに済みます。ただし、計算に数秒かかる間にも振り子は動き続けるので、「計算が終わるころの状態」を予測して、そこから解く必要があります。揺れている状態からの最適化は、うまく解けるとも限りません。毎回こうして計画し直し続けるのが、7 ページのモデル予測制御（MPC）の考え方です。</p>
+  </div>
+
+  <h2>それでも本物はもっと難しい</h2>
+  <p>このデモが入れていない不完全さも、まだたくさんあります。モーターの電流や力の限界、歯車のがた、センサーのずれ（オフセット）、棒のしなり、計算時間のばらつき、台車の摩擦（デモは加速度を直接決められるとしている）などです。実機の三重振り子の振り上げは 2013 年にウィーン工科大学のグループが実現していますが、モデルの精密な同定と、こうした細部への対処が欠かせませんでした。</p>
+  <a class="cta-demo" href="../">デモで試す</a>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

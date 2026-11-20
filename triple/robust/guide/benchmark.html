@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>題材：ばねでつながった台車</title>
+<meta name="description" content="ロバスト制御のベンチマーク問題に倣った、ばねでつながった 2 台車。非コロケーションと要求仕様。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="robust">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>題材：ばねでつながった台車</h1>
+  <p class="g-lead">1990 年ごろ、米国の制御学会で「みんなで同じ問題を解いて比べよう」と出されたロバスト制御のベンチマーク問題があります。デモはそれに倣った設定です。</p>
+</header>
+<main class="g-body">
+  <h2>設定</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 200" role="img" aria-label="2 台車の設定">
+      <line class="mut" x1="40" y1="150" x2="720" y2="150"/>
+      <rect class="fill-ink" x="160" y="86" width="100" height="60" rx="6"/>
+      <text x="210" y="122" text-anchor="middle" style="fill: var(--card)">m₁ = 1</text>
+      <path class="sw" d="M 260 116 L 285 98 L 310 134 L 335 98 L 360 134 L 385 98 L 410 134 L 435 98 L 460 116"/>
+      <text x="360" y="80" text-anchor="middle">k ∈ [0.5, 2]</text>
+      <rect class="f2" x="460" y="86" width="100" height="60" rx="6"/>
+      <text x="510" y="122" text-anchor="middle" style="fill: var(--card)">m₂ = 1</text>
+      <path class="sw" d="M 90 116 L 155 116 M 145 108 L 155 116 L 145 124"/>
+      <text x="100" y="104" class="mu sm">力 u</text>
+      <path class="sb" d="M 640 116 L 565 116 M 575 108 L 565 116 L 575 124"/>
+      <text x="600" y="104" class="mu sm">外乱 w</text>
+      <text x="510" y="176" text-anchor="middle" class="mu sm">位置 x₂ を測る</text>
+    </svg>
+  </figure>
+  <div class="math">
+    <span class="row"><var>m</var>₁ <var>ẍ</var>₁ = −<var>k</var>(<var>x</var>₁ − <var>x</var>₂) + <var>u</var>,　　<var>m</var>₂ <var>ẍ</var>₂ = <var>k</var>(<var>x</var>₁ − <var>x</var>₂) + <var>w</var>,　　<var>y</var> = <var>x</var>₂ + 雑音</span>
+  </div>
+  <ul>
+    <li>押せるのは左の台車、測れるのは右の台車の位置だけ。</li>
+    <li>ばねの強さ <var>k</var> は 0.5〜2 のどこか（4 倍の幅）。</li>
+    <li>要求：右の台車が叩かれても（力積 1）、<var>k</var> がこの範囲のどれであっても、ちゃんと止まること。できれば速く、力は小さく。</li>
+  </ul>
+
+  <h2>なぜ難しいか：動かす場所と測る場所が違う</h2>
+  <p>左を押した効果は、ばねを通ってから右に届きます。ばねの共振の周波数（√(2<var>k</var>)）を越えると、右の台車は左の台車と<strong>逆向き</strong>に動きます。古典制御の 6 ページで見た非コロケーションと同じ状況です。</p>
+  <p>しかも共振の周波数は <var>k</var> によって 1〜2 rad/s の間で動きます。「共振の周波数がわかっていれば、そこで揺れを打ち消すように押す」という作戦は、<var>k</var> がずれると「揺れを強めるように押す」ことになりかねません。</p>
+  <p>この台車の問題は、宇宙ステーションのような柔らかい大型構造物の姿勢制御を単純化したものです。構造物の柔らかさは、地上では正確に測れません。</p>
+
+  <h2>デモで比べる 2 つの制御器</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>LQG</th><th>H∞</th></tr></thead>
+      <tbody>
+        <tr><td>考え方</td><td><var>k</var> = 1.25 だと信じて、そのとき最適</td><td><var>k</var> ∈ [0.5, 2] のどれでも安定を保証</td></tr>
+        <tr><td>理論</td><td>現代制御（LQR ＋ カルマンフィルタ）</td><td>ロバスト制御（小ゲイン定理）</td></tr>
+        <tr><td>k = 1.25 での性能</td><td>速い</td><td>遅め</td></tr>
+        <tr><td>k がずれると</td><td>少しで不安定</td><td>範囲内ならずっと安定</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>どちらも制御器の中身は「状態を推定して、推定値に係数をかけて押す」という同じ形（4 次の動的な制御器）です。違うのは係数の決め方だけです。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

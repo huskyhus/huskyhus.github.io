@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ステップ応答と極</title>
+<meta name="description" content="ステップ応答の見方（立ち上がり・行き過ぎ・整定）と、極の位置の関係。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="classical">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>ステップ応答と極：速さ・揺れ・行き過ぎ</h1>
+  <p class="g-lead">目標を急に変えたとき、どう追いつくか。その形は、伝達関数の分母の根（極）の位置でほぼ決まります。</p>
+</header>
+<main class="g-body">
+  <h2>ステップ応答の見方</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 240" role="img" aria-label="ステップ応答の立ち上がり時間、行き過ぎ量、整定時間">
+      <line class="mut" x1="60" y1="200" x2="720" y2="200"/>
+      <line class="mut" x1="60" y1="20" x2="60" y2="200"/>
+      <line class="mut dash" x1="60" y1="90" x2="720" y2="90"/>
+      <rect class="area-ok" x="60" y="84" width="660" height="12"/>
+      <path class="s2" d="M 60 200 C 110 200, 130 60, 180 52 C 230 46, 250 110, 300 100 C 340 92, 360 84, 400 90 C 450 94, 500 89, 720 90"/>
+      <line class="mut dash" x1="140" y1="200" x2="140" y2="104"/>
+      <text x="140" y="218" text-anchor="middle" class="mu sm">立ち上がり</text>
+      <line class="sb" x1="180" y1="52" x2="180" y2="90"/>
+      <text x="190" y="64" class="mu sm">行き過ぎ（オーバーシュート）</text>
+      <line class="mut dash" x1="400" y1="200" x2="400" y2="96"/>
+      <text x="400" y="218" text-anchor="middle" class="mu sm">整定（±2% に収まる）</text>
+      <text x="726" y="94" class="mu sm">目標</text>
+      <text x="726" y="210" class="mu sm">時間</text>
+    </svg>
+  </figure>
+  <ul>
+    <li><b>立ち上がり時間</b>：目標の 90% に届くまで。速さの目安。</li>
+    <li><b>行き過ぎ量</b>：目標をどれだけ越えるか。ロボットなら物にぶつかる、温度なら焦げる、ということになる。</li>
+    <li><b>整定時間</b>：目標の ±2% の帯に入って、もう出なくなるまで。</li>
+    <li><b>定常偏差</b>：十分時間がたっても残るずれ。</li>
+  </ul>
+  <p>速くしたいが行き過ぎたくない、というのが典型的な綱引きです。</p>
+
+  <h2>2 次遅れ：揺れるかどうかは減衰比で決まる</h2>
+  <figure class="fig" data-fig="secondOrder">
+    <div class="two"><canvas style="aspect-ratio: 16 / 10"></canvas><canvas style="aspect-ratio: 1 / 1"></canvas></div>
+    <div class="figctl">
+      <label>減衰比 ζ（ブレーキの効き） <output data-o="z"></output><input type="range" data-k="z" min="0.05" max="2" step="0.01" value="0.3"></label>
+      <label>固有角周波数 ω<sub>n</sub>（速さ） <output data-o="w"></output><input type="range" data-k="w" min="1" max="6" step="0.1" value="3"></label>
+    </div>
+    <figcaption>ばねとおもりと空気抵抗のような「2 次遅れ」の系。ζ が小さいと揺れ、1 を超えると揺れずにゆっくり近づく。ζ ≈ 0.7 あたりが、速さと揺れのちょうどよい兼ね合いとされる。右は極の位置。</figcaption>
+  </figure>
+  <p>多くの制御系は、閉ループにすると 2 次遅れに近い形になります。だから「ζ をいくつにするか」が設計の目安になります。</p>
+
+  <h2>極：応答の形を決める点</h2>
+  <p>伝達関数の分母を 0 にする <var>s</var> の値を<strong>極</strong>と呼びます。極は複素数で、平面上の位置が応答の形を表します。</p>
+  <ul>
+    <li><b>左半分</b>にあれば、その成分は時間とともに消える（安定）。<b>右半分</b>に 1 つでもあれば、発散する（不安定）。</li>
+    <li><b>左へ遠い</b>ほど速く消える。</li>
+    <li><b>上下に離れる</b>ほど速く揺れる。実軸からの角度が大きいほど、減衰しにくい（ζ が小さい）。</li>
+  </ul>
+  <p>現代制御のページで出てきた「極」と同じものです。現代制御では状態方程式の行列の固有値として、古典制御では伝達関数の分母の根として求めますが、指しているものは同じです。</p>
+
+  <h2>デモで見る</h2>
+  <p>デモの「P だけ」は、ブレーキ役がないので ζ がほぼ 0 の 2 次遅れになり、ほとんど減衰せずに揺れ続けます。「PD」にすると ζ が大きくなって、すっと止まります。デモのステップ応答の図と、右の診断の「行き過ぎ」「整定時間」で確かめてみてください。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/classical/servo.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/classical/figs.js"></script>
+</body>
+</html>

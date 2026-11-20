@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>見えないものを見る</title>
+<meta name="description" content="測れない速さを、予測と観測を混ぜて推定するカルマンフィルタを図で説明する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+</head>
+<body data-root="../../" data-series="modern">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>見えないものを見る：カルマンフィルタ</h1>
+  <p class="g-lead">直し方には 8 つの数が必要なのに、センサーで測れるのは 4 つだけ。残りの 4 つ（速さ）は、計算で推し量ります。</p>
+</header>
+<main class="g-body">
+  <h2>測れるのは位置だけ</h2>
+  <p>実際の装置では、棒の角度は関節の回転センサー（エンコーダ）で、台車の位置はモーター側のセンサーで測ります。測れるのは<strong>位置と角度の 4 つ</strong>で、速さは測れません。しかも測った値には少しずつ雑音が乗ります。</p>
+  <p>速さは「角度の変化 ÷ 時間」なので、2 ミリ秒前の値との差を取れば求まりそうです。ところが、これがうまくいきません。</p>
+
+  <h2>差を取ると雑音が大きくなる</h2>
+  <figure class="fig">
+    <canvas data-demo="kalman" data-select="kSel" style="aspect-ratio: 16 / 8"></canvas>
+    <div class="btnrow">
+      <label for="kSel" class="note">角度の観測雑音 σ<sub>θ</sub></label>
+      <select id="kSel">
+        <option value="0.02">0.02°（良いエンコーダ程度）</option>
+        <option value="0.1" selected>0.1°</option>
+        <option value="0.5">0.5°</option>
+      </select>
+    </div>
+    <figcaption>振り上げ中の、3 本目の棒の回転の速さ。黒：本当の値。黄：測った角度の差から求めた値。青い点線：カルマンフィルタの推定値。雑音 0.1° でも、差から求めると ±1 rad/s 以上ぶれる。</figcaption>
+  </figure>
+  <p>雑音が 0.1° しかなくても、それを 0.002 秒で割ると、速さの雑音は約 1.2 rad/s にもなります。LQR は速さのずれにも係数をかけるので、この雑音がそのまま台車の加速度に乗ってしまいます。PID の D（微分）の部分が雑音に弱いと言われるのも、同じ理由です。</p>
+
+  <h2>予想と観測を、確からしさに応じて混ぜる</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 250" role="img" aria-label="幅の広い予測の分布と幅の狭い観測の分布を掛け合わせると、間にある、より狭い分布になる">
+      <line class="mut" x1="40" y1="200" x2="720" y2="200"/>
+      <path class="sw" d="M 60 198 C 160 196, 200 80, 260 80 C 320 80, 360 196, 460 198"/>
+      <path class="s2" d="M 330 198 C 400 196, 430 60, 470 60 C 510 60, 540 196, 610 198"/>
+      <path class="so" d="M 330 198 C 380 196, 405 30, 430 30 C 455 30, 480 196, 530 198" style="stroke-width:3"/>
+      <text x="260" y="70" text-anchor="middle" class="mu">予想</text>
+      <text x="260" y="226" text-anchor="middle" class="mu sm">運動方程式で 2 ms 先を計算</text>
+      <text x="520" y="50" class="mu">観測</text>
+      <text x="530" y="226" text-anchor="middle" class="mu sm">センサーの値</text>
+      <text x="430" y="20" text-anchor="middle" class="b">推定</text>
+      <text x="400" y="246" text-anchor="middle" class="mu sm">2 つの間で、どちらよりも確か</text>
+    </svg>
+    <figcaption>山の幅は「どれくらい自信がないか」。幅の狭い（確かな）ほうに引き寄せられ、混ぜた結果はどちらよりも幅が狭くなる。</figcaption>
+  </figure>
+  <p>カルマンフィルタは、2 つの情報源を組み合わせます。</p>
+  <ol>
+    <li><b>予想</b>：今の推定と、台車に出した加速度の指令から、運動方程式で 2 ミリ秒後の姿勢と速さを計算する。</li>
+    <li><b>観測</b>：2 ミリ秒後に実際に測った角度と位置。</li>
+  </ol>
+  <p>予想には「モデルの不完全さ」や「モーターの雑音」による不確かさが、観測には「センサーの雑音」による不確かさがあります。カルマンフィルタは、それぞれの不確かさを見積もりながら、<strong>確かなほうを重く信じて</strong>混ぜ合わせます。しかも測れない速さまで、角度の動き方と運動方程式のつながりから推し量れます。</p>
+  <p>トンネルの中でもカーナビが現在地を示せるのも同じ考え方です。GPS が届かない間は速度とハンドルの角度から位置を予想し、GPS が戻ったら観測と混ぜて直します。</p>
+  <p>振り子の運動方程式は非線形（sin や cos が入る）なので、毎回その場で線形化して使います。これを<strong>拡張カルマンフィルタ（EKF）</strong>と呼びます。</p>
+
+  <h2>モデルを信じすぎると危ない</h2>
+  <p>カルマンフィルタは「予想がどれだけ当たるか」を自分で見積もります。この見積もりを「モデルは完璧」にしてしまうと、観測を軽く見て、予想ばかりを信じるようになります。実機の摩擦や質量がモデルと違うと、推定がずれたまま戻らなくなります。</p>
+  <p>デモの「EKF が見込むモデルの不確かさ q<sub>a</sub>」は、「モデルにはこれくらい説明できない加速度が混じっているかもしれない」とフィルタに教える設定です。6 ページで見るとおり、これを 0 から 3 rad/s² にするだけで、摩擦 3 倍の実機での成功率が 0/10 から 10/10 に変わります。</p>
+
+  <details class="more">
+    <summary>もう少し詳しく（数式）</summary>
+    <p>観測 <var>y<sub>k</sub></var> = <var>H s<sub>k</sub></var> + <var>v<sub>k</sub></var>、<var>H</var> = [<var>I</var><sub>4</sub> 0]、<var>v</var> ~ N(0, diag(σ<sub>x</sub>², σ<sub>θ</sub>², σ<sub>θ</sub>², σ<sub>θ</sub>²))（量子化があるときは σ<sub>θ</sub>² に <var>q</var>²/12 を足す）。</p>
+    <div class="math">
+      <span class="row">予測：<var>ŝ</var><sup>−</sup><sub>k+1</sub> = Φ(<var>ŝ<sub>k</sub></var>, <var>u<sub>k</sub></var>)（RK4）,　<var>P</var><sup>−</sup> = <var>F P F</var><sup>T</sup> + σ<sub>u</sub>² Γ Γ<sup>T</sup> + diag(0, …, (<var>q<sub>a</sub> T<sub>s</sub></var>)², …)</span>
+      <span class="row">更新：<var>K</var> = <var>P</var><sup>−</sup><var>H</var><sup>T</sup>(<var>H P</var><sup>−</sup><var>H</var><sup>T</sup> + <var>R</var>)<sup>−1</sup>,　<var>ŝ</var> = <var>ŝ</var><sup>−</sup> + <var>K</var>(<var>y</var> − <var>H ŝ</var><sup>−</sup>),　<var>P</var> = (<var>I</var> − <var>K H</var>)<var>P</var><sup>−</sup></span>
+    </div>
+    <p><var>F</var> ≈ <var>I</var> + <var>A T<sub>s</sub></var> + (<var>A T<sub>s</sub></var>)²/2、Γ ≈ (<var>I T<sub>s</sub></var> + <var>A T<sub>s</sub></var>²/2)<var>B</var>。<var>A</var>, <var>B</var> は推定値まわりの線形化。<var>q<sub>a</sub></var> は角加速度に加わる未知の外乱の標準偏差で、モデル誤差を吸収するためのプロセス雑音の上乗せ。</p>
+  </details>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../data/seed.js"></script>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/model.js"></script>
+<script src="../../js/planner.js"></script>
+<script src="../../js/control.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/guide-demos.js"></script>
+</body>
+</html>

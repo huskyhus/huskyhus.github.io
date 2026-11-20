@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>古典制御の解説</title>
+<meta name="description" content="ロボット関節のサーボを題材に、伝達関数・ステップ応答・PID・ボード線図・ナイキストの安定判別・ループ整形を、図と動く図で説明する全 8 ページ。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="classical">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>古典制御：揺すって、測って、余裕を見る</h1>
+  <p class="g-lead">1920〜50 年代に生まれ、今も工場の制御の大半を支えている考え方です。相手の中身を細かく知らなくても、「入力に対して出力がどう反応するか」を周波数ごとに測れば、安定かどうかと、どれくらい余裕があるかがわかります。</p>
+</header>
+<main class="g-body">
+  <figure class="fig">
+    <svg viewBox="0 0 760 220" role="img" aria-label="モーターがねじれる軸を介して腕を回すサーボの模式図">
+      <rect class="box" x="40" y="70" width="150" height="80" rx="10"/>
+      <text x="115" y="104" text-anchor="middle" class="b">モーター</text>
+      <text x="115" y="126" text-anchor="middle" class="mu sm">トルク τ を出す</text>
+      <path class="sw" d="M 190 110 L 210 96 L 230 124 L 250 96 L 270 124 L 290 96 L 310 124 L 330 110"/>
+      <text x="260" y="80" text-anchor="middle" class="mu sm">少しねじれる軸（ばね）</text>
+      <circle class="fill-card" cx="360" cy="110" r="24" style="stroke: var(--muted); stroke-width: 2"/>
+      <line class="s2" x1="360" y1="110" x2="610" y2="50" style="stroke-width: 14"/>
+      <circle class="f2" cx="610" cy="50" r="16"/>
+      <text x="520" y="120" class="mu">腕（動かしたいもの）</text>
+      <text x="115" y="190" text-anchor="middle" class="mu sm">ここを測る？</text>
+      <text x="560" y="190" text-anchor="middle" class="mu sm">それとも、ここを測る？</text>
+      <path class="mut dash" d="M 115 170 L 115 155"/>
+      <path class="mut dash" d="M 560 170 L 590 70"/>
+    </svg>
+    <figcaption>題材はロボットの関節。モーターは軸を介して腕を回す。軸が少しねじれるので、速く動かそうとすると腕が揺れる（共振）。</figcaption>
+  </figure>
+  <ol class="toc" data-series="classical"></ol>
+  <p>デモでは PID の 3 つのつまみを動かしながら、ボード線図・ナイキスト線図・ステップ応答が同時に変わるのを見られます。まず解説 1〜3 で時間の世界、4〜6 で周波数の世界を見て、7 で古典制御の守備範囲をまとめます。8 は数学に詳しい人向けに、同じ内容を定義と定理で書き直したものです。</p>
+  <a class="cta-demo" href="../">デモを開く</a>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

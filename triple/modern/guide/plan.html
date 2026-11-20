@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台本を書く</title>
+<meta name="description" content="振り上げの最適軌道を、多重シューティングと逐次二次計画法でどう計算するかを図で説明する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+</head>
+<body data-root="../../" data-series="modern">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>台本を書く：最適な振り上げ軌道</h1>
+  <p class="g-lead">下から上への大きな動きは、その場の判断だけではできません。まず「3 秒間、台車をどう動かせば立つか」という台本を、最適化で計算します。</p>
+</header>
+<main class="g-body">
+  <h2>台本とは</h2>
+  <p>次のページで出てくる「ずれを直す」仕組みは、目標の近くでしか働きません。真下から真上へは、棒が何周も回るほどの大きな動きなので、別の作戦が必要です。</p>
+  <p>そこで最初に、<strong>雑音も誤差もない理想の世界で、台車をどう動かせば 3 本とも真上で止まるか</strong>を計算しておきます。中身は「時刻ごとの台車の加速度」の一覧で、これを台本（専門用語では軌道、フィードフォワード入力）と呼ぶことにします。</p>
+  <figure class="fig">
+    <canvas data-demo="plan" style="aspect-ratio: 16 / 12"></canvas>
+    <figcaption>デモの既定パラメータで計算した台本。上：0.12 秒ごとの姿勢を重ねたもの（濃いほど後）と、今の姿勢。下：台車の位置と加速度。台車を右・左・右と大きく振って勢いをつけ、最後にそっと止める。</figcaption>
+  </figure>
+
+  <h2>いちばん穏やかな台本を選ぶ</h2>
+  <p>振り上げ方は無数にあります。その中から、次の条件を満たすものを探します。</p>
+  <ul>
+    <li>始め：真下にぶら下がって止まっている。終わり（3 秒後）：3 本とも真上で止まっている。</li>
+    <li>途中：台車はレールの中（±0.75 m）、速さは 4 m/s 以下、加速度は 40 m/s² 以下。</li>
+    <li>その中で、<strong>台車の加速度の大きさ（の 2 乗の合計）がいちばん小さいもの</strong>。乱暴に振り回さない台本ほど、モーターにやさしく、雑音にも強くなります。</li>
+  </ul>
+  <p>「条件を満たす中で、ある量をいちばん小さくする」問題を最適化問題と呼びます。台本の最適化を軌道最適化、その結果を最適軌道と言います。</p>
+
+  <h2>カオスなので、狙い撃ちできない</h2>
+  <p>素朴なやり方は、「台本を少し変えてはシミュレーションし、3 秒後に真上に来るように調整する」ことです。大砲の狙いを付け直すのに似ています。</p>
+  <figure class="fig">
+    <svg viewBox="0 0 760 270" role="img" aria-label="一度に狙う方法では先で大きく外れ、区間に分ける方法ではつなぎ目を合わせていく">
+      <text x="20" y="26" class="b">一度に狙う（単一シューティング）</text>
+      <circle class="fill-ink" cx="40" cy="110" r="6"/>
+      <text x="40" y="136" text-anchor="middle" class="mu sm">始め</text>
+      <circle class="so" cx="340" cy="70" r="10"/>
+      <text x="340" y="50" text-anchor="middle" class="mu sm">ねらい</text>
+      <path class="sb" d="M 40 110 C 120 95, 200 80, 260 60 S 330 10, 360 -10"/>
+      <path class="sw" d="M 40 110 C 120 97, 200 88, 260 84 S 330 120, 350 160"/>
+      <path class="mut dash" d="M 40 110 C 120 96, 200 84, 260 72 S 330 64, 350 66"/>
+      <text x="200" y="190" text-anchor="middle" class="mu sm">始めの 10⁻⁶ のずれが、終わりで 10²¹ 倍に</text>
+
+      <text x="410" y="26" class="b">区間に分けてつなぐ（多重シューティング）</text>
+      <circle class="fill-ink" cx="420" cy="110" r="6"/>
+      <circle class="so" cx="730" cy="70" r="10"/>
+      <path class="s2" d="M 420 110 Q 450 100 478 96"/>
+      <circle class="f2" cx="484" cy="92" r="4"/>
+      <path class="s2" d="M 484 92 Q 515 86 540 88"/>
+      <circle class="f2" cx="548" cy="82" r="4"/>
+      <path class="s2" d="M 548 82 Q 580 74 604 78"/>
+      <circle class="f2" cx="612" cy="74" r="4"/>
+      <path class="s2" d="M 612 74 Q 645 66 668 72"/>
+      <circle class="f2" cx="676" cy="68" r="4"/>
+      <path class="s2" d="M 676 68 Q 705 66 722 70"/>
+      <text x="560" y="130" text-anchor="middle" class="mu sm">各区間の始点も未知数にして、</text>
+      <text x="560" y="148" text-anchor="middle" class="mu sm">つなぎ目の食い違い（欠損）を 0 に近づける</text>
+      <line class="mut dash" x1="478" y1="96" x2="484" y2="92"/>
+      <line class="mut dash" x1="540" y1="88" x2="548" y2="82"/>
+
+      <text x="410" y="200" class="mu sm">→ 反復するたびに食い違いが小さくなり、</text>
+      <text x="410" y="218" class="mu sm">最後は 1 本の滑らかな軌道になる（デモでは 10⁻¹¹ 以下）</text>
+    </svg>
+    <figcaption>左：前のページで見たとおり、始めのわずかな違いが指数関数的に育つので、3 秒先を一発で狙うと外れ方が大きすぎて調整にならない。右：3 秒を 50 区間（約 0.06 秒ずつ）に切れば、1 区間の中では誤差は 2〜3 倍にしか育たない。</figcaption>
+  </figure>
+  <p>デモの三重振り子では、ずれが育つ速さは最大で 1 秒あたり e<sup>16</sup> 倍です。3 秒先まで一度に狙うと、始めの小さなずれが 10<sup>21</sup> 倍になり、コンピュータの計算精度（16 桁）では扱えません。</p>
+  <p>そこで<strong>多重シューティング</strong>を使います。3 秒を 50 の短い区間に切り、各区間の始まりの姿勢も「まだわからない数」として扱います。各区間はそれぞれ別にシミュレーションし、区間の終わりと次の区間の始まりが一致するように、全体を少しずつ直していきます。</p>
+
+  <h2>少しずつ直していく</h2>
+  <p>未知数は約 500 個（各区間の始まりの姿勢と速さ、台車の加速度の値）。条件は約 400 個（つなぎ目が一致すること）。これを一度に解く公式はないので、次を繰り返します。</p>
+  <ol>
+    <li>今の案のまわりで、問題を「まっすぐな（線形の）近似」に置き換える。</li>
+    <li>近似した問題は一発で解けるので、解いて「どちらへどれだけ直すか」を決める。</li>
+    <li>直してみて、本当に良くなったか確かめる。良くなっていなければ歩幅を縮める。</li>
+  </ol>
+  <p>この方法を<strong>逐次二次計画法（SQP）</strong>と言います。既定のパラメータでは 12 回の繰り返し、0.7 秒ほどで終わります。最後はつなぎ目の食い違いが 10<sup>−11</sup> 以下、シミュレーションの計算誤差は 10<sup>−8</sup> 程度まで小さくなります。</p>
+  <p>どれくらい正確かは、デモで確かめられます。雑音をすべて 0 にし、フィードバックを切って台本どおりの加速度を流すだけにしても、振り子は立ちます。それでも、モーターに 0.01 m/s²（台本の最大加速度の 0.1% ほど）の雑音を入れただけで、10 回中 10 回とも倒れます。台本がどれだけ正確でも、それだけでは足りないということです。</p>
+
+  <h2>パラメータを変えたとき：飛び石のように</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 170" role="img" aria-label="解けている問題から目標の問題へ、パラメータを少しずつ動かしながら解き直す">
+      <line class="mut" x1="60" y1="110" x2="700" y2="110"/>
+      <circle class="fo" cx="80" cy="110" r="14"/>
+      <text x="80" y="150" text-anchor="middle" class="mu sm">解けている</text>
+      <text x="80" y="70" text-anchor="middle" class="mu sm">m₃ = 0.30 kg</text>
+      <circle class="f2" cx="240" cy="110" r="9"/>
+      <circle class="f2" cx="360" cy="110" r="9"/>
+      <circle class="f2" cx="440" cy="110" r="9"/>
+      <circle class="f2" cx="520" cy="110" r="9"/>
+      <circle class="fw" cx="680" cy="110" r="14"/>
+      <text x="680" y="150" text-anchor="middle" class="mu sm">解きたい</text>
+      <text x="680" y="70" text-anchor="middle" class="mu sm">m₃ = 0.60 kg</text>
+      <path class="ink" d="M 94 100 Q 160 50 230 100"/>
+      <path class="ink" d="M 250 100 Q 300 60 350 100"/>
+      <path class="sb" d="M 370 100 Q 520 20 670 96"/>
+      <text x="520" y="40" text-anchor="middle" class="mu sm">遠すぎて失敗 → 歩幅を半分に</text>
+      <path class="ink" d="M 370 100 Q 405 75 432 100"/>
+      <path class="ink" d="M 450 100 Q 485 75 512 100"/>
+      <path class="ink dash" d="M 530 100 Q 600 60 668 100"/>
+    </svg>
+    <figcaption>前の解を出発点に、パラメータを少しずつ目標へ動かしながら解き直す（継続法）。解ければ歩幅を広げ、失敗したら縮める。</figcaption>
+  </figure>
+  <p>最適化は、出発点が答えから遠いと迷子になります。デモでは最初の答え（既定パラメータの解）を別の強力なソフト（IPOPT）で多数の出発点から探して用意しておき、パラメータを変えたときは今の解から少しずつ動かして解き直します。これを<strong>継続法</strong>と言います。</p>
+  <div class="callout warn">
+    <p><b>答えは 1 つではない</b></p>
+    <p>どの棒をどちら向きに回して立てるかで、別々の「型」の台本があります。継続法は今の型を保ったまま形を変えるので、パラメータを大きく変えると、別の型のほうが穏やかに済む場合もあります。</p>
+  </div>
+
+  <details class="more">
+    <summary>もう少し詳しく（数式）</summary>
+    <p>状態 <var>s</var> = (<var>x</var>, θ₁, θ₂, θ₃, <var>ẋ</var>, θ̇₁, θ̇₂, θ̇₃)、入力 <var>u</var> = <var>ẍ</var>（台車の加速度）。角度は鉛直上向きから測る。各リンクは一様な棒で、ラグランジュ方程式から</p>
+    <div class="math">
+      <span class="row">Σ<sub>j</sub> μ<sub>ij</sub> cos(θ<sub>i</sub> − θ<sub>j</sub>) θ̈<sub>j</sub> + Σ<sub>j</sub> μ<sub>ij</sub> sin(θ<sub>i</sub> − θ<sub>j</sub>) θ̇<sub>j</sub>² + β<sub>i</sub> cos θ<sub>i</sub> · <var>u</var> − <var>g</var> β<sub>i</sub> sin θ<sub>i</sub> + (摩擦) = 0</span>
+    </div>
+    <p>最適制御問題は min ∫<sub>0</sub><sup><var>T</var></sup> <var>u</var>² d<var>t</var>、条件は運動方程式、両端の状態、|<var>x</var>| ≤ <var>x</var><sub>max</sub>、|<var>ẋ</var>| ≤ <var>v</var><sub>max</sub>、|<var>u</var>| ≤ <var>u</var><sub>max</sub>。</p>
+    <p>離散化は多重シューティング（<var>M</var> = 50 区間、区間内は刻み 0.5 ms の RK4、入力は 100 区間の区分線形）。欠損 <var>c</var><sub>k</sub> = Φ<sub>k</sub>(<var>s</var><sub>k</sub>, <var>u</var>) − <var>s</var><sub>k+1</sub> = 0 を等式制約にして、SQP の各反復で</p>
+    <div class="math">
+      <span class="row">(<var>J</var> <var>W</var><sup>−1</sup> <var>J</var><sup>T</sup>) λ = <var>c</var> − <var>J</var> <var>W</var><sup>−1</sup> <var>g</var>,　Δ = −<var>W</var><sup>−1</sup>(<var>g</var> + <var>J</var><sup>T</sup> λ)</span>
+    </div>
+    <p>を解く。<var>W</var> はラグランジュ関数のヘッセ行列の近似で、目的関数の部分は厳密、ダイナミクスの曲率 λ<sup>T</sup>∇²<var>c</var> は区間ごとの 11×11 ブロックを減衰つき BFGS で近似する（区分準ニュートン法）。未知数を時間順に並べると <var>W</var> は半帯幅 10 の帯行列になる。不等式制約は二乗ペナルティ、大域化はフィルタ法の直線探索と二次補正。入力の更新量が小さくなったら、目的関数を外したニュートン射影で欠損を二次収束で消す。</p>
+    <p>精度の目安：欠損の最大値 ≈ 6×10<sup>−12</sup>、各区間を刻み 0.25 ms で積分し直したときの差 ≈ 1.4×10<sup>−8</sup>。入力の二乗積分 J = 34.63（IPOPT のエルミート・シンプソン法、刻み 20 ms では 35.63）。</p>
+  </details>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../data/seed.js"></script>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/model.js"></script>
+<script src="../../js/planner.js"></script>
+<script src="../../js/control.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/guide-demos.js"></script>
+</body>
+</html>

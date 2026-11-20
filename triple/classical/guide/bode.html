@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>揺すって測る</title>
+<meta name="description" content="正弦波を入れて振幅比と位相のずれを測る周波数応答と、ボード線図の読み方。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="classical">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>揺すって測る：周波数応答とボード線図</h1>
+  <p class="g-lead">相手を一定の周波数で揺すると、同じ周波数で揺れ返してきます。その「大きさの比」と「遅れ」を周波数ごとに並べたのがボード線図です。古典制御のいちばん強力な道具です。</p>
+</header>
+<main class="g-body">
+  <h2>正弦波を入れると、正弦波が返ってくる</h2>
+  <figure class="fig" data-fig="shake">
+    <canvas style="aspect-ratio: 16 / 6"></canvas>
+    <canvas style="aspect-ratio: 16 / 7; margin-top: 8px"></canvas>
+    <div class="figctl">
+      <label>揺する周波数 <output data-o="f"></output><input type="range" data-k="f" min="-0.6" max="1.7" step="0.01" value="0"></label>
+    </div>
+    <figcaption>サーボ（ゆるい位置制御をかけたもの）に、目標として正弦波を入れたときの応答。上：入力と出力（周波数によらず約 1 秒に 1 周期に見えるよう、時間を伸縮して表示）。下：その周波数での振幅比と位相を、ボード線図上の点で示す。7.5 Hz 付近ではモーターがほとんど動かなくなり（反共振：腕だけが揺れてモーターの動きを打ち消す）、15 Hz 付近で急に大きく揺れ返す（共振）。</figcaption>
+  </figure>
+  <p>線形の系（入力を 2 倍にすれば出力も 2 倍になる系）に正弦波を入れると、しばらくすると、出力も<strong>同じ周波数の正弦波</strong>になります。違うのは 2 つだけです。</p>
+  <ul>
+    <li><b>振幅の比（ゲイン）</b>：何倍になって出てくるか。</li>
+    <li><b>位相のずれ</b>：どれだけ遅れて出てくるか（1 周期を 360° として測る）。</li>
+  </ul>
+  <p>周波数を低いほうから高いほうへ変えながら、この 2 つを並べたものが<strong>ボード線図</strong>です。横軸は周波数を 10 倍ごとの目盛（対数）で、ゲインは dB（20 log<sub>10</sub>|<var>G</var>|、20 dB で 10 倍）で表します。</p>
+
+  <h2>ボード線図の読み方</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 260" role="img" aria-label="ボード線図の典型的な形">
+      <line class="mut" x1="60" y1="20" x2="60" y2="240"/>
+      <line class="mut" x1="60" y1="110" x2="720" y2="110"/>
+      <text x="50" y="114" text-anchor="end" class="mu sm">0 dB</text>
+      <path class="ink" d="M 60 30 L 300 110 L 380 136 C 420 148, 430 60, 450 60 C 470 60, 480 170, 520 178 L 720 236"/>
+      <text x="150" y="44" class="mu sm">低い周波数：ゲインが大きい</text>
+      <text x="150" y="60" class="mu sm">＝ゆっくりした変化にはよく追従する</text>
+      <circle class="fo" cx="300" cy="110" r="6"/>
+      <text x="290" y="132" text-anchor="end" class="mu sm">ゲイン交差（|L| = 1）</text>
+      <text x="460" y="48" text-anchor="middle" class="mu sm">共振の山</text>
+      <text x="600" y="200" class="mu sm">高い周波数：ゲインが小さい</text>
+      <text x="600" y="216" class="mu sm">＝雑音や速い揺れは無視する</text>
+    </svg>
+  </figure>
+  <ul>
+    <li>積分（1/<var>s</var>）が 1 つあるごとに、ゲインは周波数 10 倍で 20 dB ずつ下がり、位相は 90° 遅れる。デモのサーボは 2 回積分なので、低い周波数では −40 dB/10 倍、位相 −180°。</li>
+    <li>共振では、ゲインに鋭い山ができ、位相が急に 180° 変わる。</li>
+    <li>むだ時間は、ゲインを変えずに、位相だけを周波数に比例して遅らせる（6 ページ）。</li>
+  </ul>
+
+  <h2>なぜ周波数で見るのか</h2>
+  <p>周波数で見る理由は 3 つあります。</p>
+  <ol>
+    <li><b>測れる</b>：式がわからなくても、実物を揺すってボード線図を測れます（周波数応答解析）。サーボの調整の現場では、今でもまずこれを測ります。</li>
+    <li><b>掛け算が足し算になる</b>：直列につないだ箱の伝達関数は掛け算ですが、dB と位相では足し算です。制御器を足したら線図がどう変わるかが、目で見てわかります。</li>
+    <li><b>安定性と余裕がわかる</b>：一巡伝達関数 <var>L</var> のボード線図から、閉ループが安定か、どれくらい余裕があるかが読み取れます（次のページ）。</li>
+  </ol>
+
+  <h2>デモのボード線図</h2>
+  <p>デモのボード線図は一巡伝達関数 <var>L</var> = <var>C P</var> e<sup>−<var>sT</var></sup> です。点線の |<var>S</var>| = |1/(1 + <var>L</var>)| は<strong>感度関数</strong>で、外乱やずれがどれだけ残るかを表します。|<var>L</var>| が大きい低周波では |<var>S</var>| が小さく、外乱がよく抑えられています。|<var>S</var>| が 0 dB を超える周波数帯では、外乱がかえって大きくなります。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/classical/servo.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/classical/figs.js"></script>
+</body>
+</html>

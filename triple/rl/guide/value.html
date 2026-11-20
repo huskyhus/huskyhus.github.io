@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>場所の良さを測る</title>
+<meta name="description" content="価値関数とベルマン方程式。価値反復と、時間差（TD）学習。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>場所の良さを測る：価値関数</h1>
+  <p class="g-lead">将来の報酬の合計を、今の状態ごとに見積もった数を「価値」と呼びます。価値がわかれば、方策は簡単です。いちばん価値の高い次の状態へ向かえばよいのです。</p>
+</header>
+<main class="g-body">
+  <h2>ベルマン方程式</h2>
+  <p>価値には、きれいな性質があります。</p>
+  <div class="math"><span class="row">ある場所の価値 ＝ 最善の一歩でもらえる報酬 ＋ その一歩で行き着いた場所の価値</span></div>
+  <p>当たり前のようですが、これが<strong>ベルマン方程式</strong>（1950 年代、動的計画法）です。全体の最適を、「一歩」と「残り」に分けて考えられることを表しています。ゴールの価値は 0、ゴールの隣は −1、その隣は −2、と、ゴールから順に決まっていきます。</p>
+
+  <h2>モデルがあれば：価値反復</h2>
+  <figure class="fig" data-fig="valueIter">
+    <canvas style="aspect-ratio: 16 / 10"></canvas>
+    <div class="btnrow"><button type="button">1 回更新</button><button type="button">自動で更新</button><button type="button">やり直す</button></div>
+    <p class="readout"></p>
+    <figcaption>すべてのマスで同時に「最善の一歩の報酬 ＋ 行き着く先の価値」を計算し直す。1 回ごとに、ゴールから 1 マスずつ情報が広がる。</figcaption>
+  </figure>
+  <p>迷路の地図（どのマスからどう動くとどこに行くか＝モデル）があれば、ベルマン方程式を繰り返し当てはめるだけで、すべてのマスの価値が求まります。これは<strong>計画</strong>であって、学習ではありません。現代制御の LQR も、実はこの仲間です（6 ページ）。</p>
+
+  <h2>モデルがなければ：経験から少しずつ</h2>
+  <p>強化学習では地図がありません。そこで、実際に一歩進んでみて、</p>
+  <div class="math"><span class="row">ずれ ＝（もらった報酬 ＋ 行き着いた先の価値の見積もり）−（今いた場所の価値の見積もり）</span></div>
+  <p>を計算し、今いた場所の見積もりを、このずれの方向に少しだけ直します。これを<strong>時間差学習（TD 学習）</strong>と呼びます。見積もりを見積もりで直す、自分の尻尾を追いかけるような方法ですが、条件を満たせば正しい価値に収束することが証明されています。</p>
+  <p>デモの台車の左下の図が、学習中の価値の見積もりです。渦巻きの形は、「揺れを大きくしながら頂上に近づく」道筋を表しています。渦の外側ほど（勢いがあるほど）ゴールに近い。</p>
+
+  <h2>遠くまで褒める：適格度トレース</h2>
+  <p>台車の問題では、報酬の情報がゴールから少しずつしか伝わらないので、学習が遅くなります。そこで、最近通った状態たちに「足跡」（適格度トレース）を残しておき、ずれが出たときに足跡の濃さに応じてまとめて直します。デモの λ がその足跡の残り方です。λ = 0 だと直前の状態しか直さず、学習がかなり遅くなります。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/rl/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/rl/figs.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>制約を守る</title>
+<meta name="description" content="入力の上限と状態の制約。LQR に飽和をかけるだけでは足りない理由と、MPC が制約を直接扱う利点。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>制約を守る</h1>
+  <p class="g-lead">現実の機械には必ず限界があります。モーターの力、ハンドルの角度、タンクの容量、道の幅。これらを「後から切る」のと「最初から計画に入れる」のでは、結果が大きく違います。</p>
+</header>
+<main class="g-body">
+  <h2>2 種類の制約</h2>
+  <ul>
+    <li><b>入力の制約</b>：出せる力やハンドルの角度の上限。守らなくても物理的にそれ以上は出ない（飽和）。</li>
+    <li><b>状態の制約</b>：道からはみ出さない、温度を超えない、壁にぶつからない。守らないと事故になる。</li>
+  </ul>
+  <p>LQR や PID は制約を知りません。入力の制約には「上限で切る」で対処できますが、状態の制約にはうまく対処できません。上限で切ると、制御器が想定した動きと実際の動きがずれ、行き過ぎや揺れの原因にもなります（古典制御の「積分の巻き上がり」と同じ構図）。</p>
+
+  <h2>壁の手前で止まる</h2>
+  <figure class="fig" data-fig="wall">
+    <div class="two"><canvas style="aspect-ratio: 16 / 10"></canvas><canvas style="aspect-ratio: 16 / 10"></canvas></div>
+    <div class="figctl"><label>位置のずれの重み q（大きいほど急いで目標へ） <output data-o="q"></output><input type="range" data-k="q" min="0" max="3.5" step="0.05" value="2.5"></label></div>
+    <figcaption>力の上限が ±1 の台車を、位置 0 から目標 0.95 まで動かす。1 のところに壁がある。点線：LQR の出力を ±1 で切ったもの。実線：MPC（同じ重みで、力の上限と壁を制約として与えたもの）。q を大きくすると、LQR は止まりきれずに壁を越える。MPC は「この速さだと止まれない」ことを予測して、早めにブレーキをかける。</figcaption>
+  </figure>
+  <p>MPC は予測の中で「このまま加速すると、ブレーキの上限では壁の手前で止まれない」ことがわかるので、まだ壁が遠いうちから減速を始めます。制約を<strong>未来の分まで</strong>考えられることが、MPC の最大の強みです。</p>
+
+  <h2>デモで見る</h2>
+  <p>デモの半透明の車（LQR ＋ 飽和）は、同じ重みだとハンドルの上限に張り付いて大きく揺れ、道からはみ出します。重みを弱めて（穏やかにして）、車線を変え始めるタイミングをうまく調整すれば LQR でもよけられますが、その調整は状況ごとにやり直しです。MPC は同じ重みのまま、上限ぎりぎりの操作を、はみ出さないように計画できます。</p>
+  <div class="callout">
+    <p><b>制約は「すべてを最適に」を可能にする</b></p>
+    <p>制約がない世界では、「乗り心地をよくしたい」と「速く車線を変えたい」は重みの綱引きでしか表せません。制約を直接書けると、「横加速度 5 m/s² までは使ってよい、その範囲でいちばん速く」と言えます。要求の書き方が、人の言葉に近くなります。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/mpc/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/mpc/figs.js"></script>
+</body>
+</html>

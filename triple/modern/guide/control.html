@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>制御ってなに？</title>
+<meta name="description" content="制御とフィードバック、PID 制御を、例え話と図で説明する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+</head>
+<body data-root="../../" data-series="modern">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>制御ってなに？</h1>
+  <p class="g-lead">「思いどおりに動かす」ための考え方。その基本形がフィードバックと PID です。</p>
+</header>
+<main class="g-body">
+  <h2>思いどおりに動かす</h2>
+  <p>制御とは、ものを思いどおりの状態に保ったり、動かしたりすることです。エアコンは部屋を 26℃ に保ち、車のクルーズコントロールは速度を 100 km/h に保ち、ドローンは風が吹いても同じ場所に浮かび続けます。どれも、外から邪魔が入っても目標を保つ仕組みが働いています。</p>
+  <p>制御工学は、その仕組みをどう作れば確実にうまくいくかを、数学で考える分野です。</p>
+
+  <h2>やりっぱなしと、確かめながら</h2>
+  <p>シャワーの温度を合わせるところを思い浮かべてください。やり方は大きく 2 つあります。</p>
+  <figure class="fig">
+    <svg viewBox="0 0 760 300" role="img" aria-label="開ループ制御とフィードバック制御のブロック図">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="fill-ink"/></marker>
+      </defs>
+      <text x="20" y="28" class="b">やりっぱなし（開ループ）</text>
+      <text x="40" y="78" class="mu">目標 40℃</text>
+      <line class="ink" x1="110" y1="73" x2="170" y2="73" marker-end="url(#ar)"/>
+      <rect class="box" x="172" y="48" width="150" height="50" rx="8"/>
+      <text x="247" y="78" text-anchor="middle">蛇口を「いつもの位置」に</text>
+      <line class="ink" x1="322" y1="73" x2="392" y2="73" marker-end="url(#ar)"/>
+      <rect class="box" x="394" y="48" width="130" height="50" rx="8"/>
+      <text x="459" y="78" text-anchor="middle">シャワー</text>
+      <line class="ink" x1="524" y1="73" x2="594" y2="73" marker-end="url(#ar)"/>
+      <text x="600" y="68">お湯</text>
+      <text x="600" y="88" class="mu sm">冬は冷たい…</text>
+
+      <text x="20" y="160" class="b">確かめながら（フィードバック）</text>
+      <text x="40" y="210" class="mu">目標 40℃</text>
+      <line class="ink" x1="110" y1="205" x2="150" y2="205" marker-end="url(#ar)"/>
+      <circle class="box-acc" cx="166" cy="205" r="15"/>
+      <text x="166" y="210" text-anchor="middle" class="b">−</text>
+      <text x="166" y="244" text-anchor="middle" class="mu sm">ずれ</text>
+      <line class="ink" x1="181" y1="205" x2="222" y2="205" marker-end="url(#ar)"/>
+      <rect class="box-acc" x="224" y="180" width="120" height="50" rx="8"/>
+      <text x="284" y="210" text-anchor="middle">ずれを見て調整</text>
+      <line class="ink" x1="344" y1="205" x2="392" y2="205" marker-end="url(#ar)"/>
+      <rect class="box" x="394" y="180" width="130" height="50" rx="8"/>
+      <text x="459" y="210" text-anchor="middle">シャワー</text>
+      <line class="ink" x1="524" y1="205" x2="594" y2="205" marker-end="url(#ar)"/>
+      <text x="600" y="210">お湯</text>
+      <path class="ink" d="M 560 205 L 560 275 L 166 275 L 166 222" marker-end="url(#ar)"/>
+      <rect class="box" x="300" y="256" width="130" height="34" rx="8"/>
+      <text x="365" y="278" text-anchor="middle">手で温度を感じる</text>
+      <text x="600" y="240" class="mu sm">冬でも夏でも</text>
+      <text x="600" y="256" class="mu sm">40℃ に近づく</text>
+    </svg>
+    <figcaption>上：決めた操作をするだけ。条件が変わると外れる。下：結果を測って目標と比べ、ずれに応じて操作を直す。この「結果を見て操作に戻す」輪をフィードバックと呼ぶ。</figcaption>
+  </figure>
+  <p>フィードバックの強みは、<strong>相手のことを完全に知らなくても目標に近づける</strong>ことです。水道管の温度が季節で変わっても、手で感じたずれを直していけば、だいたい 40℃ になります。</p>
+  <p>弱みもあります。熱湯に気づいてから蛇口をひねっても、お湯が届くまでの数秒間は熱いままです。この「遅れ」は、6 ページでこの振り子にとっても大問題だとわかります。</p>
+
+  <h2>PID：いちばん使われている調整のしかた</h2>
+  <p>「ずれを見て調整」の中身として、工場の温度・圧力・モーターの回転数など、世の中の制御の大半で使われているのが PID 制御です。ずれ（目標 − 今の値）から、3 種類の量を作って足し合わせます。</p>
+  <figure class="fig">
+    <svg viewBox="0 0 760 260" role="img" aria-label="ずれの時間変化と、P・I・D の意味">
+      <line class="mut" x1="60" y1="200" x2="700" y2="200"/>
+      <line class="mut" x1="60" y1="30" x2="60" y2="210"/>
+      <text x="704" y="205" class="mu sm">時間</text>
+      <text x="66" y="28" class="mu sm">ずれ</text>
+      <path class="area-w" d="M 60 200 C 140 40, 260 70, 340 120 C 400 155, 440 165, 480 170 L 480 200 Z"/>
+      <path class="ink" d="M 60 200 C 140 40, 260 70, 340 120 C 400 155, 440 165, 480 170"/>
+      <path class="ink dash" d="M 480 170 C 540 178, 600 190, 680 196"/>
+      <line class="s2" x1="480" y1="200" x2="480" y2="170"/>
+      <circle class="f2" cx="480" cy="170" r="4"/>
+      <line class="sb" x1="420" y1="152" x2="560" y2="186"/>
+      <text x="200" y="185" class="b">I</text>
+      <text x="215" y="185" class="mu">これまでのずれの合計（面積）</text>
+      <text x="494" y="140" class="b">D</text>
+      <text x="508" y="140" class="mu">ずれが減っていく速さ（傾き）</text>
+      <text x="494" y="215" class="b">P</text>
+      <text x="508" y="215" class="mu">今のずれの大きさ</text>
+      <text x="480" y="244" text-anchor="middle" class="mu sm">今</text>
+    </svg>
+    <figcaption>P は「今」、I は「過去」、D は「この先」を見ている。</figcaption>
+  </figure>
+  <ul>
+    <li><b>P（比例）</b>：ずれが大きいほど強く直す。基本の動き。</li>
+    <li><b>I（積分）</b>：小さなずれでも、長く続いていれば少しずつ強く直す。最後に残る「ちょっとしたずれ」を消す役。</li>
+    <li><b>D（微分）</b>：ずれが減ってきているなら手を緩める。行き過ぎ（オーバーシュート）を防ぐブレーキ役。</li>
+  </ul>
+  <p>3 つの係数（ゲイン）を、試しながら調整して使います。仕組みが単純で、相手のモデルをほとんど知らなくても調整でき、それでいてよく効きます。</p>
+
+  <h2>PID が苦手なこと</h2>
+  <p>PID は基本的に「1 つのずれを見て、1 つの操作を決める」道具です。温度を測ってヒーターを調整する、のような 1 対 1 の関係ならとても強い。</p>
+  <p>この振り子は違います。動かせるのは台車 1 つなのに、気にしなければならない量は 8 つあります（台車の位置、3 本の棒の角度、それぞれの速さ）。しかも「下の棒を右に倒したいなら、上の棒はいったん逆に倒す」ような、直感に反するつながり方をしています。8 つの量をどの割合で混ぜて台車を動かせばいいかを、手で試して見つけるのはまず無理です。</p>
+  <div class="callout">
+    <p><b>このデモの中の「PID」</b></p>
+    <p>実は、このデモで倒立を保っている部分（4 ページの LQR）も、形は「8 つの量それぞれに P と D をかけて足したもの」です。PID の仲間と言えます。違うのは係数の決め方で、手で探すのではなく、数学で「いちばん良い組み合わせ」を計算しています。デモの係数は K = [−18, −265, 1277, −1250, −30, −2, 23, −109] のような値で、符号が入れ替わったり桁が飛んだりしています。人の勘ではまず出てきません。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

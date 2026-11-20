@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ただでは手に入らない</title>
+<meta name="description" content="ロバスト性と性能のトレードオフ、感度関数とウォーターベッド効果。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="robust">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>ただでは手に入らない：トレードオフ</h1>
+  <p class="g-lead">広い範囲を保証するほど、性能は落ちます。そして、ある周波数で外乱を抑えれば、別の周波数で必ず悪くなります。制御には「ただ飯」がありません。</p>
+</header>
+<main class="g-body">
+  <h2>保証する範囲を広げると、遅くなる</h2>
+  <figure class="fig" data-fig="tradeoff">
+    <canvas style="aspect-ratio: 16 / 7"></canvas>
+    <canvas style="aspect-ratio: 16 / 7; margin-top: 8px"></canvas>
+    <figcaption>上：保証する範囲（k = 1.25 ± δ）を広げたときの、範囲内でいちばん遅い整定時間（デモと同じ自動設計）。下：感度関数 |S| の比較（赤：LQG、緑：H∞、範囲 ±0.75）。</figcaption>
+  </figure>
+  <p>どんな k でも壊れない制御器は、どの k に対しても「強く押しすぎない」ように控えめにならざるを得ません。デモで測ると、範囲を k = 1.25 ± 0.25 にすれば 6 秒ほどで止まり、± 0.55 で約 12 秒、± 0.75（0.5〜2）まで広げると 30 秒近くかかります。どこで折り合うかは設計者が決めることで、理論はその「値札」を正確に示してくれます。</p>
+
+  <h2>ウォーターベッド効果</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 200" role="img" aria-label="感度関数をある帯域で押し下げると、別の帯域で持ち上がる">
+      <line class="mut" x1="40" y1="100" x2="720" y2="100"/>
+      <text x="30" y="104" text-anchor="end" class="mu sm">1</text>
+      <path class="area-ok" d="M 40 100 C 120 100, 160 160, 260 160 C 340 160, 360 100, 400 100 Z"/>
+      <path class="area-bad" d="M 400 100 C 440 100, 470 40, 520 40 C 570 40, 600 100, 680 100 Z"/>
+      <path class="ink" d="M 40 100 C 120 100, 160 160, 260 160 C 340 160, 360 100, 400 100 C 440 100, 470 40, 520 40 C 570 40, 600 100, 720 100"/>
+      <text x="220" y="185" text-anchor="middle" class="mu sm">ここで外乱を抑えると（log|S| &lt; 0）</text>
+      <text x="530" y="28" text-anchor="middle" class="mu sm">ここで同じ面積だけ悪くなる</text>
+    </svg>
+    <figcaption>ボードの感度積分：開ループが安定で相対次数が 2 以上なら、∫₀^∞ log|S(jω)| dω = 0。対数をとった感度の面積の合計は、どんな制御器でも 0（開ループに不安定な極があれば、さらに正の値になる）。</figcaption>
+  </figure>
+  <p>感度関数 |S| は「外乱がどれだけ残るか」の倍率です。1 より小さい周波数では抑え、1 より大きい周波数では増やしてしまいます。ボードは 1945 年に、log|S| の面積の合計がどんな制御器でも 0 以上になることを示しました。水を張ったベッドのように、どこかを押し下げれば、どこかが持ち上がります。</p>
+  <p>ロバスト制御の設計は、この持ち上がりを、モデルが当てにならない帯域や、外乱がない帯域に追いやる作業だとも言えます。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/robust/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/robust/figs.js"></script>
+</body>
+</html>

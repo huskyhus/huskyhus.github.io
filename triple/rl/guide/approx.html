@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>連続な世界を覚える</title>
+<meta name="description" content="関数近似とタイルコーディング。汎化と、深層強化学習へのつながり。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>連続な世界を覚える：関数近似</h1>
+  <p class="g-lead">迷路なら、マスごとに価値を表に書いておけます。でも台車の位置と速さは連続な数で、状態は無限にあります。全部は覚えられないので、「似た状態は似た価値」と考えて、少ない数で近似します。</p>
+</header>
+<main class="g-body">
+  <h2>タイルコーディング</h2>
+  <figure class="fig" data-fig="tiles">
+    <canvas style="aspect-ratio: 16 / 10; cursor: crosshair"></canvas>
+    <div class="figctl"><label>重ねる格子の枚数 <output data-o="n"></output><input type="range" data-k="n" min="1" max="16" step="1" value="8"></label></div>
+    <p class="readout"></p>
+    <figcaption>位置（横）と速さ（縦）の平面を 8×8 の格子で区切る（灰色の線は 1 枚目）。少しずつずらした格子を何枚も重ねる。マウスを動かすと、その点と同じタイルを共有する範囲が色で表示される。</figcaption>
+  </figure>
+  <p>状態の平面を粗い格子（タイル）で区切り、タイルごとに 1 つの数（重み）を持ちます。ある状態の価値は、その状態が入っているタイルの重みの合計です。格子を少しずつずらして何枚も重ねると、</p>
+  <ul>
+    <li>1 枚 1 枚は粗いのに、重ねると細かい違いも表せる。</li>
+    <li>ある状態で学んだことが、タイルを共有する近くの状態にも自然に伝わる（<strong>汎化</strong>）。</li>
+  </ul>
+  <p>デモでは 8 枚 × 9×9 マス × 3 行動 = 1944 個の数だけで、連続な状態全体の価値を近似しています。1 枚だけにすると汎化が粗くなり、学習が遅く、結果も悪くなります。</p>
+
+  <h2>より強力な近似：ニューラルネットワーク</h2>
+  <p>タイルコーディングは状態の次元が少ないときには強力ですが、次元が増えると格子の数が爆発します（ロボットの関節が 12 個あれば状態は数十次元）。そこで、価値や方策をニューラルネットワークで近似するのが<strong>深層強化学習</strong>です。2013〜2015 年、画面の画素をそのまま入力にしてテレビゲームを学ぶ DQN が登場し、強化学習が一気に注目されました。</p>
+  <div class="callout warn">
+    <p><b>近似の代償</b></p>
+    <p>表で覚えるなら TD 学習は正しい価値に収束しますが、関数近似を使うと、条件によっては発散することが知られています（オフ方策学習、関数近似、ブートストラップの 3 つがそろうと危ない、とされる）。深層強化学習には、これを抑えるための工夫（経験の再生、目標ネットワークなど）が多数入っています。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/rl/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/rl/figs.js"></script>
+</body>
+</html>

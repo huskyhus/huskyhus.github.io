@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>現代制御の数学的定式化</title>
+<meta name="description" content="三重倒立振り子のデモで扱った最適制御問題、直接法、LQR と時変 LQR、状態推定、エネルギー整形を、数学的に定式化する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+</head>
+<body data-root="../../" data-series="modern">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>数学的に定式化すると</h1>
+  <p class="g-lead">ここまでの 7 ページで言葉と図で述べた内容を、定義・定理・証明の概略として書き直す。読者には常微分方程式論、線形代数、初歩の凸解析と確率論を仮定する。デモで実際に計算している形にできるだけ合わせ、近似や省略をした箇所は明記する。</p>
+</header>
+<main class="g-body mathdoc">
+  <ol class="toc-local">
+    <li><a href="#s1">力学系としての三重振り子</a></li>
+    <li><a href="#s2">平衡点での線形化と可制御性</a></li>
+    <li><a href="#s3">最適制御問題と必要条件</a></li>
+    <li><a href="#s4">直接法：多重シューティングと SQP</a></li>
+    <li><a href="#s5">LQR：定常と時変</a></li>
+    <li><a href="#s6">時変系の安定性と「凍結した極」</a></li>
+    <li><a href="#s7">状態推定</a></li>
+    <li><a href="#s8">サンプル値系とむだ時間</a></li>
+    <li><a href="#s9">エネルギー整形による立て直し</a></li>
+  </ol>
+
+  <h2 id="s1">1. 力学系としての三重振り子</h2>
+  <p>配位空間は \(Q = \mathbb{R} \times \mathbb{T}^3\)、座標は \(q = (x, \theta_1, \theta_2, \theta_3)\) である（\(\theta_i\) は鉛直上向きから測る）。リンク \(i\) は質量 \(m_i\)、長さ \(l_i\)、重心までの距離 \(a_i\)、重心まわりの慣性モーメント \(J_i\) の剛体とする。台車の加速度 \(u = \ddot x\) を入力とみなすと（台車をサーボで加速度制御する理想化）、台車の自由度は入力に吸収され、振り子の部分系は \(\theta \in \mathbb{T}^3\) 上のラグランジュ系になる。</p>
+  <div class="env defn"><b>定義 1（運動方程式）</b>
+    \(\beta_i = m_i a_i + l_i \sum_{k>i} m_k\)、\(\mu_{ii} = J_i + m_i a_i^2 + l_i^2 \sum_{k>i} m_k\)、\(\mu_{ij} = l_{\min(i,j)}\beta_{\max(i,j)}\ (i\ne j)\) とおき、
+    $$ M(\theta)_{ij} = \mu_{ij}\cos(\theta_i - \theta_j),\qquad V(\theta) = g\sum_i \beta_i \cos\theta_i $$
+    と定める。運動方程式は
+    $$ M(\theta)\ddot\theta + C(\theta,\dot\theta)\dot\theta + \nabla V(\theta) + D\dot\theta + b(\theta)\,u = 0,\qquad b(\theta)_i = \beta_i\cos\theta_i, $$
+    ここで \(C(\theta,\dot\theta)\dot\theta\) はコリオリ・遠心力項（\(\dot M - 2C\) が交代行列になるように選ぶ）。成分で書けば \(\sum_j \mu_{ij}\cos(\theta_i-\theta_j)\ddot\theta_j + \sum_j \mu_{ij}\sin(\theta_i-\theta_j)\dot\theta_j^2 + \beta_i\cos\theta_i\,u - g\beta_i\sin\theta_i + (D\dot\theta)_i = 0\)（\(\partial V/\partial\theta_i = -g\beta_i\sin\theta_i\)）。\(D\) は関節の粘性摩擦を表す半正定値行列。これは \(L = T - V\)、一般化力 \(-D\dot\theta - b(\theta)u\) のラグランジュ方程式である（台車の加速度 \(u\) が振り子に及ぼす慣性力が \(-b(\theta)u\)）。
+  </div>
+  <p>\(M(\theta)\) は運動エネルギー \(T = \tfrac12\dot\theta^\top M(\theta)\dot\theta\) のグラム行列なので、すべての \(\theta\) で正定値である（各リンクの重心速度の写像が単射であるため）。したがって状態 \(s = (x,\theta,\dot x,\dot\theta) \in \mathbb{R}\times\mathbb{T}^3\times\mathbb{R}^4\) について、系は入力アフィン形</p>
+  $$ \dot s = f(s) + g(s)\,u $$
+  <p>に書け、\(f, g\) は実解析的である。デモはこれを 4 次のルンゲ・クッタ法（刻み \(h = 0.5\ \mathrm{ms}\)）で積分している。RK4 の大域誤差は \(O(h^4)\)、1 刻みの局所誤差は \(O(h^5)\) である。</p>
+
+  <h2 id="s2">2. 平衡点での線形化と可制御性</h2>
+  <p>\(u = 0\) の平衡点は \(\dot\theta = 0,\ \sin\theta_i = 0\) を満たす \(2^3 = 8\) 点（台車位置は任意）である。倒立点 \(s^\star = 0\) で線形化すると \(\dot{\delta s} = A\,\delta s + B\,\delta u\)、ただし \(A = \partial_s(f + gu)|_{s^\star,0}\)、\(B = g(s^\star)\)。</p>
+  <div class="env thm"><b>定理 2（カルマンの可制御性判定）</b>
+    線形系 \((A,B)\)（\(A\in\mathbb{R}^{n\times n}\)）が可制御であることと、\(\operatorname{rank}[B, AB, \dots, A^{n-1}B] = n\) は同値である。このとき複素共役について閉じた任意の \(n\) 個の複素数の組 \(\Lambda\) に対し \(\sigma(A - BK) = \Lambda\) となる \(K\) が存在する。
+  </div>
+  <div class="env prop"><b>命題 3（非線形系の局所安定化）</b>
+    \(A - BK\) がフルビッツ（すべての固有値の実部が負）なら、非線形系に \(u = -K s\) を適用した閉ループの平衡点 \(s^\star\) は局所指数安定である。
+  </div>
+  <p class="proof">閉ループ \(\dot s = F(s)\) の線形化が \(A - BK\) なので、リアプノフの間接法による。具体的には \((A-BK)^\top P + P(A-BK) = -I\) の正定値解 \(P\) について \(V = s^\top P s\) が原点の近傍でリアプノフ関数になる。</p>
+  <p>デモの既定パラメータでは、\(A\) の固有値は \(\{-18.25, -9.89, -4.22, 0, 0, 4.21, 9.52, 16.27\}\)（すべて実数）で、不安定な極は 3 個である（0 の 2 つは台車の位置と速度）。\((A,B)\) は可制御である（数値的には可制御性行列の条件数が大きく、ランク判定より LQR の解の存在で確認する方が安定である）。</p>
+
+  <h2 id="s3">3. 最適制御問題と必要条件</h2>
+  <div class="env defn"><b>定義 4（振り上げの最適制御問題）</b>
+    固定された \(T > 0\) に対し、
+    $$ \min_{u\in L^\infty(0,T)} \ J(u) = \int_0^T u(t)^2\,dt $$
+    $$ \text{s.t.}\quad \dot s = f(s) + g(s)u,\quad s(0) = s_{\downarrow},\quad s(T) = s_{\uparrow},\quad |x(t)|\le x_{\max},\ |\dot x(t)|\le v_{\max},\ |u(t)|\le u_{\max}. $$
+    \(s_{\downarrow}\) は \(\theta = (\pi,\pi,\pi)\) で静止、\(s_{\uparrow}\) は \(\theta \in (2\pi\mathbb{Z})^3\) のいずれかで静止した状態（巻き数の選び方ごとに別の問題になる）。
+  </div>
+  <p>最適解の存在は自明ではない。入力集合 \(\{|u|\le u_{\max}\}\) は有界閉凸で、ダイナミクスは入力についてアフィン、さらに有界な入力に対して解は有限時間で爆発しない（命題 14 のエネルギー評価から \(E\) は高々指数的にしか増えない）。したがって許容集合が空でなければ、\(L^\infty\) の弱 * コンパクト性、入力アフィン系での軌道の一様収束、目的関数の弱下半連続性によるフィリッポフ型の議論で、最適解の存在が言える。許容集合が空でないこと（状態制約のもとで振り上げが可能であること）は、一般には保証されない。</p>
+  <div class="env thm"><b>定理 5（ポントリャーギンの最大原理、状態制約が効いていない区間で）</b>
+    \((s^*, u^*)\) が局所最適で、状態制約がその区間で不活性なら、絶対連続な \(\lambda: [0,T]\to\mathbb{R}^8\) と \(\lambda_0 \in \{0, 1\}\) が存在して \((\lambda_0,\lambda)\ne 0\)、
+    $$ \dot\lambda = -\partial_s H(s^*, u^*, \lambda),\qquad u^*(t) \in \arg\min_{|v|\le u_{\max}} H(s^*(t), v, \lambda(t)), $$
+    ただし \(H(s,u,\lambda) = \lambda_0 u^2 + \lambda^\top(f(s) + g(s)u)\)。正規（\(\lambda_0 = 1\)）なら \(u^* = \operatorname{sat}_{u_{\max}}(-\tfrac12 g(s^*)^\top\lambda)\)。
+  </div>
+  <p>この必要条件を境界値問題として直接解く方法（間接法）は、随伴変数の初期値に対する感度が極端に大きく、カオス的な系では実用にならない。デモは次節の直接法を使う。</p>
+
+  <h2 id="s4">4. 直接法：多重シューティングと SQP</h2>
+  <p>\(\varphi_t(s)\) を \(\dot s = f(s) + g(s)u\) の流れとする。\(L\) をこの場のリプシッツ定数とすると、グロンウォールの不等式より</p>
+  $$ \|\varphi_t(s) - \varphi_t(\tilde s)\| \le e^{Lt}\|s - \tilde s\|. $$
+  <p>単一シューティング（\(u\) だけを未知数にし、\(s(T) = s_\uparrow\) を等式制約にする）の感度は \(e^{LT}\) で増大し、デモの値（不安定な最大固有値 \(\approx 16\ \mathrm{s^{-1}}\)、\(T = 3\ \mathrm{s}\)）では \(10^{21}\) に達して倍精度で扱えない。</p>
+  <div class="env defn"><b>定義 6（多重シューティングによる離散化）</b>
+    \(0 = t_0 < \dots < t_M = T\)（等間隔、\(M = 50\)）とし、入力を \(2M\) 区間の区分線形関数 \(u(t) = \sum_j u_j \phi_j(t)\)（\(u_0 = u_{2M} = 0\)）で表す。未知数を \(w = (s_1,\dots,s_{M-1}, u_1,\dots,u_{2M-1})\) として、
+    $$ \min_w \ \tfrac12 w^\top H_0 w + \rho\sum \operatorname{dist}(\cdot,\ \text{制約})^2 \quad \text{s.t.}\quad c_k(w) := \Phi_k(s_k, u) - s_{k+1} = 0\ \ (k = 0,\dots,M-1), $$
+    ここで \(\Phi_k\) は区間 \([t_k, t_{k+1}]\) の RK4 による数値流れ、\(s_0 = s_\downarrow\)、\(s_M = s_\uparrow\)、\(H_0\) は \(\int u^2\) の区分線形基底でのグラム行列（三重対角）。不等式制約は二乗ペナルティで扱う。
+  </div>
+  <p>各 \(c_k\) が依存する変数は \(s_k\) と 3 個のノット \(u_{2k}, u_{2k+1}, u_{2k+2}\) だけなので、ラグランジュ関数 \(\mathcal{L} = F + \lambda^\top c\) のヘッセ行列は区間ごとの \(11\times 11\) ブロックの和になる（部分的に分離可能）。変数を時間順に並べると半帯幅 10 の帯行列である。</p>
+  <div class="env thm"><b>定理 7（SQP の局所収束）</b>
+    KKT 点 \((w^*, \lambda^*)\) で線形独立制約想定（LICQ）と二次十分条件が成り立つとする。SQP ステップ
+    $$ \begin{pmatrix} W_k & \nabla c(w_k)^\top \\ \nabla c(w_k) & 0 \end{pmatrix}\begin{pmatrix}\Delta w\\ \lambda_{k+1}\end{pmatrix} = -\begin{pmatrix}\nabla F(w_k) \\ c(w_k)\end{pmatrix} $$
+    で \(W_k = \nabla^2_{ww}\mathcal{L}(w_k,\lambda_k)\) なら二次収束する。\(W_k\) を準ニュートン近似とし、デニス・モレ条件 \(\|P_k(W_k - \nabla^2\mathcal L^*)\Delta w_k\| = o(\|\Delta w_k\|)\)（\(P_k\) は \(\nabla c\) の零空間への射影）が成り立てば超一次収束する。
+  </div>
+  <p>デモでは、各ブロックを減衰つき BFGS（パウエルの修正：\(s^\top y < 0.2\, s^\top B s\) なら \(y\) を \(B s\) との凸結合に置き換える）で更新し、正定値性を保つ。KKT 系は \(W\) の帯コレスキー分解を用いて \((J W^{-1} J^\top)\lambda = c - J W^{-1}\nabla F\) に縮約する。大域化はフィルタ法（Fletcher–Leyffer、Wächter–Biegler）による。最後に \(\nabla F\) を 0 とおいたステップ（\(\Delta w = -W^{-1}J^\top(JW^{-1}J^\top)^{-1}c\)、\(W\) 計量での最小ノルム射影）を数回行う。これは \(c = 0\) に対するガウス・ニュートン法で、\(J\) が行フルランクなら二次収束する。</p>
+  <div class="env rem"><b>注意 8</b>
+    ヤコビアン \(\nabla c\) は前進差分（刻み \(10^{-7}\)）で求めているので、得られるのは厳密な KKT 点ではなく、相対誤差 \(O(10^{-7})\) 程度のヤコビアンに対する近似である。欠損 \(\|c\|_\infty\) は残差として直接評価しており、既定値で \(6\times 10^{-12}\) である。計画軌道と連続時間の解の差は、RK4 の局所誤差（刻みを半分にした積分との差で見積もって \(1.4\times10^{-8}\)）で支配される。
+  </div>
+  <p>パラメータの変更に対しては、パラメータ \(p\) について \(w^*(p)\) を追跡する<b>継続法</b>を用いる。KKT 点で LICQ と強二次十分条件が成り立てば、陰関数定理により \(p \mapsto w^*(p)\) は局所的に \(C^1\) なので、十分小さな歩幅なら前の解が次の問題のニュートン法の収束域に入る。</p>
+
+  <h2 id="s5">5. LQR：定常と時変</h2>
+  <p>デモの制御器は制御周期 \(T_s = 2\ \mathrm{ms}\) の離散時間系として設計する（第 8 節）。</p>
+  <div class="env thm"><b>定理 9（無限時間 LQR）</b>
+    \(x_{k+1} = Ax_k + Bu_k\)、\(Q \succeq 0\)、\(R \succ 0\)、評価 \(J = \sum_{k\ge0} x_k^\top Q x_k + u_k^\top R u_k\) とする。\((A,B)\) が可安定で \((Q^{1/2}, A)\) が可検出なら、離散リッカチ代数方程式
+    $$ P = Q + A^\top P A - A^\top P B (R + B^\top P B)^{-1} B^\top P A $$
+    はただ一つの半正定値な安定化解 \(P\) を持ち、\(u_k = -Kx_k\)、\(K = (R + B^\top PB)^{-1}B^\top PA\) が最適で、最適値は \(x_0^\top P x_0\)。
+  </div>
+  <p class="proof">任意の \(P = P^\top\) について平方完成により \(x^\top Qx + u^\top Ru + (Ax+Bu)^\top P(Ax+Bu) - x^\top Px = (u + Kx)^\top(R + B^\top PB)(u+Kx)\)（\(P\) がリッカチ方程式を満たすとき）。これを \(k = 0,\dots,N-1\) で足し合わせると \(J_N = x_0^\top P x_0 - x_N^\top P x_N + \sum (u_k+Kx_k)^\top(\cdot)(u_k+Kx_k)\)。安定化解なら最適な入力のもとで \(x_N \to 0\) となり、主張が従う。存在と一意性は、シンプレクティック行列束の安定な不変部分空間がグラフ \(\{(x, Px)\}\) で表されることによる。</p>
+  <p>デモは \(P\) を構造保存倍化法（SDA）で求める：\(A_0 = A,\ G_0 = BR^{-1}B^\top,\ H_0 = Q\) から
+  $$ A_{k+1} = A_k(I + G_kH_k)^{-1}A_k,\ \ G_{k+1} = G_k + A_k(I+G_kH_k)^{-1}G_kA_k^\top,\ \ H_{k+1} = H_k + A_k^\top H_k(I+G_kH_k)^{-1}A_k, $$
+  \(H_k \to P\) は二次収束する（倍化により \(2^k\) ステップ分の情報を一度に進める）。</p>
+  <div class="env thm"><b>命題 10（有限時間・時変 LQR）</b>
+    \(x_{k+1} = A_kx_k + B_ku_k\)、評価 \(\sum_{k\lt N}(x_k^\top Qx_k + u_k^\top Ru_k) + x_N^\top P_Nx_N\) の最適制御は \(u_k = -K_kx_k\)、
+    $$ K_k = (R + B_k^\top P_{k+1}B_k)^{-1}B_k^\top P_{k+1}A_k,\qquad P_k = Q + A_k^\top P_{k+1}(A_k - B_kK_k). $$
+  </div>
+  <p class="proof">動的計画法。価値関数が二次形式 \(V_{k+1}(x) = x^\top P_{k+1}x\) なら、ベルマン方程式 \(V_k(x) = \min_u\{x^\top Qx + u^\top Ru + V_{k+1}(A_kx + B_ku)\}\) の右辺は \(u\) について狭義凸な二次式で、最小化すると \(V_k\) も二次形式になり上の漸化式を得る。</p>
+  <p>軌道追従では、計画軌道 \((s^*_k, u^*_k)\) のまわりで \(\delta s_{k+1} = A_k\delta s_k + B_k\delta u_k + O(\|\delta\|^2)\)（\(A_k, B_k\) は零次ホールド離散化したヤコビアン）を用い、終端条件 \(P_N\) を倒立点での定常解とする。<b>各時刻で定理 9 を別々に解いたもの（凍結 LQR）とは異なる</b>ことに注意する。凍結 LQR は各 \(k\) で \((A_k,B_k)\) の可安定性を要求し、その近傍で \(P\) は有界でない。命題 10 は区間全体での可制御性（グラミアンの正則性）しか要求しない。デモでは凍結 LQR のゲインが最大 \(2.5\times10^4\)（時変 LQR は \(1.3\times10^3\)）に達し、雑音下の成功率が下がることを数値的に確かめた。</p>
+
+  <h2 id="s6">6. 時変系の安定性と「凍結した極」</h2>
+  <div class="env thm"><b>例 11（マーカス・山辺、1960）</b>
+    \(1 < a < 2\) として
+    $$ A(t) = \begin{pmatrix} -1 + a\cos^2 t & 1 - a\sin t\cos t \\ -1 - a\sin t\cos t & -1 + a\sin^2 t\end{pmatrix}. $$
+    すべての \(t\) で \(A(t)\) の固有値は \(\tfrac{a-2}{2} \pm \tfrac{\sqrt{a^2-4}}{2}\) で実部は負だが、\(x(t) = e^{(a-1)t}(\cos t, -\sin t)^\top\) は \(\dot x = A(t)x\) の解であり、発散する。
+  </div>
+  <p>したがって、デモの極の図が振り上げ中に表示する \(\sigma(A_k - B_kK_k)\)（凍結した固有値）は、閉ループの安定性を決めない。時変線形系 \(x_{k+1} = F_kx_k\) の指数安定性は、遷移行列 \(\Phi(k,j) = F_{k-1}\cdots F_j\) が \(\|\Phi(k,j)\| \le c\,r^{k-j}\)（\(r<1\)）を満たすことと同値であり、有限区間の追従問題では命題 10 の \(P_k\) が時変リアプノフ関数 \(V_k(x) = x^\top P_kx\) を与える（\(V_{k+1}(x_{k+1}) - V_k(x_k) = -x_k^\top(Q + K_k^\top RK_k)x_k\)）。</p>
+
+  <h2 id="s7">7. 状態推定</h2>
+  <div class="env thm"><b>定理 12（カルマンフィルタ）</b>
+    \(x_{k+1} = Ax_k + Bu_k + w_k\)、\(y_k = Cx_k + v_k\)、\(x_0, w_k, v_k\) は独立な正規分布（\(w_k\sim N(0,W)\)、\(v_k\sim N(0,V)\)、\(V\succ0\)）とする。条件付き分布 \(x_k \mid y_{0:k}\) は正規分布 \(N(\hat x_k, P_k)\) で、
+    $$ \hat x_k^- = A\hat x_{k-1} + Bu_{k-1},\ \ P_k^- = AP_{k-1}A^\top + W,\ \ L_k = P_k^-C^\top(CP_k^-C^\top + V)^{-1}, $$
+    $$ \hat x_k = \hat x_k^- + L_k(y_k - C\hat x_k^-),\qquad P_k = (I - L_kC)P_k^-. $$
+    \(\hat x_k\) は二乗誤差を最小にする推定量（条件付き期待値）である。
+  </div>
+  <p>正規分布の条件付けの公式（シューア補元）による。非線形系に対する拡張カルマンフィルタ（EKF）は、各時刻で \(f\) を推定値のまわりで線形化して共分散だけを近似的に伝播するもので、一般には最適性も一致性も保証されない。</p>
+  <div class="env rem"><b>注意 13（プロセス雑音の上乗せ）</b>
+    実機のパラメータが名目値と異なるとき、予測誤差は確率的な \(w_k\) ではなく、状態に依存する系統的な項 \(\Delta f(x_k)\) を含む。デモの \(q_a\) は角加速度に独立な雑音 \(N(0, q_a^2)\) を仮定して \(W\) を大きくする操作で、カルマンゲインを大きくし、観測をより重視させる。これは最適性の主張を放棄して、モデル誤差に対する推定の頑健さを得る経験的な処方である（ロバスト制御のシリーズの LQG の議論を参照）。
+  </div>
+
+  <h2 id="s8">8. サンプル値系とむだ時間</h2>
+  <p>連続時間系 \(\dot x = A_cx + B_cu\) に零次ホールド \(u(t) = u_k\ (t\in[kT_s,(k+1)T_s))\) を接続すると、標本点での状態は厳密に</p>
+  $$ x_{k+1} = e^{A_cT_s}x_k + \Big(\int_0^{T_s}e^{A_c\tau}d\tau\Big)B_c\,u_k $$
+  <p>を満たす。デモは \(\exp\begin{pmatrix}A_c & B_c\\ 0 & 0\end{pmatrix}T_s = \begin{pmatrix}A_d & B_d\\ 0 & I\end{pmatrix}\) を、スケーリング・二乗法とテイラー展開で計算している。</p>
+  <p>入力に \(d\) 周期のむだ時間 \(u^{\mathrm{applied}}_k = u_{k-d}\) があると、状態 \((x_k, u_{k-d}, \dots, u_{k-1})\) の拡大系になる。モデルが正確なら、\(\hat x_{k+d} = A_d^d x_k + \sum_{j=0}^{d-1}A_d^{d-1-j}B_d u_{k-d+j}\) は既知量だけで書け、\(u_k = -K\hat x_{k+d}\) とすると閉ループの固有値はむだ時間のない場合と（\(d\) 個の 0 を除いて）一致する。これがデモの「予測による補償」（スミス予測器の状態空間版）であり、モデル誤差があると、この一致は崩れる。</p>
+
+  <h2 id="s9">9. エネルギー整形による立て直し</h2>
+  <div class="env prop"><b>命題 14</b>
+    振り子部分系のエネルギーを \(E(\theta,\dot\theta) = \tfrac12\dot\theta^\top M(\theta)\dot\theta + V(\theta)\) とする。定義 1 の運動方程式のもとで
+    $$ \dot E = -u\sum_i\beta_i\cos\theta_i\,\dot\theta_i - \dot\theta^\top D\dot\theta. $$
+    したがって \(u = k\sum_i\beta_i\cos\theta_i\,\dot\theta_i\)（\(k>0\)）とすれば \(\dot E \le 0\)。
+  </div>
+  <p class="proof">\(\dot E = \dot\theta^\top M\ddot\theta + \tfrac12\dot\theta^\top\dot M\dot\theta + \nabla V^\top\dot\theta\)。運動方程式より \(M\ddot\theta = -C\dot\theta - \nabla V - D\dot\theta - b(\theta)u\) を代入すると \(\dot E = \dot\theta^\top(\tfrac12\dot M - C)\dot\theta - \dot\theta^\top D\dot\theta - u\,b(\theta)^\top\dot\theta\)。\(\dot M - 2C\) は交代行列なので第 1 項は 0。</p>
+  <p>デモではこれに台車を中央へ戻す項 \(-k_xx - k_v\dot x\) と飽和を加えており、厳密な単調減少は失われる。さらに「安全フィルタ」として、\(\mathrm{sign}(x)\dot x > 0\) かつ \(\dot x^2 \ge 2a_{\mathrm{brake}}(x_{\max} - \text{余白} - |x|)\) のとき入力を \(-a_{\mathrm{brake}}\,\mathrm{sign}(x)\) に置き換える。これは集合 \(\{\dot x^2 < 2a_{\mathrm{brake}}(x_{\max} - \text{余白} - |x|)\}\) を前方不変にする最小限の介入であり、制御バリア関数の素朴な形と見なせる。</p>
+
+  <h2>参考文献</h2>
+  <ul class="refs">
+    <li>R. E. Kalman, Contributions to the theory of optimal control, <i>Bol. Soc. Mat. Mexicana</i> 5 (1960).</li>
+    <li>L. S. Pontryagin et al., <i>The Mathematical Theory of Optimal Processes</i>, 1962.</li>
+    <li>H. G. Bock, K. J. Plitt, A multiple shooting algorithm for direct solution of optimal control problems, <i>IFAC World Congress</i> (1984).</li>
+    <li>J. Nocedal, S. J. Wright, <i>Numerical Optimization</i>, 2nd ed., Springer, 2006.（SQP、BFGS、フィルタ法）</li>
+    <li>A. Wächter, L. T. Biegler, Line search filter methods for nonlinear programming, <i>SIAM J. Optim.</i> 16 (2005).</li>
+    <li>L. Markus, H. Yamabe, Global stability criteria for differential systems, <i>Osaka Math. J.</i> 12 (1960).</li>
+    <li>E. K.-W. Chu et al., Structure-preserving algorithms for periodic discrete-time algebraic Riccati equations, <i>Int. J. Control</i> 77 (2004).（SDA）</li>
+    <li>T. Glück, A. Eder, A. Kugi, Swing-up control of a triple pendulum on a cart with experimental validation, <i>Automatica</i> 49 (2013).</li>
+  </ul>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/auto-render.min.js"></script>
+<script>renderMathInElement(document.body, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "\\(", right: "\\)", display: false }], throwOnError: false });</script>
+</body>
+</html>

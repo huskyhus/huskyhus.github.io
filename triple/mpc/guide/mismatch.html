@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>予測が外れたら</title>
+<meta name="description" content="MPC のモデル誤差と外乱：再計画によるフィードバックの効果と限界、ロバスト MPC。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>予測が外れたら：モデル誤差と外乱</h1>
+  <p class="g-lead">MPC は予測に頼る方法です。予測が外れると、計画は「守れるはずの制約」を守れなくなります。どこまでは毎回の計算し直しで救えて、どこからは救えないのでしょうか。</p>
+</header>
+<main class="g-body">
+  <h2>小さな外れは、計算し直しで吸収される</h2>
+  <p>MPC は毎回、実際に測った状態から計画し直します。横風で少し流されても、次の計算は流された位置から始まるので、自然に修正されます。デモで「横風」を押してみると、MPC の車は流されながらも車線を保ちます。</p>
+
+  <h2>大きな外れは、制約違反につながる</h2>
+  <figure class="fig" data-fig="mismatch">
+    <canvas style="aspect-ratio: 16 / 6"></canvas>
+    <div class="figctl"><label class="chk"><input type="checkbox" data-k="wind"> 1〜4 秒の間に横風を吹かせる</label></div>
+    <figcaption>実際の車は、タイヤが横滑りする 2 輪モデル。赤：MPC が簡単なモデル（タイヤは滑らない）で予測した場合。青：横滑りも考えたモデルで予測した場合。</figcaption>
+  </figure>
+  <p>簡単なモデルは「ハンドルを切った瞬間に向きが変わり始める」と予測しますが、実際の車は少し遅れて、しかも少し横に滑りながら曲がります。この食い違いが車線変更の大きな動きの中で積み重なると、計画では道の内側に収まっていたはずの車が、はみ出してしまいます。予測に使うモデルを本物に近づけると、問題は消えます。</p>
+  <p>MPC の「計算し直し」は万能ではありません。<strong>予測が系統的に外れていると、毎回同じ方向に外れ続ける</strong>からです。</p>
+
+  <h2>対策</h2>
+  <ul>
+    <li><b>モデルを良くする</b>：いちばん確実。ただし複雑なモデルは計算が重く、非線形なら QP ではなくなる。</li>
+    <li><b>余白を取る（制約の締め付け）</b>：予測の誤差の大きさを見積もり、その分だけ制約を内側に狭めておく。ロバスト MPC（チューブ MPC など）は、これを理論的に行う。</li>
+    <li><b>外乱を推定する</b>：予測と実際のずれを外乱として推定し、予測モデルに足し込む（オフセットフリー MPC）。カルマンフィルタと組み合わせる。</li>
+    <li><b>学習する</b>：走りながらモデルの誤差を学習して予測を直す。強化学習との境界領域。</li>
+  </ul>
+  <div class="callout">
+    <p><b>ロバスト制御とのつながり</b></p>
+    <p>ロバスト制御が「範囲内のどんな相手でも安定」を目指したように、ロバスト MPC は「範囲内のどんな外乱でも制約を守る」ことを目指します。代償も同じで、最悪の場合に備えるほど、ふつうの場合の性能は落ちます。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/mpc/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/mpc/figs.js"></script>
+</body>
+</html>

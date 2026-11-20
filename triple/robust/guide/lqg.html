@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>最適なのに壊れやすい</title>
+<meta name="description" content="LQG 制御器の安定余裕が小さくなりうること（Doyle, 1978）を、ばね台車で確かめる。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="robust">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>最適なのに壊れやすい：LQG の落とし穴</h1>
+  <p class="g-lead">現代制御の LQR とカルマンフィルタを組み合わせた LQG は、モデルが正しければ最適です。ところが、それがモデルのずれにとても弱くなることがあります。</p>
+</header>
+<main class="g-body">
+  <h2>LQR だけなら、余裕が保証されていた</h2>
+  <p>状態がすべて測れて LQR をそのまま使う場合、1 入力の系では、ゲインを 1/2 倍〜∞ 倍に変えても、位相が 60° 遅れても安定であることが証明されています（ゲイン余裕・位相余裕の保証）。最適化すれば、自動的にロバストにもなる。1960 年代の人々はそう期待しました。</p>
+  <p>ところが実際には状態は全部測れないので、カルマンフィルタで推定した値に LQR をかけます（LQG）。1978 年、ドイルは短い論文で、<strong>LQG にはこの保証がまったくない</strong>ことを例で示しました。論文の要旨は一行、「ない（There are none）」です。</p>
+
+  <h2>デモで確かめる</h2>
+  <figure class="fig" data-fig="lqgMargins">
+    <div class="two"><canvas style="aspect-ratio: 1 / 1"></canvas><canvas style="aspect-ratio: 4 / 3"></canvas></div>
+    <div class="figctl"><label>力の重み r（小さいほど攻める） <output data-o="r"></output><input type="range" data-k="r" min="-2" max="1" step="0.05" value="-1"></label></div>
+    <p class="readout"></p>
+    <figcaption>k = 1.25 で設計した LQG。左：台車を押す入口でループを切ったナイキスト線図。曲線が −1 のすぐそばを通っている。右：実際に安定な k の範囲。</figcaption>
+  </figure>
+  <p>既定の設計では、位相余裕は約 1°、ゲイン余裕は 0.1 dB ほどしかありません。ナイキスト線図は −1 をかすめるように通っています。<var>k</var> を少し下げるだけで不安定になり、デモで確かめると安定なのは <var>k</var> ≈ 1.25〜1.85 だけです。設計した値のすぐ下で壊れるのは、ノミナル値で「ぎりぎりまで攻めた」結果です。</p>
+
+  <h2>なぜこうなるのか</h2>
+  <p>LQG は「モデルが正しい」ことを前提に、平均的な性能（2 乗の積分）を最小にします。モデルのずれは前提に入っていないので、ずれに備えて余裕を残す理由がありません。カルマンフィルタは「モデルを信じて」推定し、LQR は「推定を信じて」押します。信頼が二重に重なると、どちらかが外れたときに崩れます。</p>
+  <div class="callout">
+    <p><b>現代制御のページとのつながり</b></p>
+    <p>三重振り子のデモで、EKF に「モデルは完璧ではない」と教える（q<sub>a</sub> を上げる）と摩擦の誤差に強くなりました。あれは、カルマンフィルタの雑音の仮定をわざと大きくして余裕を取り戻す、という経験的な対処です。LQG の余裕を取り戻す方法としては、ループ伝達回復（LTR）という手法も知られています。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/robust/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/robust/figs.js"></script>
+</body>
+</html>

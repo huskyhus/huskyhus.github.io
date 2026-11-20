@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>毎回、最適化を解く</title>
+<meta name="description" content="MPC の中身である二次計画問題（QP）と、それを数ミリ秒で解く内点法。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>毎回、最適化を解く：二次計画問題と内点法</h1>
+  <p class="g-lead">MPC は 0.1 秒ごとに最適化問題を解きます。間に合わなければ意味がありません。ここが MPC の弱点であり、ここ 30 年の計算機と数値計算の進歩が MPC を広めた理由でもあります。</p>
+</header>
+<main class="g-body">
+  <h2>二次計画問題（QP）</h2>
+  <p>モデルが線形で、目的関数が「ずれの 2 乗＋操作の 2 乗」、制約が「〜以下」の形（線形不等式）なら、MPC の問題は<strong>二次計画問題</strong>になります。</p>
+  <div class="math"><span class="row">最小化　½ <var>z</var><sup>T</sup> <var>P z</var> + <var>q</var><sup>T</sup><var>z</var>　　条件　<var>l</var> ≤ <var>A z</var> ≤ <var>u</var></span></div>
+  <p>デモでは、未知数 <var>z</var> は 30 ステップ分のハンドル操作と、30 個の「余裕変数」（どうしても道幅を守れないときに少しだけはみ出すことを許し、その分に大きな罰を与える変数）の 60 個。不等式は 210 本です。予測はモデルから計算できるので、未知数は操作だけで済みます（「縮約」と呼ぶ）。</p>
+  <p>QP は<strong>凸</strong>な問題です。お椀の形をした目的関数を、平らな壁で囲まれた領域の中で最小にするので、谷底はひとつしかなく、局所的な最小に迷い込むことがありません。現代制御の三重振り子の軌道計画（非線形で、谷がたくさんある）とは、解きやすさがまったく違います。</p>
+
+  <h2>内点法：内側から近づく</h2>
+  <figure class="fig" data-fig="qp2d">
+    <canvas style="aspect-ratio: 16 / 9"></canvas>
+    <div class="figctl"><label>制約がないときの最小の点の向き <output data-o="a"></output><input type="range" data-k="a" min="0" max="360" step="1" value="40"></label></div>
+    <p class="readout"></p>
+    <figcaption>2 変数の QP。灰色の楕円が目的関数の等高線、緑の多角形が制約を満たす領域。赤い点が内点法の反復。制約の境界に当たったところが答えになる。</figcaption>
+  </figure>
+  <p>デモでは<strong>主双対内点法</strong>で QP を解いています。制約の壁に「近づくほど高くなる柵」を立てて領域の内側から出発し、柵を少しずつ低くしながら、答えへ近づいていきます。各反復では 1 回の連立一次方程式を解くだけで、デモの問題ならおよそ 10〜20 回で、10<sup>−8</sup> の精度の答えが出ます（ブラウザで数ミリ秒）。</p>
+  <p>ほかにも、どの制約が効いているかを推測しながら進む<strong>有効制約法</strong>、簡単な計算を何百回も繰り返す <strong>ADMM</strong>（大規模な問題や、組み込み機器向け）などがあり、問題の大きさや計算機に合わせて使い分けます。</p>
+
+  <h2>速く解く工夫</h2>
+  <ul>
+    <li><b>温め直し（ウォームスタート）</b>：前回の答えを 1 ステップずらしたものを、次の計算の出発点にする。状況はそれほど変わらないので、近いところから始められる。</li>
+    <li><b>構造を使う</b>：予測の行列には、時間方向の決まった並び方がある。それを使えば、ホライズン N に比例する計算量で解ける。</li>
+    <li><b>事前に解いておく（陽的 MPC）</b>：小さな問題なら、あらゆる状態に対する答えを前もって計算して表にしておける。</li>
+  </ul>
+  <p>デモの右の欄に、1 回の計算にかかった時間が出ています。ホライズンを長くすると、計算時間がどう増えるか見てみてください。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/mpc/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/mpc/figs.js"></script>
+</body>
+</html>

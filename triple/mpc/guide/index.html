@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モデル予測制御の解説</title>
+<meta name="description" content="車線変更と障害物回避を題材に、予測と再計画、制約、二次計画問題、ホライズン、モデル誤差を説明する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>モデル予測制御：先を読んで、一手だけ指す</h1>
+  <p class="g-lead">将棋の棋士は何手も先を読みますが、実際に指すのは一手だけです。相手が指したら、また読み直します。モデル予測制御（MPC）は、これを 0.1 秒ごとに行う制御です。</p>
+</header>
+<main class="g-body">
+  <figure class="fig">
+    <svg viewBox="0 0 760 170" role="img" aria-label="道路上の車と、その先の予測軌道">
+      <rect class="fill-mut" x="20" y="30" width="720" height="110" style="opacity: 0.15"/>
+      <line class="ink" x1="20" y1="30" x2="740" y2="30"/>
+      <line class="ink" x1="20" y1="140" x2="740" y2="140"/>
+      <line class="mut dash" x1="20" y1="85" x2="740" y2="85"/>
+      <rect class="f1" x="80" y="100" width="50" height="24" rx="4"/>
+      <rect class="fw" x="420" y="100" width="50" height="24" rx="3"/>
+      <path class="s1 dash" d="M 130 112 C 220 112, 260 56, 360 56 S 520 56, 600 56"/>
+      <text x="300" y="160" text-anchor="middle" class="mu sm">この先 3 秒の最適な通り道（点線）を計算し、最初の 0.1 秒だけ実行する。0.1 秒後、また計算し直す。</text>
+    </svg>
+  </figure>
+  <ol class="toc" data-series="mpc"></ol>
+  <a class="cta-demo" href="../">デモを開く</a>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

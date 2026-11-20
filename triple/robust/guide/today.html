@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ロバスト制御の今</title>
+<meta name="description" content="ロバスト制御の現場での使われ方と限界、MPC と強化学習への橋渡し。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="robust">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>ロバスト制御の今</h1>
+  <p class="g-lead">1980〜90 年代に理論がほぼ完成し、今は「当たり前の道具」になっています。どこで使われ、何が苦手なのかをまとめます。</p>
+</header>
+<main class="g-body">
+  <h2>使われているところ</h2>
+  <ul>
+    <li><b>航空機・ロケット</b>：飛行条件（速さ、高度、燃料の量）で特性が大きく変わる。H∞ ループ整形や μ 解析で設計・検証される。</li>
+    <li><b>ハードディスク・光ディスク・半導体露光装置</b>：ナノメートル単位の位置決め。機械の共振が製品ごとにずれる。</li>
+    <li><b>自動車</b>：エンジン、サスペンション。個体差と経年変化。</li>
+    <li><b>検証の道具として</b>：設計は別の方法でも、「この範囲なら安定か」を μ 解析で確かめることが多い。</li>
+  </ul>
+
+  <h2>苦手なこと</h2>
+  <ul>
+    <li><b>保守的</b>：最悪の場合に備えるので、ふつうの場合の性能を犠牲にする。デモでも、ノミナルでは LQG より遅い。</li>
+    <li><b>線形が前提</b>：周波数で考えるので、大きく非線形な動き（振り子を下から振り上げる）は苦手。</li>
+    <li><b>制約が扱いにくい</b>：「力は 1 以下」「レールの外に出ない」という上限を、直接は扱えない（重みで間接的に抑える）。</li>
+    <li><b>不確かさの範囲は人が決める</b>：範囲を狭く見積もれば保証は意味を失い、広く見積もれば性能が落ちる。</li>
+  </ul>
+
+  <h2>次の考え方へ</h2>
+  <p>制約を直接扱いたい、という要求から広まったのが<a href="../../mpc/">モデル予測制御</a>です。毎回、今の状態から最適化を解き直すので、予測が外れても次の回で修正されます。モデルそのものを書くのが難しい問題に向かうのが<a href="../../rl/">強化学習</a>です。ただし、どちらも「保証」の面では、ロバスト制御の考え方（最悪の場合、余裕）を借りて理論を作り直している最中です。</p>
+  <div class="callout">
+    <p><b>まとめ</b></p>
+    <p>古典制御は「余裕」を周波数で見た。現代制御は「最適」を状態で計算した。ロバスト制御は、その最適を「余裕つき」に作り直した。この 3 つは、今もひとつながりの理論として使われています。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

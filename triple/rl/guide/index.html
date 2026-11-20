@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>強化学習の解説</title>
+<meta name="description" content="谷から出られない台車を題材に、報酬と方策、価値関数、探索と活用、関数近似、制御理論とのつながりを説明する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>強化学習：モデルなしで、試して学ぶ</h1>
+  <p class="g-lead">ここまでの 4 つの考え方は、どれも「相手のモデル（式）」を使っていました。強化学習は、モデルを使わず、やってみた結果の良し悪し（報酬）だけから振る舞いを学びます。</p>
+</header>
+<main class="g-body">
+  <figure class="fig">
+    <svg viewBox="0 0 760 200" role="img" aria-label="谷の台車">
+      <path class="ink" d="M 40 70 C 140 70, 200 170, 330 170 C 470 170, 560 50, 720 40"/>
+      <rect class="f1" x="316" y="146" width="30" height="16" rx="3"/>
+      <line class="ink" x1="660" y1="48" x2="660" y2="14"/>
+      <path class="fo" d="M 660 14 L 684 22 L 660 30 Z"/>
+      <path class="sw" d="M 300 132 C 260 120, 230 110, 210 100" />
+      <path class="sw" d="M 362 132 C 420 120, 460 100, 480 90" />
+      <text x="330" y="196" text-anchor="middle" class="mu sm">エンジンが弱く、右の坂を直接は登れない。どうすれば頂上の旗に届くか？</text>
+    </svg>
+  </figure>
+  <ol class="toc" data-series="rl"></ol>
+  <a class="cta-demo" href="../">デモを開く</a>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

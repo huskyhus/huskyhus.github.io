@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モデルはいつも間違っている</title>
+<meta name="description" content="モデルの不確かさの種類と、ノミナルモデル、ロバスト安定・ロバスト性能。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="robust">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>モデルはいつも間違っている</h1>
+  <p class="g-lead">「すべてのモデルは間違っている。だが役に立つものもある」。統計学者ボックスの言葉です。制御も同じで、問題は「間違っているかどうか」ではなく、「どれくらい間違っていても大丈夫か」です。</p>
+</header>
+<main class="g-body">
+  <h2>間違いはどこから来るか</h2>
+  <ul>
+    <li><b>パラメータのばらつき</b>：同じ型番の部品でも、ばねの強さや重さは 1 台ずつ違う。荷物を載せれば重さが変わる。温度で摩擦が変わる。</li>
+    <li><b>省いた動き</b>：モデルを簡単にするために無視した、速い振動や小さな遅れ。高い周波数ほど、モデルは当てにならない。</li>
+    <li><b>測れないもの</b>：外から加わる力や、センサーの雑音。</li>
+  </ul>
+  <p>現代制御の三重振り子では、これらを「入れて試す」ことで耐性を確かめました（モンテカルロ）。試すのは強力ですが、試していない組み合わせで壊れないとは言い切れません。ロバスト制御は、<strong>試す代わりに、数学で保証する</strong>道を取ります。</p>
+
+  <h2>ばねの強さが変わると、何が変わるか</h2>
+  <figure class="fig" data-fig="family">
+    <canvas style="aspect-ratio: 16 / 8"></canvas>
+    <div class="figctl"><label>ばねの強さ k <output data-o="k"></output><input type="range" data-k="k" min="0.3" max="3" step="0.01" value="1.25"></label></div>
+    <figcaption>デモの題材で、左の台車を押してから右の台車が動くまでの伝わり方（周波数応答）。灰色は k = 0.5〜2。ばねの強さが変わると、共振の周波数が √(2k) で動く。制御器が共振の位置を前提にしていると、ずれた瞬間に効き方が逆になる。</figcaption>
+  </figure>
+
+  <h2>言葉の整理</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>言葉</th><th>意味</th></tr></thead>
+      <tbody>
+        <tr><td>ノミナル（名目）モデル</td><td>設計に使う「いちばんありそうな」モデル。デモでは k = 1.25。</td></tr>
+        <tr><td>不確かさの集合</td><td>本物がこの中のどれかだ、という範囲。デモでは k ∈ [0.5, 2]。</td></tr>
+        <tr><td>ロバスト安定</td><td>集合の中のどのモデルに対しても、閉ループが安定。</td></tr>
+        <tr><td>ロバスト性能</td><td>集合の中のどのモデルに対しても、性能（例：何秒で止まるか）の要求を満たす。</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>ロバスト制御の目標は、「ノミナルで最高の性能」ではなく、「集合全体で、最悪の場合でも許せる性能」です。考え方の軸が、平均から最悪へ移ります。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/robust/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/robust/figs.js"></script>
+</body>
+</html>

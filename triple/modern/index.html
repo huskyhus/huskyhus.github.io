@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三重倒立振り子</title>
+<meta name="description" content="台車の加速度だけを入力に、三重振り子を最適軌道で振り上げて倒立させる制御工学のデモ。雑音・モデル誤差・遅れへの耐性を試せる。">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/guide.css">
+</head>
+<body data-root="../" data-series="modern">
+<nav id="siteNav"></nav>
+<header class="top">
+  <nav class="crumbs"><a class="back" href="../">← 制御工学の見取り図</a><a class="back" href="guide/">解説を読む →</a></nav>
+  <h1>三重倒立振り子を台車だけで振り上げる</h1>
+  <p class="lead">入力は台車の加速度ひとつだけ。パラメータを決めるとブラウザの中で最適な振り上げ軌道を解き、時変 LQR と拡張カルマンフィルタで追従して、最後は LQR で倒立を保つ。雑音・モデル誤差・遅れを入れて、どこまで耐えられるかを試せる。</p>
+  <p class="lead-link">制御工学を知らなくても大丈夫。<a href="guide/">はじめての人向けの解説（全 8 ページ）</a>で、何をしているのかを絵で説明している。</p>
+</header>
+
+<main class="layout">
+  <div class="col">
+  <section class="stage card" aria-label="シミュレーション">
+    <div class="hud">
+      <span id="badge" class="badge">準備中</span>
+      <span>t <b id="hudT">0.00 s</b></span>
+      <span>u <b id="hudU">+0.0</b> m/s²</span>
+      <span>x <b id="hudX">+0.000</b> m</span>
+      <span>推定誤差 <b id="hudE">0.00</b>°</span>
+    </div>
+    <canvas id="scene" aria-label="台車と三重振り子のアニメーション"></canvas>
+    <div class="progress"><div id="prog"></div></div>
+    <div class="transport">
+      <button id="swing" class="primary" type="button">▶ 振り上げ</button>
+      <button id="reset" type="button">リセット</button>
+      <button id="play" type="button">一時停止</button>
+      <div class="seg" role="radiogroup" aria-label="再生速度">
+        <input type="radio" name="speed" id="sp1" value="1" checked><label for="sp1">1×</label>
+        <input type="radio" name="speed" id="sp2" value="0.5"><label for="sp2">½×</label>
+        <input type="radio" name="speed" id="sp4" value="0.25"><label for="sp4">¼×</label>
+      </div>
+      <button id="poke" type="button">つつく</button>
+    </div>
+    <label class="switch"><input type="checkbox" id="autoRecover" checked> 倒れたら自動で立て直す（揺れを抜いて下で止め、もう一度振り上げる）</label>
+    <p class="hint">振り子をクリックすると、そのリンクを横から叩く。点線は計画した軌道、薄い灰色の線は推定器が「見ている」姿勢（名目の寸法で描く）。</p>
+    <p class="hint" id="plantInfo"></p>
+  </section>
+
+
+  <section class="plots card" aria-label="時系列">
+    <h2>時系列（直近 6 秒）</h2>
+    <canvas id="plots"></canvas>
+    <div class="legend">
+      <span style="--c: var(--link1)">θ₁</span>
+      <span style="--c: var(--link2)">θ₂</span>
+      <span style="--c: var(--link3)">θ₃</span>
+      <span style="--c: var(--cart)">x</span>
+      <span style="--c: var(--warn)">u（実際に出た加速度）</span>
+      <span class="dash" style="--c: var(--ref)">計画</span>
+    </div>
+  </section>
+
+  <section class="robust card" aria-label="耐性テスト">
+    <h2>4. 耐性テスト（モンテカルロ）</h2>
+    <p class="note">今の設定で振り上げ＋<span id="holdSec">3</span> 秒の倒立を繰り返し、成功率を数える。成功＝最後まで倒立を保ち、レール端に当たらず、終了時の角度ずれが 0.2 rad 未満。モデル誤差は試行ごとに引き直す。</p>
+    <div class="btnrow">
+      <button id="mc" type="button">成功率を測る（20 回）</button>
+      <select id="sweepVar" aria-label="掃引する項目">
+        <option value="nth">角度の観測雑音</option>
+        <option value="nx">台車位置の観測雑音</option>
+        <option value="ppr">エンコーダの分解能</option>
+        <option value="nu">モーター出力の雑音</option>
+        <option value="delay">むだ時間</option>
+        <option value="mass">質量のばらつき</option>
+        <option value="len">長さのばらつき</option>
+        <option value="fric">関節摩擦</option>
+      </select>
+      <button id="sweep" type="button">掃引する</button>
+      <button id="mcStop" type="button" disabled>中止</button>
+    </div>
+    <div id="mcStatus" class="status" aria-live="polite"></div>
+    <canvas id="sweepCv"></canvas>
+  </section>
+
+  </div>
+  <div class="col">
+  <aside class="panel card" aria-label="設定">
+    <h2>1. 物理パラメータと軌道計画</h2>
+    <div class="pgrid">
+      <div class="ctrl"><label for="m1">m₁ 質量</label><output id="m1Out"></output><input type="range" id="m1" min="0.05" max="1.5" step="0.05"></div>
+      <div class="ctrl"><label for="l1">l₁ 長さ</label><output id="l1Out"></output><input type="range" id="l1" min="0.10" max="0.50" step="0.01"></div>
+      <div class="ctrl"><label for="m2">m₂</label><output id="m2Out"></output><input type="range" id="m2" min="0.05" max="1.5" step="0.05"></div>
+      <div class="ctrl"><label for="l2">l₂</label><output id="l2Out"></output><input type="range" id="l2" min="0.10" max="0.50" step="0.01"></div>
+      <div class="ctrl"><label for="m3">m₃</label><output id="m3Out"></output><input type="range" id="m3" min="0.05" max="1.5" step="0.05"></div>
+      <div class="ctrl"><label for="l3">l₃</label><output id="l3Out"></output><input type="range" id="l3" min="0.10" max="0.50" step="0.01"></div>
+      <div class="ctrl"><label for="xmax">レール ±x<sub>max</sub></label><output id="xmaxOut"></output><input type="range" id="xmax" min="0.3" max="1.5" step="0.05"></div>
+      <div class="ctrl"><label for="umax">加速度 u<sub>max</sub></label><output id="umaxOut"></output><input type="range" id="umax" min="10" max="80" step="1"></div>
+      <div class="ctrl wide"><label for="T">振り上げ時間 T</label><output id="TOut"></output><input type="range" id="T" min="2.0" max="5.0" step="0.1"></div>
+    </div>
+    <div class="btnrow">
+      <button id="solve" class="primary" type="button">軌道を計算</button>
+      <button id="defaults" type="button">既定値</button>
+    </div>
+    <div id="solveStatus" class="status" aria-live="polite"></div>
+    <dl id="planInfo" class="info"></dl>
+
+    <h2>2. 現実の不完全さ</h2>
+    <div class="btnrow presets">
+      <span class="note">まとめて設定：</span>
+      <button id="preset-ideal" type="button">理想</button>
+      <button id="preset-default" type="button">雑音だけ</button>
+      <button id="preset-real" type="button">実機らしく</button>
+    </div>
+    <h3>センサー</h3>
+    <div class="ctrl"><label for="nth">角度の観測雑音 σ<sub>θ</sub></label><output id="nthOut"></output><input type="range" id="nth" min="0" max="100" step="1"></div>
+    <div class="ctrl"><label for="nx">台車位置の観測雑音 σ<sub>x</sub></label><output id="nxOut"></output><input type="range" id="nx" min="0" max="100" step="1"></div>
+    <div class="ctrl sel"><label for="rPpr">エンコーダの分解能（角度の丸め）</label>
+      <select id="rPpr">
+        <option value="0">なし</option>
+        <option value="65536">65536 カウント/回転</option>
+        <option value="16384">16384</option>
+        <option value="4096">4096</option>
+        <option value="1024">1024</option>
+        <option value="256">256</option>
+      </select>
+    </div>
+    <h3>モーター</h3>
+    <div class="ctrl"><label for="nu">出力の雑音 σ<sub>u</sub></label><output id="nuOut"></output><input type="range" id="nu" min="0" max="100" step="1"></div>
+    <div class="ctrl"><label for="rDelay">むだ時間（指令が効くまでの遅れ）</label><output id="rDelayOut"></output><input type="range" id="rDelay" min="0" max="40" step="2"></div>
+    <label class="switch"><input type="checkbox" id="rComp"> 遅れを予測で補償する</label>
+    <h3>モデル誤差（制御器は知らない）</h3>
+    <div class="ctrl"><label for="rMass">質量のばらつき（1σ）</label><output id="rMassOut"></output><input type="range" id="rMass" min="0" max="30" step="1"></div>
+    <div class="ctrl"><label for="rLen">長さのばらつき（1σ）</label><output id="rLenOut"></output><input type="range" id="rLen" min="0" max="10" step="0.5"></div>
+    <div class="ctrl"><label for="rFric">関節摩擦（実機/モデル）</label><output id="rFricOut"></output><input type="range" id="rFric" min="0" max="100" step="1"></div>
+    <p class="note">モデル誤差とむだ時間を変えると、実機を引き直して最初からやり直す。ばらつきは振り上げのたびに新しく引く。</p>
+    <h3>推定</h3>
+    <div class="seg full" role="radiogroup" aria-label="状態推定">
+      <input type="radio" name="est" id="estEkf" value="ekf" checked><label for="estEkf">EKF（位置だけ観測）</label>
+      <input type="radio" name="est" id="estTrue" value="true"><label for="estTrue">真の状態（理想）</label>
+    </div>
+    <div class="ctrl"><label for="qa">EKF が見込むモデルの不確かさ q<sub>a</sub></label><output id="qaOut"></output><input type="range" id="qa" min="0" max="100" step="1"></div>
+    <label class="switch"><input type="checkbox" id="feedback" checked> 追従フィードバック（切ると計画した入力を流すだけ）</label>
+
+    <h2>3. 制御器の重み（時変 LQR と LQR に共通）</h2>
+    <div class="ctrl"><label for="qth">角度 q<sub>θ</sub></label><output id="qthOut"></output><input type="range" id="qth" min="0" max="4" step="0.05"></div>
+    <div class="ctrl"><label for="qx">台車位置 q<sub>x</sub></label><output id="qxOut"></output><input type="range" id="qx" min="-1" max="3" step="0.05"></div>
+    <div class="ctrl"><label for="rw">入力 r</label><output id="rwOut"></output><input type="range" id="rw" min="-3" max="1" step="0.05"></div>
+  </aside>
+  <section class="poles card" aria-label="極">
+    <h2 id="poleTitle">上上上での極</h2>
+    <canvas id="poles"></canvas>
+    <p class="stats" id="poleStats"></p>
+    <div class="legend">
+      <span style="--c: var(--muted)">× 開ループ</span>
+      <span style="--c: var(--link2)">● 閉ループ（LQR）</span>
+    </div>
+  </section>
+  </div>
+</main>
+
+<section class="explain guide-cta">
+  <h2>解説</h2>
+  <p>このページで動いているものを、制御工学を知らない人にもわかるように、絵と小さなデモで説明している。</p>
+  <ol class="toc" id="toc"></ol>
+  <h2>既定パラメータ</h2>
+  <ul id="paramList"></ul>
+</section>
+<footer>静的な HTML / CSS / JavaScript だけで動く。計算はすべてこのブラウザの中。</footer>
+
+<script src="../data/seed.js"></script>
+<script src="../js/linalg.js"></script>
+<script src="../js/model.js"></script>
+<script src="../js/planner.js"></script>
+<script src="../js/control.js"></script>
+<script src="../js/site.js"></script>
+<script src="../js/main.js"></script>
+</body>
+</html>

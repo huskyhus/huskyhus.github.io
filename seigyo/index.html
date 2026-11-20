@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数学科のための制御工学</title>
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div id="app">
+    <header id="topbar"><span id="crumb"></span><span id="pos"></span></header>
+    <main id="viewport">
+      <div id="stage"><div id="subtitle"></div></div>
+    </main>
+    <div id="progress"><div id="progress-bar"></div></div>
+    <nav id="controls">
+      <button id="btn-menu" type="button" aria-pressed="false" title="章の一覧（M）">☰ 目次</button>
+      <button id="btn-prev" type="button" title="戻る（←）">◀</button>
+      <button id="btn-next" type="button" title="進む（→ / Space / クリック）">▶</button>
+      <button id="btn-glossary" type="button" aria-pressed="false" title="用語集（G）">用語</button>
+      <span class="spacer"></span>
+      <span class="hint">→ 進む　← 戻る　M 目次　G 用語　S 字幕　P 自動送り　A 読み上げ　F 全画面</span>
+      <button id="btn-subs" type="button" aria-pressed="true" title="字幕（S）">字幕</button>
+      <button id="btn-audio" type="button" aria-pressed="true" title="読み上げ（A）">読み上げ</button>
+      <select id="voice" title="読み上げの声"></select>
+      <select id="rate" title="読み上げの速さ">
+        <option value="0.9">0.9倍</option>
+        <option value="1.0">1.0倍</option>
+        <option value="1.1">1.1倍</option>
+        <option value="1.25">1.25倍</option>
+        <option value="1.5">1.5倍</option>
+        <option value="1.75">1.75倍</option>
+        <option value="2">2倍</option>
+        <option value="2.5">2.5倍</option>
+        <option value="3">3倍</option>
+        <option value="4">4倍</option>
+        <option value="5">5倍</option>
+      </select>
+      <button id="btn-auto" type="button" aria-pressed="false" title="自動送り（P）">自動送り</button>
+    </nav>
+    <aside id="menu" hidden></aside>
+  </div>
+  <div id="glossary" hidden role="dialog" aria-label="用語集">
+    <div class="gl-panel">
+      <div class="gl-head">
+        <h1>用語集</h1>
+        <input type="search" placeholder="用語、定義、意味で絞り込む">
+        <label><input type="checkbox"> まだ出ていない用語も表示</label>
+        <button type="button" class="gl-close" title="閉じる（Esc）">✕</button>
+      </div>
+      <div class="gl-count"></div>
+      <div class="gl-list"></div>
+    </div>
+  </div>
+
+  <script src="vendor/katex/katex.min.js"></script>
+  <script src="vendor/katex/auto-render.min.js"></script>
+  <script src="src/core.js"></script>
+  <script src="content/narration/narration.js"></script>
+  <script src="data/ch1.js"></script>
+  <script src="data/ch2.js"></script>
+  <script src="data/ch3.js"></script>
+  <script src="data/ch4.js"></script>
+  <script src="data/ch5a.js"></script>
+  <script src="data/ch5b.js"></script>
+  <script src="data/ch6.js"></script>
+  <script src="src/figures.js"></script>
+  <script src="src/figures-more.js"></script>
+  <script src="content/glossary.js"></script>
+  <script src="content/scenes/ch1.js"></script>
+  <script src="content/scenes/ch2.js"></script>
+  <script src="content/scenes/ch3.js"></script>
+  <script src="content/scenes/ch4.js"></script>
+  <script src="content/scenes/ch5a.js"></script>
+  <script src="content/scenes/ch5b.js"></script>
+  <script src="content/scenes/ch6.js"></script>
+  <script src="src/player.js"></script>
+  <script src="src/glossary.js"></script>
+</body>
+</html>

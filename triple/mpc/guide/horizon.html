@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>先を読んで、一手だけ指す</title>
+<meta name="description" content="モデル予測制御の基本：予測、最適化、最初の一手の実行、再計画（後退ホライズン）。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>先を読んで、一手だけ指す</h1>
+  <p class="g-lead">MPC の仕組みは 4 つの手順の繰り返しです。現代制御の「台本を書く」と似ていますが、台本を一度だけ書くのではなく、毎回書き直します。</p>
+</header>
+<main class="g-body">
+  <h2>4 つの手順</h2>
+  <ol>
+    <li><b>測る</b>：今の状態（車の横位置、向き、ハンドルの角度）を測る。</li>
+    <li><b>予測して最適化する</b>：モデルを使って、この先 N ステップ（デモでは 30 ステップ＝3 秒）の動きを予測し、目的（車線の真ん中を、穏やかに）と制約（道からはみ出さない、ハンドルの限界）を満たす最良の操作列を計算する。</li>
+    <li><b>最初の一手だけ実行する</b>：計算した 30 個の操作のうち、最初の 0.1 秒分だけを使う。</li>
+    <li><b>時間を進めて、1 に戻る</b>：予測の窓（ホライズン）は常に「今から 3 秒先」まで。時間とともに前へずれていくので、後退ホライズン制御とも呼ばれる。</li>
+  </ol>
+
+  <h2>計画は、毎回書き換えられる</h2>
+  <figure class="fig" data-fig="plans">
+    <canvas style="aspect-ratio: 16 / 6"></canvas>
+    <figcaption>横軸は進んだ距離、縦軸は横位置。橙が障害物。赤い線が実際に走った跡、青い点線が 0.5 秒ごとの「その時点での 3 秒先までの計画」。障害物が予測の窓に入った瞬間から計画が曲がり始め、実際の走りは、次々に書き換わる計画の「先頭」をつないだものになる。</figcaption>
+  </figure>
+  <p>なぜ全部実行しないのか。理由は 2 つあります。</p>
+  <ul>
+    <li><b>予測は外れる</b>：モデルの誤差、横風、新しく現れた障害物。毎回、今の状態から計算し直すので、外れた分が自動的に修正される。つまり MPC は<strong>フィードバック制御</strong>になっている。</li>
+    <li><b>先はまだ見えない</b>：3 秒先より向こうの障害物は、今の計画に入っていない。進むたびに新しい情報を取り込める。</li>
+  </ul>
+
+  <h2>現代制御との違い</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>三重振り子（現代制御）</th><th>車線変更（MPC）</th></tr></thead>
+      <tbody>
+        <tr><td>最適化を解く回数</td><td>最初に 1 回（数秒かけて）</td><td>0.1 秒ごとに毎回（数ミリ秒で）</td></tr>
+        <tr><td>ずれの直し方</td><td>時変 LQR（線形の補正）</td><td>最適化そのものを解き直す</td></tr>
+        <tr><td>制約</td><td>台本の計画時だけ考慮</td><td>毎回、直接考慮する</td></tr>
+        <tr><td>想定外の出来事</td><td>苦手（台本ごと作り直しが必要）</td><td>次の計算で取り込める</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>実は、制約がなく、ホライズンが無限に長ければ、MPC の答えは LQR とまったく同じになります。MPC の本領は、制約がある場合と、状況が変わり続ける場合に発揮されます。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/mpc/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/mpc/figs.js"></script>
+</body>
+</html>

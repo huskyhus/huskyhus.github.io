@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ハスタワーで学ぶコード理論</title>
+<link rel="stylesheet" href="seminar.css">
+</head>
+<body>
+<div class="toast"></div>
+<div class="stage">
+
+<!-- ============================================================ 0. 表紙 -->
+<section class="slide title">
+  <div class="part">コード理論ゼミ ・ 60 分</div>
+  <h1>ハスタワーで学ぶ<br>コード理論</h1>
+  <div class="sub">音の正体から、「これは○○進行だ」「ここで外してきた」が聴き取れるまで</div>
+  <div class="songs"><span>スーパーハスタワー</span><span>ウルトラハスタワー</span><span>戦闘曲1改「ハスタワー」</span></div>
+  <p class="small muted" style="margin-top:40px">→ / PageDown で次へ ・ N で発表者メモ ・ Esc で音を止める</p>
+  <aside class="notes">
+    開始前に音量チェック: 3 枚目の ▶ ボタン（スーパーハスタワー）を一度押しておく（最初の 1 回は読み込みに少しかかることがある）。<br>
+    経過時間は 2 枚目に進んだ時点から数え始める。T でリセット。下の帯に「このパートの目安」が出て、超えると赤くなる。
+  </aside>
+</section>
+
+<!-- ============================================================ 1. ゴール -->
+<section class="slide" data-until="4">
+  <div class="part">はじめに ・ 4 分</div>
+  <h2>今日のゴール</h2>
+  <p class="big">曲を聴いて<br>「あ、ここ<span class="em">王道進行</span>だ」「ここで<span class="out">外してきた</span>な」<br>と言えるようになる</p>
+  <div class="cols c3" style="margin-top:18px">
+    <div class="card"><h3>① 音と和音</h3><p class="small">音の高さ・音階・キー・和音の作り方。ここを押さえると、あとの話が全部「数え方」になる</p></div>
+    <div class="card"><h3>② 定番の進行</h3><p class="small">コードの役割（T・SD・D）と、名前の付いた進行。ハスタワーの 3 曲で実際に聴く</p></div>
+    <div class="card"><h3>③ 外し</h3><p class="small">偽終止・音階の外の和音・転調。「期待をずらす」仕掛けを聴き取る</p></div>
+  </div>
+  <aside class="notes">
+    ここで言うこと: 楽譜が読めなくても大丈夫。今日は「音を数える」「役割で聴く」の 2 つだけ持って帰ってもらう。<br>
+    教材の曲は全部 musiclab にあるハスタワーの曲。各セクションにコード進行が書き込まれているので、後で自分で見返せる。
+  </aside>
+</section>
+
+<!-- ============================================================ 2. つかみ -->
+<section class="slide" data-until="4">
+  <div class="part">はじめに</div>
+  <h2>まず 1 曲聴いてみる</h2>
+  <p>スーパーハスタワーの <b>C メロ → 大サビ</b>。何か起きている所が 2 か所あります。</p>
+  <div class="clip" data-song="super" data-section="C メロ（丸サ進行）" data-offset="4" data-bars="8" data-hide></div>
+  <ul class="small">
+    <li>どこかで「お、雰囲気が変わった」と感じた？</li>
+    <li>大サビは、その前のサビと同じ旋律。なのに何かが違う</li>
+  </ul>
+  <p class="muted small">答えは 60 分後に。今日の最後には、ここで何が起きたかを言葉で説明できるようになります。</p>
+  <aside class="notes">
+    2 か所: (1) C メロの最後の A♭7（音階にない和音で、次の調への橋渡し）、(2) 大サビで半音上（ハ長調 → 変ニ長調）へ転調。<br>
+    ここでは答えを言わない。「なんか上がった気がする」が出たら拾って褒める。クイズ 4 で回収する。
+  </aside>
+</section>
+
+<!-- ============================================================ 3. 音とは -->
+<section class="slide" data-until="9">
+  <div class="part">第 1 部 音の正体 ・ 5 分</div>
+  <h2>音 ＝ 空気の振動。高さ ＝ 1 秒に何回ふるえるか</h2>
+  <div class="cols w">
+    <div>
+      <ul>
+        <li>1 秒間の振動の回数が <b>周波数（Hz）</b>。多いほど高い音</li>
+        <li>基準は <b>ラ ＝ 440 Hz</b>（A4）</li>
+        <li>周波数が <b>2 倍</b>になると、<b class="em">同じ名前の音</b>に聞こえる ＝ <b>オクターブ</b></li>
+      </ul>
+      <button class="play" data-hz="220 440 880">220 → 440 → 880 Hz（どれも「ラ」）</button>
+      <button class="play" data-hz="440 660">440 → 660 Hz（1.5 倍 ＝ ミ。「よく溶ける」音）</button>
+    </div>
+    <div class="card small">
+      <h3>なぜ大事？</h3>
+      <p>2 倍・1.5 倍のように、<b>簡単な比</b>の音どうしはきれいに溶け合う。和音が「きれい」「濁る」と感じるのは、この比の簡単さから来ている。</p>
+    </div>
+  </div>
+  <aside class="notes">
+    220/440/880 を鳴らして「全部ラに聞こえる」を体感させる。<br>
+    1.5 倍（完全 5 度）は後で出てくる「ド と ソ」の関係。和音の土台。細かい物理（倍音）は深追いしない。
+  </aside>
+</section>
+
+<!-- ============================================================ 4. 12 の音 -->
+<section class="slide" data-until="9">
+  <div class="part">第 1 部 音の正体</div>
+  <h2>1 オクターブを 12 等分 ＝ 12 の音</h2>
+  <div class="kbd" data-from="60" data-to="83" data-letters></div>
+  <div class="cols">
+    <div>
+      <ul class="small">
+        <li>となりの鍵（黒鍵も数える）との距離が <b>半音</b>。半音 2 つで <b>全音</b></li>
+        <li>音名: <b>C D E F G A B ＝ ド レ ミ ファ ソ ラ シ</b></li>
+        <li>♯ は半音上、♭ は半音下（C♯ ＝ D♭）</li>
+      </ul>
+    </div>
+    <div>
+      <button class="play" data-seq="C4 C#4 D4 D#4 E4 F4 F#4 G4 G#4 A4 A#4 B4 C5" data-step="0.28">半音ずつ 12 個上がる</button><br>
+      <button class="play" data-seq="E4 F4 B4 C5" data-step="0.6">ミ–ファ、シ–ド は白鍵どうしでも半音</button>
+      <p class="small muted">鍵盤は押しても鳴ります</p>
+    </div>
+  </div>
+  <aside class="notes">
+    今日いちばん大事な道具は「半音いくつ離れているか」を数えること。和音も音階も全部これで説明できる。<br>
+    ミ–ファ と シ–ド の間に黒鍵がない＝半音、をしっかり。
+  </aside>
+</section>
+
+<!-- ============================================================ 5. 長音階 -->
+<section class="slide" data-until="15">
+  <div class="part">第 2 部 音階とキー ・ 6 分</div>
+  <h2>長音階（メジャースケール）＝ 明るい音階</h2>
+  <div class="kbd" data-from="60" data-to="83" data-mark="0 2 4 5 7 9 11" data-root="0"></div>
+  <p>12 音から 7 つを選ぶ。並び方は <b class="big">全 全 <span class="em">半</span> 全 全 全 <span class="em">半</span></b></p>
+  <div>
+    <button class="play" data-seq="C4 D4 E4 F4 G4 A4 B4 C5">ハ長調（ド から）</button>
+    <button class="play" data-seq="C4 D4 E4 F4 G4 A4 B4" data-step="0.5">シで止める（気持ち悪い？）</button>
+    <button class="play" data-seq="D4 E4 F#4 G4 A4 B4 C#5 D5">ニ長調（レ から、同じ並び）</button>
+  </div>
+  <p class="small" style="margin-top:10px">「シで止める」と、ドに帰りたくなる。この帰る先が <b>主音</b>。どの音を主音（家）にするかが <b>キー（調）</b>。</p>
+  <aside class="notes">
+    「シで止める」を鳴らしてから「どうしたくなる？」と聞く。ドに行きたくなる＝シ（導音）→ド が半音、が後のドミナントの話の伏線。<br>
+    ニ長調はウルトラハスタワーの調。並びが同じなら、どこから始めても同じ「明るさ」になる。
+  </aside>
+</section>
+
+<!-- ============================================================ 6. 短音階 -->
+<section class="slide" data-until="15">
+  <div class="part">第 2 部 音階とキー</div>
+  <h2>短音階（マイナースケール）＝ 暗い音階</h2>
+  <div class="kbd" data-from="57" data-to="81" data-mark="9 11 0 2 4 5 7" data-root="9"></div>
+  <p>並び方は <b class="big">全 <span class="em">半</span> 全 全 <span class="em">半</span> 全 全</b>　（ラ から白鍵だけ）</p>
+  <div>
+    <button class="play" data-seq="A3 B3 C4 D4 E4 F4 G4 A4">イ短調（ラ から）</button>
+    <button class="play" data-seq="C4 D4 E4 F4 G4 A4 B4 C5">ハ長調（ド から）</button>
+  </div>
+  <ul class="small" style="margin-top:8px">
+    <li>使う音は <b>ハ長調とまったく同じ</b>。家（主音）が違うだけで明るさが変わる → この 2 つは <b>平行調</b></li>
+    <li>戦闘曲1改は <b>イ短調</b>。だから曲中にハ長調の顔（明るい進行）をすっと出せる</li>
+  </ul>
+  <aside class="notes">
+    同じ白鍵 7 つでも、ラを家にすると暗い。3 番目の音（ド）が主音から半音 3 つ＝短 3 度、が暗さの正体（次の「和音」で再登場）。<br>
+    平行調の話は、戦闘曲1改の「掛け合い（王道進行）」で回収する。
+  </aside>
+</section>
+
+<!-- ============================================================ 7. ディグリー -->
+<section class="slide" data-until="15">
+  <div class="part">第 2 部 音階とキー</div>
+  <h2>ディグリー: 音階の「何番目か」で呼ぶ</h2>
+  <table>
+    <tr><th>番号</th><th class="c">I</th><th class="c">II</th><th class="c">III</th><th class="c">IV</th><th class="c">V</th><th class="c">VI</th><th class="c">VII</th></tr>
+    <tr><td>ハ長調</td><td class="c">C</td><td class="c">D</td><td class="c">E</td><td class="c">F</td><td class="c">G</td><td class="c">A</td><td class="c">B</td></tr>
+    <tr><td>ニ長調</td><td class="c">D</td><td class="c">E</td><td class="c">F♯</td><td class="c">G</td><td class="c">A</td><td class="c">B</td><td class="c">C♯</td></tr>
+    <tr><td>ホ長調</td><td class="c">E</td><td class="c">F♯</td><td class="c">G♯</td><td class="c">A</td><td class="c">B</td><td class="c">C♯</td><td class="c">D♯</td></tr>
+  </table>
+  <p style="margin-top:16px">キーが変わっても <b>番号で言えば同じ進行</b>。「王道進行 ＝ IV–V–iii–vi」と覚えれば、どのキーでも見つけられる。</p>
+  <div class="prog" data-prog="F|IV|SD G|V|D Em|iii|T Am|vi|T" data-label="ハ長調で IV–V–iii–vi" data-dur="1.1"></div>
+  <div class="prog" data-prog="A|IV|SD B|V|D G#m|iii|T C#m|vi|T" data-label="ホ長調で IV–V–iii–vi（高さが違うだけで同じ感じ）" data-dur="1.1"></div>
+  <aside class="notes">
+    ローマ数字＝ディグリー。大文字・小文字の意味は次の和音のパートで。<br>
+    ウルトラハスタワーはニ長調で始まり、ラスサビでホ長調になる。それでもサビは同じ「IV–V–iii–vi」と言える、という予告。
+  </aside>
+</section>
+
+<!-- ============================================================ 8. 和音 -->
+<section class="slide" data-until="23">
+  <div class="part">第 3 部 和音 ・ 8 分</div>
+  <h2>和音 ＝ 1 つおきに 3 つ重ねる</h2>
+  <div class="kbd" data-from="60" data-to="83"></div>
+  <div class="cols">
+    <div>
+      <h3>メジャー（明るい）</h3>
+      <p class="small">下から <b>半音 4</b>（長 3 度）＋ <b>半音 3</b>　例 C ＝ ド・ミ・ソ</p>
+      <button class="play" data-notes="C4 E4 G4" data-arp>C</button>
+      <button class="play" data-notes="A4 C#5 E5" data-arp>A</button>
+    </div>
+    <div>
+      <h3>マイナー（暗い）</h3>
+      <p class="small">下から <b>半音 3</b>（短 3 度）＋ <b>半音 4</b>　例 Cm ＝ ド・ミ♭・ソ</p>
+      <button class="play" data-notes="C4 D#4 G4" data-arp>Cm</button>
+      <button class="play" data-notes="A4 C5 E5" data-arp>Am</button>
+    </div>
+  </div>
+  <p class="small">違いは <b>真ん中の音（3 度）が半音 1 つ</b>だけ。これで明るい・暗いが決まる。</p>
+  <aside class="notes">
+    C と Cm を交互に鳴らして、真ん中のミ／ミ♭だけが違うことを鍵盤で見せる。<br>
+    下と上（ド–ソ）は半音 7 ＝ さっきの 1.5 倍（完全 5 度）。土台が安定しているから和音として溶ける。
+  </aside>
+</section>
+
+<!-- ============================================================ 9. ダイアトニック -->
+<section class="slide" data-until="23">
+  <div class="part">第 3 部 和音</div>
+  <h2>音階の上に積むと 7 つの和音ができる（ダイアトニックコード）</h2>
+  <table>
+    <tr><th>ディグリー</th><th class="c">I</th><th class="c">ii</th><th class="c">iii</th><th class="c">IV</th><th class="c">V</th><th class="c">vi</th><th class="c">vii°</th></tr>
+    <tr><td>ハ長調</td><td class="c">C</td><td class="c">Dm</td><td class="c">Em</td><td class="c">F</td><td class="c">G</td><td class="c">Am</td><td class="c">Bdim</td></tr>
+    <tr><td></td>
+      <td class="c"><button class="play" data-chord="C">C</button></td>
+      <td class="c"><button class="play" data-chord="Dm">Dm</button></td>
+      <td class="c"><button class="play" data-chord="Em">Em</button></td>
+      <td class="c"><button class="play" data-chord="F">F</button></td>
+      <td class="c"><button class="play" data-chord="G">G</button></td>
+      <td class="c"><button class="play" data-chord="Am">Am</button></td>
+      <td class="c"><button class="play" data-chord="Bdim">B°</button></td></tr>
+  </table>
+  <ul style="margin-top:16px">
+    <li><b>大文字 ＝ メジャー</b>（I・IV・V）、<b>小文字 ＝ マイナー</b>（ii・iii・vi）、° は少し不安定な形</li>
+    <li>ポップスの進行は、ほぼこの 7 つ（とくに 6 つ）の並べ替えでできている</li>
+    <li>ここに <b>ない</b> 和音が出てきたら、それが「外し」の候補 → 第 6 部</li>
+  </ul>
+  <aside class="notes">
+    白鍵だけで 1 つおきに積むと、自動的にメジャーとマイナーが混ざる。この表を覚えるのが今日の最大の近道。<br>
+    「この表にない和音が出たら外し」と一言入れておくと、第 6 部への伏線になる。
+  </aside>
+</section>
+
+<!-- ============================================================ 10. セブンス -->
+<section class="slide" data-until="23">
+  <div class="part">第 3 部 和音</div>
+  <h2>もう 1 つ重ねる: セブンス（4 和音）</h2>
+  <table>
+    <tr><th>名前</th><th>例</th><th>重ね方</th><th>感じ</th><th></th></tr>
+    <tr><td><b>maj7</b>（△7）</td><td>Cmaj7 ＝ ド ミ ソ <b>シ</b></td><td>メジャー ＋ 長 7 度</td><td>おしゃれ・都会的・浮遊感</td><td><button class="play" data-chord="Cmaj7">鳴らす</button></td></tr>
+    <tr><td><b>m7</b></td><td>Am7 ＝ ラ ド ミ <b>ソ</b></td><td>マイナー ＋ 短 7 度</td><td>やわらかい暗さ</td><td><button class="play" data-chord="Am7">鳴らす</button></td></tr>
+    <tr><td><b>7</b>（セブンス）</td><td>G7 ＝ ソ シ レ <b>ファ</b></td><td>メジャー ＋ 短 7 度</td><td>どこかへ行きたい・落ち着かない</td><td><button class="play" data-chord="G7">鳴らす</button></td></tr>
+  </table>
+  <p style="margin-top:16px">ハスタワーの曲は <b>Fmaj7・Am7・Gmaj7</b> だらけ。3 和音より響きが柔らかく、浮いた感じになる。</p>
+  <div class="prog" data-prog="C|I|T Am|vi|T F|IV|SD G|V|D" data-label="3 和音で" data-dur="1.1"></div>
+  <div class="prog" data-prog="Cmaj7|I△7|T Am7|vi7|T Fmaj7|IV△7|SD G7|V7|D" data-label="4 和音で" data-dur="1.1"></div>
+  <aside class="notes">
+    G7 の「落ち着かなさ」が次のパートの主役。ここでは「7 が付くとどこかへ行きたくなる」とだけ言う。<br>
+    maj7 と 7 は名前が似ていて紛らわしい。maj7 は 7 度が主音の半音下（シ）、7 は全音下（シ♭）。
+  </aside>
+</section>
+
+<!-- ============================================================ 11. 分数コード -->
+<section class="slide" data-until="23">
+  <div class="part">第 3 部 和音</div>
+  <h2>コード表記の読み方 ＋ ベースは「線」で動く</h2>
+  <div class="cols">
+    <div>
+      <table class="small">
+        <tr><td><b>G/B</b></td><td>G の和音で、いちばん下（ベース）は B</td></tr>
+        <tr><td><b>sus4</b></td><td>3 度を 4 度に吊る。明るくも暗くもない「宙ぶらりん」</td></tr>
+        <tr><td><b>add9</b></td><td>9 度（＝ 2 度上）を足す。きらっとする</td></tr>
+        <tr><td><b>7♭9</b></td><td>7 にさらに ♭9。影のある緊張</td></tr>
+      </table>
+      <p class="small" style="margin-top:12px"><button class="play" data-chord="Asus4">Asus4</button><button class="play" data-chord="A">A</button><button class="play" data-chord="Cadd9">Cadd9</button></p>
+    </div>
+    <div>
+      <p class="small">スーパーハスタワーの A メロは、ベースが <b>ド → シ → ラ</b> と 1 段ずつ下りる。分数コードはこのためにある。</p>
+      <div class="prog" data-prog="C|I|T G/B|V⁶|D Am7|vi7|T Fmaj7|IV△7|SD" data-label="C–G/B–Am7–Fmaj7" data-dur="1.2"></div>
+      <div class="clip" data-song="super" data-section="A メロ" data-bars="4"></div>
+    </div>
+  </div>
+  <aside class="notes">
+    コードを聴き取るときは、まずベース（いちばん低い音）を追うのがコツ。ベースが階段状に下りる進行は「カノン進行」的な響きになる。<br>
+    原曲を流すときは「ベースだけ聴いて」と指示すると効果的。
+  </aside>
+</section>
+
+<!-- ============================================================ 12. 機能 -->
+<section class="slide" data-until="31">
+  <div class="part">第 4 部 コードの役割（機能）・ 8 分</div>
+  <h2>和音には役割がある: <span class="t">T</span>・<span class="sd">SD</span>・<span class="d">D</span></h2>
+  <div class="cols c3">
+    <div class="card" style="border-color:var(--t)"><h3 class="t">T トニック ＝ 家</h3><p class="small">安定。落ち着く。曲の始まりと終わり。<br><b>I</b>（と仲間の vi・iii）</p></div>
+    <div class="card" style="border-color:var(--sd)"><h3 class="sd">SD サブドミナント ＝ 外出</h3><p class="small">家から少し離れる。広がる、ふわっとする。<br><b>IV</b>（と仲間の ii）</p></div>
+    <div class="card" style="border-color:var(--d)"><h3 class="d">D ドミナント ＝ 帰りたい</h3><p class="small">緊張。「次は家だよね？」と強く期待させる。<br><b>V</b>・<b>V7</b></p></div>
+  </div>
+  <p style="margin-top:18px">いちばん基本の物語 ＝ <b>カデンツ</b>: 家 → 外出 → 帰りたい → 家</p>
+  <div class="prog" data-prog="C|I|T F|IV|SD G7|V7|D C|I|T" data-label="I–IV–V7–I" data-dur="1.3"></div>
+  <div class="prog" data-prog="C|I|T F|IV|SD G7|V7|D" data-label="V7 で止めると？" data-dur="1.3"></div>
+  <aside class="notes">
+    「V7 で止める」を鳴らして、聴き手が「続きは？」と感じることを確認。これが今日の「期待」の正体。<br>
+    外しとは、この期待を作っておいて、わざと別の所へ行くこと。
+  </aside>
+</section>
+
+<!-- ============================================================ 13. ドミナントモーション -->
+<section class="slide" data-until="31">
+  <div class="part">第 4 部 コードの役割</div>
+  <h2>なぜ V7 は I に帰りたいのか</h2>
+  <div class="kbd" data-from="60" data-to="77"></div>
+  <div class="cols">
+    <div>
+      <p>G7 ＝ ソ <b class="d">シ</b> レ <b class="d">ファ</b></p>
+      <ul class="small">
+        <li><b>シ → ド</b>: 半音上がって主音へ（さっきの「シで止めると気持ち悪い」）</li>
+        <li><b>ファ → ミ</b>: 半音下がって落ち着く</li>
+        <li>2 つの音が <b>半音で</b>解決する ＝ <b>ドミナントモーション</b></li>
+      </ul>
+    </div>
+    <div>
+      <button class="play" data-notes="B4 F5" data-arp>シ と ファ だけ（濁る）</button><br>
+      <button class="play" data-seq="B4 C5 F5 E5" data-step="0.5">シ→ド、ファ→ミ</button><br>
+      <div class="prog" data-prog="G7|V7|D C|I|T" data-label="G7 → C" data-dur="1.5"></div>
+    </div>
+  </div>
+  <p class="small muted">短調でも V は <b>メジャー（E7 の G♯）</b>にして、主音へ半音で上がる音（導音）を作るのが普通。戦闘曲1改の E7 はこれ。</p>
+  <aside class="notes">
+    シとファの間（増 4 度）は不安定な響き。それが半音ずつ内側と外側へほどけるのが「解決」。<br>
+    この「半音で動く」の感覚が分かると、セカンダリードミナント（第 6 部）がすぐ理解できる。
+  </aside>
+</section>
+
+<!-- ============================================================ 14. 代理 -->
+<section class="slide" data-until="31">
+  <div class="part">第 4 部 コードの役割</div>
+  <h2>代理コード: 構成音が似ていれば、同じ役割</h2>
+  <table>
+    <tr><th>役割</th><th>代表</th><th>代理（仲間）</th><th>共通の音</th></tr>
+    <tr><td class="t">T</td><td>I（C）</td><td><b>vi（Am）</b>・iii（Em）</td><td>C ＝ ド<b>ミ</b>ソ、Am ＝ ラド<b>ミ</b> → 2 音同じ</td></tr>
+    <tr><td class="sd">SD</td><td>IV（F）</td><td><b>ii（Dm）</b></td><td>F ＝ <b>ファラド</b>、Dm ＝ レ<b>ファラ</b></td></tr>
+    <tr><td class="d">D</td><td>V（G）</td><td>vii°（Bdim）</td><td>G7 の上 3 音 ＝ Bdim</td></tr>
+  </table>
+  <div class="cols" style="margin-top:14px">
+    <div>
+      <p class="small">I の代わりに vi で家に帰ると「<b>家だけど、少しさみしい</b>」</p>
+      <div class="prog" data-prog="F|IV|SD G7|V7|D C|I|T" data-label="V7 → I" data-dur="1.2"></div>
+      <div class="prog" data-prog="F|IV|SD G7|V7|D Am|vi|T" data-label="V7 → vi（偽終止）" data-dur="1.2"></div>
+    </div>
+    <div class="card small">
+      <h3>ii–V–I（ツーファイブワン）</h3>
+      <p>SD の代理 ii を使った、いちばんなめらかなカデンツ。ジャズでも J-POP でも頻出。</p>
+      <div class="prog" data-prog="Dm7|ii7|SD G7|V7|D Cmaj7|I△7|T" data-label="Dm7–G7–Cmaj7" data-dur="1.2"></div>
+    </div>
+  </div>
+  <aside class="notes">
+    V7 → vi の「偽終止」は外しの代表。ここでは聴き比べだけして、名前を覚えてもらう。第 6 部で原曲を聴く。
+  </aside>
+</section>
+
+<!-- ============================================================ 15. 原曲でカデンツ -->
+<section class="slide" data-until="31">
+  <div class="part">第 4 部 コードの役割</div>
+  <h2>原曲で確認: 戦闘曲1改「カデンツ」</h2>
+  <p>イ短調の T–SD–D–T。<b>i–iv7–V7–i</b> を 2 回。</p>
+  <div class="prog" data-prog="Am|i|T Dm7|iv7|SD E7|V7|D Am|i|T" data-label="ピアノで" data-dur="1.1"></div>
+  <div class="clip" data-song="kai" data-section="カデンツ（T–SD–D–T）" data-bars="8"></div>
+  <ul class="small">
+    <li>E7 の小節で「次で終わりそう」と感じたら、ドミナントが聴き取れている</li>
+    <li>ウルトラハスタワーのサビ後半も <b>ii7–V7–I</b>（Em7–A7–D）。ここで一度「家」に帰る</li>
+  </ul>
+  <div class="clip" data-song="ultra" data-section="サビ" data-offset="4" data-bars="4"></div>
+  <aside class="notes">
+    短調では和音が i（Am）・iv（Dm）と小文字になるが、役割の考え方は同じ。<br>
+    ウルトラのサビ後半: Em7 → A7 → D で家に帰り、D7 で次（ソロ）へ押し出す。D7 は次の部の「セカンダリードミナント」の例でもある（IV の G へ向かう形）。
+  </aside>
+</section>
+
+<!-- ============================================================ 16. 王道進行 -->
+<section class="slide" data-until="45">
+  <div class="part">第 5 部 名前の付いた進行 ・ 14 分</div>
+  <h2>王道進行 <span class="muted" style="font-size:28px">IV△7 – V – iii7 – vi7</span></h2>
+  <div class="cols w">
+    <div>
+      <ul class="small">
+        <li>J-POP のサビの代表。<span class="sd">SD</span> → <span class="d">D</span> で盛り上げて、I に行かずに <span class="t">iii → vi</span> へ流れる</li>
+        <li>帰りそうで帰らない ＝ <b>切なさ</b>。vi から IV に戻ってループする</li>
+        <li>見つけ方: <b>ベースが「ファ → ソ → ミ → ラ」</b>（上がって、下がって、上がる）</li>
+      </ul>
+      <div class="prog" data-prog="Fmaj7|IV△7|SD G|V|D Em7|iii7|T Am7|vi7|T" data-label="ハ長調で" data-dur="1.1"></div>
+    </div>
+    <div class="card small">
+      <h3>ハスタワーでは</h3>
+      <p>ウルトラハスタワーのイントロとサビ（ニ長調: Gmaj7–A–F♯m7–Bm7）</p>
+      <div class="clip" data-song="ultra" data-section="サビ" data-bars="4"></div>
+      <p>戦闘曲1改の掛け合い（イ短調の曲の中で、平行調のハ長調として）</p>
+      <div class="clip" data-song="kai" data-section="掛け合い（王道進行）" data-bars="4"></div>
+    </div>
+  </div>
+  <aside class="notes">
+    ウルトラのサビは、旋律が各小節の頭で和音の 9 度・7 度（和音の外側の音）から始まって 1 段ずつ下りる。これが「泣き」を強めている（第 6 部のおまけで触れる）。<br>
+    戦闘曲1改の掛け合いは、短調の曲の中で急に明るくなる場面。使う音が同じ平行調だから自然につながる。
+  </aside>
+</section>
+
+<!-- ============================================================ 17. Axis -->
+<section class="slide" data-until="45">
+  <div class="part">第 5 部 名前の付いた進行</div>
+  <h2>I – V – vi – IV と、その並べ替え</h2>
+  <div class="cols">
+    <div>
+      <h3>I–V–vi–IV（Axis 進行）</h3>
+      <p class="small">明るく始まり、vi で少し陰る。世界中のポップスで使われる。スーパー・ウルトラの A メロはどちらもこれ（ベースが下りる形）。</p>
+      <div class="prog" data-prog="C|I|T G/B|V⁶|D Am7|vi7|T Fmaj7|IV△7|SD" data-dur="1.1"></div>
+      <div class="clip" data-song="ultra" data-section="A メロ" data-bars="4"></div>
+    </div>
+    <div>
+      <h3>vi–IV–I–V（同じ 4 つを vi から）</h3>
+      <p class="small">同じ和音でも <b>暗い vi から始めると</b>、切なく力強いサビになる。スーパーハスタワーのサビ。</p>
+      <div class="prog" data-prog="Am|vi|T Fmaj7|IV△7|SD C|I|T G/B|V⁶|D" data-dur="1.1"></div>
+      <div class="clip" data-song="super" data-section="B メロ（サビ）" data-bars="4"></div>
+    </div>
+  </div>
+  <p class="small muted">ポイント: 進行は「どの和音を使うか」だけでなく「<b>どこから始めるか</b>」で表情が変わる。</p>
+  <aside class="notes">
+    スーパーの A メロとサビは、実は同じ 4 つの和音（C・G・Am・F）。始まる場所が違うだけ。聴き比べると驚きがある。<br>
+    時間が押していたら、右のスーパーのサビだけ流す。
+  </aside>
+</section>
+
+<!-- ============================================================ 18. 小室・カノン -->
+<section class="slide" data-until="45">
+  <div class="part">第 5 部 名前の付いた進行</div>
+  <h2>小室進行 <span class="muted" style="font-size:28px">vi – IV – V – I</span></h2>
+  <div class="cols w">
+    <div>
+      <ul class="small">
+        <li>暗い vi で始まり、最後に <b>I（家）に着く</b>。疾走感と高揚感</li>
+        <li>着いた I から vi へは共通音が 2 つ → ループのつなぎ目がなめらか</li>
+        <li>90 年代の小室哲哉さんの曲で多用されたことからこの名前</li>
+      </ul>
+      <div class="prog" data-prog="Am|vi|T F|IV|SD G|V|D C|I|T" data-dur="1.1"></div>
+    </div>
+    <div class="card small">
+      <h3>ハスタワーでは</h3>
+      <p>戦闘曲1改「裏拍」。イ短調の曲だが、和音はハ長調の vi–IV–V–I（Am–F–G–C）。旋律も伴奏も裏拍で、前のめりに走る。</p>
+      <div class="clip" data-song="kai" data-section="裏拍（小室進行）" data-bars="8"></div>
+    </div>
+  </div>
+  <aside class="notes">
+    王道進行との聴き分け: 王道は IV で始まり vi で終わる（着かない）、小室は vi で始まり I で終わる（着く）。<br>
+    「最後に落ち着いたか？」が聴き分けの鍵、と強調する。
+  </aside>
+</section>
+
+<!-- ============================================================ 19. 丸サ -->
+<section class="slide" data-until="45">
+  <div class="part">第 5 部 名前の付いた進行</div>
+  <h2>丸サ進行 <span class="muted" style="font-size:28px">IV△7 – III7 – vi7 – I7</span></h2>
+  <div class="cols w">
+    <div>
+      <ul class="small">
+        <li>おしゃれでせつない。シティポップでおなじみ</li>
+        <li><b class="out">III7（E7）と I7（C7）</b>は、さっきのダイアトニックの表に<b>ない</b> → 音階の外の音（ソ♯・シ♭）が混ざる</li>
+        <li>この「外の音」がおしゃれさの正体。理由は第 6 部で</li>
+      </ul>
+      <div class="prog" data-prog="Fmaj7|IV△7|SD E7|III7|X Am7|vi7|T C7|I7|X" data-dur="1.2"></div>
+    </div>
+    <div class="card small">
+      <h3>ハスタワーでは</h3>
+      <p>スーパーハスタワー C メロ（E7 は ♭9 付き）</p>
+      <div class="clip" data-song="super" data-section="C メロ（丸サ進行）" data-bars="4"></div>
+      <p>戦闘曲1改 B' メロ（同じ旋律の B を丸サに付け替え）</p>
+      <div class="clip" data-song="kai" data-section="B' メロ（丸サ進行）" data-bars="4"></div>
+    </div>
+  </div>
+  <aside class="notes">
+    紫のチップ（X）は「音階の外」の和音。今日の残りは、この紫がなぜ自然に聞こえるのかの話。<br>
+    戦闘曲1改の B と B' は旋律がほぼ同じで和音だけ違う。余裕があれば B（短調のカノン進行の後半）と聴き比べる。
+  </aside>
+</section>
+
+<!-- ============================================================ 20. 短調の進行 -->
+<section class="slide" data-until="45">
+  <div class="part">第 5 部 名前の付いた進行</div>
+  <h2>短調の定番（全部、戦闘曲1改に入っている）</h2>
+  <div class="cols c3">
+    <div class="card small">
+      <h3>アンダルシア進行</h3>
+      <p><b>i – VII – VI – V7</b><br>ベースが ラ→ソ→ファ→ミ と下りる。情熱的・スペイン風・哀愁</p>
+      <div class="prog" data-prog="Am|i|T G|VII| F|VI|SD E7|V7|D" data-dur="1"></div>
+      <div class="clip" data-song="kai" data-section="C メロ（アンダルシア進行）" data-bars="4" data-label="▶ C メロ"></div>
+    </div>
+    <div class="card small">
+      <h3>エピック進行</h3>
+      <p><b>i – VI – III – VII</b><br>壮大・映画的。終わらずにぐるぐる回る</p>
+      <div class="prog" data-prog="Am|i|T F|VI|SD C|III|T G|VII|" data-dur="1"></div>
+      <div class="clip" data-song="kai" data-section="シンコペーション（エピック進行）" data-bars="4" data-label="▶ シンコペーション"></div>
+    </div>
+    <div class="card small">
+      <h3>ロック進行</h3>
+      <p><b>i – VII – VI – VII</b><br>VI と VII を行き来する。力強い、ハードな感じ</p>
+      <div class="prog" data-prog="Am|i|T G|VII| F|VI|SD G|VII|" data-dur="1"></div>
+      <div class="clip" data-song="kai" data-section="A' メロ" data-bars="4" data-label="▶ A' メロ"></div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:12px">共通点: <b>VII（ソ）や VI（ファ）</b>を、V を使わずに行き来する。短調らしい「流れ」の響き。</p>
+  <aside class="notes">
+    3 つとも Am・G・F が出てくるので、聴き分けは「4 つ目」に注目: E7（緊張して戻る）ならアンダルシア、C を通るならエピック、G に戻るならロック。<br>
+    時間が押していたら、アンダルシアだけ原曲を流す（いちばん聴き取りやすい）。
+  </aside>
+</section>
+
+<!-- ============================================================ 21. ♭VI-♭VII-I -->
+<section class="slide" data-until="45">
+  <div class="part">第 5 部 名前の付いた進行</div>
+  <h2>♭VI – ♭VII – I（エオリアン終止）</h2>
+  <div class="cols w">
+    <div>
+      <ul class="small">
+        <li>V を使わずに、<b>全音ずつ 2 段上がって</b>家に着く。勝利・冒険・ゲーム音楽っぽい</li>
+        <li>長調で使うと ♭VI（A♭）・♭VII（B♭）は音階の外 → 次の部の「借用和音」</li>
+      </ul>
+      <div class="prog" data-prog="Abmaj7|♭VI△7|X Bb|♭VII|X C|I|T" data-label="ハ長調で ♭VI–♭VII–I" data-dur="1.3"></div>
+      <div class="prog" data-prog="F|VI|SD G|VII| Am|i|T E7|V7|D" data-label="イ短調で VI–VII–i（–V7）" data-dur="1.1"></div>
+    </div>
+    <div class="card small">
+      <h3>ハスタワーでは</h3>
+      <p>スーパーハスタワーのイントロ（I–vi7–♭VI△7–♭VII → A メロの I）</p>
+      <div class="clip" data-song="super" data-section="イントロ" data-bars="5"></div>
+      <p>戦闘曲1改の前奏（VI△7–VII–i–V7）</p>
+      <div class="clip" data-song="kai" data-section="前奏" data-bars="5"></div>
+    </div>
+  </div>
+  <aside class="notes">
+    短調では VI・VII は音階の中の和音なので普通の進行。長調に持ってくると「外の和音」になる。同じ形が、キーによって普通にも外しにもなる、が面白いところ。<br>
+    ここで第 5 部は終わり。押していたら次の第 6 部を短く。
+  </aside>
+</section>
+
+<!-- ============================================================ 22. 外しとは -->
+<section class="slide" data-until="55">
+  <div class="part">第 6 部 「ここで外してきた」 ・ 10 分</div>
+  <h2>外し ＝ 期待を作って、ずらす</h2>
+  <table>
+    <tr><th>種類</th><th>何が起きる</th><th>聞こえ方</th><th>ハスタワーの例</th></tr>
+    <tr><td><b>偽終止</b></td><td>V7 のあと I ではなく vi へ</td><td>「帰らない」・せつない</td><td>ウルトラ 落ちサビ</td></tr>
+    <tr><td><b>セカンダリードミナント</b></td><td>I 以外へ向かう「よその V7」</td><td>ぐっと引き寄せられる</td><td>丸サ進行の E7・C7</td></tr>
+    <tr><td><b>借用和音</b></td><td>同じ主音の短調から和音を借りる</td><td>明るい中に影</td><td>スーパー イントロ・ウルトラ つなぎ</td></tr>
+    <tr><td><b>転調</b></td><td>キーそのものを変える</td><td>景色が変わる・一段上がる</td><td>3 曲とも最後のサビ</td></tr>
+  </table>
+  <p style="margin-top:16px">聴き取りのコツ: 「<b>次はこう来るだろう</b>」を頭の中で予想しながら聴く。予想が外れた瞬間が外し。</p>
+  <aside class="notes">
+    外しは「ルール違反」ではなく、ルール（期待）があるから効く演出。第 4 部の「V7 で止めると続きが聴きたくなる」を思い出してもらう。
+  </aside>
+</section>
+
+<!-- ============================================================ 23. 偽終止 -->
+<section class="slide" data-until="55">
+  <div class="part">第 6 部 「ここで外してきた」</div>
+  <h2>偽終止: 帰ると見せて、帰らない</h2>
+  <div class="cols">
+    <div>
+      <p class="small">ウルトラハスタワーの落ちサビ。ii7–V7 で「家（D）に帰るぞ」と思わせて、<b>vi7（Bm7）</b>へ逃げる。そのまま sus4 で宙吊りにして、次のラスサビへ。</p>
+      <div class="prog" data-prog="Em7|ii7|SD A7|V7|D Bm7|vi7|X B7sus4|→ホ長調|X" data-label="ピアノで" data-dur="1.3"></div>
+      <div class="clip" data-song="ultra" data-section="落ちサビ" data-offset="4" data-bars="4"></div>
+    </div>
+    <div>
+      <p class="small">サビでは同じ Em7–A7 から <b>ちゃんと D に帰っていた</b>。だから落ちサビで「帰らない」が効く。</p>
+      <div class="clip" data-song="ultra" data-section="サビ" data-offset="4" data-bars="3"></div>
+      <p class="small">スーパーハスタワーも、A メロの最後の V（G）から <b>サビの頭は vi（Am）</b>。偽終止でサビに飛び込む。</p>
+      <div class="clip" data-song="super" data-section="A メロ" data-offset="6" data-bars="3"></div>
+    </div>
+  </div>
+  <aside class="notes">
+    同じ曲の中で「一度は普通に解決させておいて、次は外す」のが上手い外し方。ウルトラのサビと落ちサビを並べて聴くとよく分かる。<br>
+    ラスサビでもう一度 V7 → vi7 の偽終止があり、最後の最後に主和音（Eadd9）で曲の最高音に着く。
+  </aside>
+</section>
+
+<!-- ============================================================ 24. セカンダリードミナント -->
+<section class="slide" data-until="55">
+  <div class="part">第 6 部 「ここで外してきた」</div>
+  <h2>セカンダリードミナント:「よその V7」</h2>
+  <div class="cols">
+    <div>
+      <p class="small">V7 → I の引力を、<b>I 以外の和音</b>に向けて使う。そのために音階の外の音（導音）が 1 つ入る。</p>
+      <table class="small">
+        <tr><th>和音</th><th>向かう先</th><th>外の音</th></tr>
+        <tr><td><b class="out">E7</b>（III7）</td><td>Am（vi）の V7</td><td>ソ♯ → ラ</td></tr>
+        <tr><td><b class="out">C7</b>（I7）</td><td>F（IV）の V7</td><td>シ♭ → ラ</td></tr>
+        <tr><td><b class="out">D7</b>（II7）</td><td>G（V）の V7</td><td>ファ♯ → ソ</td></tr>
+      </table>
+      <p class="small">丸サ進行の紫の和音は、これだった。</p>
+      <div class="prog" data-prog="E7|V7/vi|X Am7|vi7|T" data-label="E7 → Am7" data-dur="1.4"></div>
+    </div>
+    <div>
+      <p class="small">スーパーハスタワー A' メロの最後: <b>Gm7–C7</b> は「F へのツーファイブ」。家（C）の代わりに、C メロの Fmaj7 へ引き寄せる。</p>
+      <div class="clip" data-song="super" data-section="A' メロ" data-offset="5" data-bars="4"></div>
+      <p class="small muted">見つけ方: 「<b>7</b>」の付いたメジャーの和音が V 以外の場所に出たら、次の和音を見る。4 度上（5 度下）に行っていればセカンダリードミナント。</p>
+    </div>
+  </div>
+  <aside class="notes">
+    A 'メロの G → Gm7 → C7 → Fmaj7: G（家へ帰る和音）を一瞬で Gm7 に変えて、行き先を F に付け替えている。ここも「外し」として聴ける。<br>
+    「4 度上（5 度下）」: E→A、C→F、D→G。ドミナントモーションの形。
+  </aside>
+</section>
+
+<!-- ============================================================ 25. 借用和音 -->
+<section class="slide" data-until="55">
+  <div class="part">第 6 部 「ここで外してきた」</div>
+  <h2>借用和音: 同じ主音の短調から借りる</h2>
+  <div class="cols">
+    <div>
+      <p class="small">ハ長調の曲で、<b>ハ短調</b>の和音（A♭・B♭・Fm など）を一瞬借りる。明るさの中に影や遠さが差す。</p>
+      <div class="prog" data-prog="C|I|T Am7|vi7|T Abmaj7|♭VI△7|X Bb|♭VII|X C|I|T" data-label="スーパーのイントロの和音" data-dur="1.1"></div>
+      <div class="clip" data-song="super" data-section="イントロ" data-bars="5"></div>
+    </div>
+    <div>
+      <p class="small">ウルトラハスタワーの「つなぎ」。ニ長調の曲で <b>C△7（♭VII△7）</b>。ラスサビ（ホ長調）の輝きのあとに、遠くを見るような影を残して A メロへ戻る。</p>
+      <div class="prog" data-prog="Cmaj7|♭VII△7|X A7sus4|V7sus4|D D|I|T" data-label="ニ長調で" data-dur="1.4"></div>
+      <div class="clip" data-song="ultra" data-section="つなぎ" data-offset="-1" data-bars="4"></div>
+    </div>
+  </div>
+  <aside class="notes">
+    借用和音の聴き取り方: 長調の曲で「急にくもった」「ドラマチックに沈んだ」と感じたら疑う。<br>
+    第 5 部の ♭VI–♭VII–I は、借用和音を使った進行の代表だった、と結びつける。
+  </aside>
+</section>
+
+<!-- ============================================================ 26. 転調 -->
+<section class="slide" data-until="55">
+  <div class="part">第 6 部 「ここで外してきた」</div>
+  <h2>転調: 最後のサビでキーを上げる</h2>
+  <table class="small">
+    <tr><th>曲</th><th>どこで</th><th>変化</th><th>橋渡しの和音</th></tr>
+    <tr><td>スーパー</td><td>大サビ</td><td>ハ長調 → 変ニ長調（<b>半音上</b>）</td><td>A♭7 ＝ 変ニ長調の V7</td></tr>
+    <tr><td>ウルトラ</td><td>ラスサビ</td><td>ニ長調 → ホ長調（<b>全音上</b>）</td><td>B7sus4 ＝ ホ長調の V7sus4</td></tr>
+    <tr><td>戦闘曲1改</td><td>大サビ</td><td>イ短調 → 変ロ短調（<b>半音上</b>）</td><td>F7 ＝ 変ロ短調の V7</td></tr>
+  </table>
+  <p class="small" style="margin-top:10px">どれも <b>新しいキーの V7 を先に鳴らして</b>から入る。ドミナントの引力で、新しい家へ連れて行く。</p>
+  <div class="cols c3">
+    <div class="clip" data-song="super" data-section="大サビ（変ニ長調）" data-offset="-2" data-bars="4" data-label="▶ スーパー"></div>
+    <div class="clip" data-song="ultra" data-section="ラスサビ（ホ長調）" data-offset="-2" data-bars="4" data-label="▶ ウルトラ"></div>
+    <div class="clip" data-song="kai" data-section="大サビ（変ロ短調）" data-offset="-2" data-bars="4" data-label="▶ 戦闘曲1改"></div>
+  </div>
+  <aside class="notes">
+    冒頭のつかみで聴いた「何かが違う」の答えがこれ。<br>
+    おまけ（時間があれば次のスライド）: スーパーの大サビの最後は D♭7（G7 の裏コード）で、ハ長調の A メロへ半音下りて戻ってくる。
+  </aside>
+</section>
+
+<!-- ============================================================ 27. おまけ -->
+<section class="slide" data-until="55">
+  <div class="part">第 6 部 おまけ（時間があれば）</div>
+  <h2>もっと細かい「外し」</h2>
+  <div class="cols c3">
+    <div class="card small">
+      <h3>裏コード</h3>
+      <p>G7 の代わりに <b>D♭7</b>。シ・ファの 2 音を共有するので同じ働きをし、ベースが <b>半音下りて</b> C に着く。スーパーの大サビ → A メロ。</p>
+      <div class="prog" data-prog="Db7|♭II7|X C|I|T" data-dur="1.4"></div>
+      <div class="clip" data-song="super" data-section="大サビ（変ニ長調）" data-offset="8" data-bars="3" data-label="▶ 大サビの終わり"></div>
+    </div>
+    <div class="card small">
+      <h3>sus4 で吊る</h3>
+      <p>V7 の 3 度を 4 度に吊ると、解決を<b>先送り</b>できる。ウルトラは A メロの最後とソロの最後で A7sus4。</p>
+      <div class="prog" data-prog="A7sus4|V7sus4|D A7|V7|D D|I|T" data-dur="1.2"></div>
+    </div>
+    <div class="card small">
+      <h3>旋律のテンション</h3>
+      <p>ウルトラのサビは、旋律が各小節の頭で <b>和音の 9 度・7 度</b>から始まり、1 段ずつ下りて和音の音に落ちる。この「少しぶつかって、ほどける」が泣きのツボ。</p>
+    </div>
+  </div>
+  <aside class="notes">
+    時間が押していたら飛ばしてクイズへ。資料として残しておけば後で読める。
+  </aside>
+</section>
+
+<!-- ============================================================ 28. クイズ 1 -->
+<section class="slide" data-until="59">
+  <div class="part">第 7 部 聴き取りクイズ ・ 4 分</div>
+  <h2>Q1. この進行は？</h2>
+  <div class="quiz" data-answer="1">
+    <div class="clip hidden" data-song="kai" data-section="裏拍（小室進行）" data-bars="4" data-label="▶ 聴く（4 小節）"></div>
+    <ol class="choices">
+      <li>王道進行（IV–V–iii–vi）</li>
+      <li>小室進行（vi–IV–V–I）</li>
+      <li>アンダルシア進行（i–VII–VI–V7）</li>
+      <li>丸サ進行（IV△7–III7–vi7–I7）</li>
+    </ol>
+    <button class="reveal">答え</button>
+    <div class="answer" hidden><b>小室進行</b>（戦闘曲1改「裏拍」）。暗い Am で始まり、最後の C で <b>着いた</b>感じがある。王道進行なら最後は vi（暗い方）で、着かない。</div>
+  </div>
+  <aside class="notes">
+    手を挙げてもらう → 答え。「最後に落ち着いたか」が判断のポイント。
+  </aside>
+</section>
+
+<!-- ============================================================ 29. クイズ 2 -->
+<section class="slide" data-until="59">
+  <div class="part">第 7 部 聴き取りクイズ</div>
+  <h2>Q2. この進行は？</h2>
+  <div class="quiz" data-answer="2">
+    <div class="clip hidden" data-song="kai" data-section="C メロ（アンダルシア進行）" data-bars="4" data-label="▶ 聴く（4 小節）"></div>
+    <ol class="choices">
+      <li>エピック進行（i–VI–III–VII）</li>
+      <li>ロック進行（i–VII–VI–VII）</li>
+      <li>アンダルシア進行（i–VII–VI–V7）</li>
+      <li>カデンツ（i–iv–V7–i）</li>
+    </ol>
+    <button class="reveal">答え</button>
+    <div class="answer" hidden><b>アンダルシア進行</b>（戦闘曲1改「C メロ」）。ベースが ラ → ソ → ファ → ミ と 1 段ずつ下りて、最後の E7 で強く引っ張られる。</div>
+  </div>
+  <aside class="notes">
+    ヒントを出すなら「ベースだけ聴いて。階段になってる？」
+  </aside>
+</section>
+
+<!-- ============================================================ 30. クイズ 3 -->
+<section class="slide" data-until="59">
+  <div class="part">第 7 部 聴き取りクイズ</div>
+  <h2>Q3. 3 小節目で何が起きた？</h2>
+  <div class="quiz" data-answer="0">
+    <div class="clip hidden" data-song="ultra" data-section="落ちサビ" data-offset="4" data-bars="4" data-label="▶ 聴く（4 小節）"></div>
+    <ol class="choices">
+      <li>偽終止（I に帰らず vi へ）</li>
+      <li>ちゃんと I に帰った</li>
+      <li>借用和音（♭VII）</li>
+      <li>何も起きていない</li>
+    </ol>
+    <button class="reveal">答え</button>
+    <div class="answer" hidden><b>偽終止</b>（ウルトラ「落ちサビ」）。Em7–A7 で帰る準備をして、Bm7 へ逃げた。4 小節目の B7sus4 は、次のホ長調への橋渡し。</div>
+  </div>
+</section>
+
+<!-- ============================================================ 31. クイズ 4 -->
+<section class="slide" data-until="59">
+  <div class="part">第 7 部 聴き取りクイズ</div>
+  <h2>Q4. 冒頭の曲、答え合わせ</h2>
+  <div class="quiz" data-answer="3">
+    <div class="clip hidden" data-song="super" data-section="C メロ（丸サ進行）" data-offset="4" data-bars="8" data-label="▶ もう一度聴く"></div>
+    <ol class="choices">
+      <li>偽終止</li>
+      <li>小室進行に変わった</li>
+      <li>テンポが上がった</li>
+      <li>V7 で橋を架けて、半音上へ転調</li>
+    </ol>
+    <button class="reveal">答え</button>
+    <div class="answer" hidden>前半は <b>丸サ進行</b>（E7♭9 が紫の和音）。最後の <b>A♭7</b> は変ニ長調の V7 で、大サビから<b>半音上へ転調</b>。旋律はサビと同じなのに「一段上がった」と感じたのはこれ。</div>
+  </div>
+  <aside class="notes">
+    冒頭で「何かが違う」と感じた人に、今なら説明できるか聞いてみる。言えたら今日のゴール達成。
+  </aside>
+</section>
+
+<!-- ============================================================ 32. まとめ -->
+<section class="slide" data-until="60">
+  <div class="part">まとめ ・ 1 分</div>
+  <h2>聴くときのチェックリスト</h2>
+  <div class="cols w">
+    <ol>
+      <li><b>ベースを追う</b>: 階段で下りる？ 跳ねる？</li>
+      <li><b>落ち着いた？</b> 着いた（I）か、まだ続く（vi・V）か</li>
+      <li><b>明るい？ 暗い？</b> どこから始まったか（I か vi か IV か）</li>
+      <li><b>くもった・光った？</b> 音階の外の和音（借用・セカンダリー）</li>
+      <li><b>景色が上がった？</b> V7 のあとに転調</li>
+    </ol>
+    <div class="card small">
+      <h3>続けて学ぶなら</h3>
+      <ul>
+        <li><b>musiclab のコード進行ラボ</b>（chords.html）: 22 の進行をキーを変えて鳴らせる</li>
+        <li><b>musiclab で 3 曲を開く</b>: シークバーにセクション名と進行名が出る。今日の場面を何度でも</li>
+        <li>好きな曲で「サビは何から始まる？ 最後に着く？」を試す</li>
+      </ul>
+    </div>
+  </div>
+  <p class="big" style="margin-top:12px">進行の名前 ＝ <span class="em">期待のパターン</span>。外し ＝ <span class="out">その期待をずらす演出</span>。</p>
+</section>
+
+<div class="bar"><span class="page"></span><span class="clock"></span><span class="goal"></span><span class="now-playing"></span><span class="progress"><i></i></span></div>
+</div>
+<script type="module" src="seminar.js"></script>
+</body>
+</html>

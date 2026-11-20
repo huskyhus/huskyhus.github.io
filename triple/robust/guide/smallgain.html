@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小さな輪は回らない</title>
+<meta name="description" content="小ゲイン定理と、不確かさをフィードバックの輪として表す考え方。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="robust">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>小さな輪は回らない：小ゲイン定理</h1>
+  <p class="g-lead">ロバスト制御のいちばん大事な道具は、驚くほど単純な定理です。「一周して必ず小さくなる輪なら、どんな位相でも発散しない」。</p>
+</header>
+<main class="g-body">
+  <h2>不確かさを、輪の中の「わからない箱」にする</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 240" role="img" aria-label="既知の閉ループ M と不確かさ Δ の輪">
+      <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fill-ink"/></marker></defs>
+      <rect class="box-acc" x="300" y="130" width="160" height="70" rx="10"/>
+      <text x="380" y="160" text-anchor="middle" class="b">M</text>
+      <text x="380" y="182" text-anchor="middle" class="mu sm">名目の対象＋制御器（わかっている）</text>
+      <rect class="box" x="320" y="30" width="120" height="56" rx="10" style="stroke: var(--warn)"/>
+      <text x="380" y="62" text-anchor="middle" class="b">Δ</text>
+      <text x="380" y="20" text-anchor="middle" class="mu sm">わからない（大きさ ≤ 1 だけわかる）</text>
+      <path class="ink" d="M 460 165 L 540 165 L 540 58 L 442 58" marker-end="url(#a4)"/>
+      <path class="ink" d="M 320 58 L 220 58 L 220 165 L 298 165" marker-end="url(#a4)"/>
+      <text x="560" y="115" class="mu sm">z：ばねの伸び</text>
+      <text x="100" y="115" class="mu sm">w：ばねの力のずれ</text>
+    </svg>
+    <figcaption>ばねの強さのずれ δ は、「ばねの伸びを見て、ずれた分の力を加える」箱 Δ として、既知の閉ループ M の外側につながっていると見なせる。</figcaption>
+  </figure>
+  <p>ばねの強さが <var>k</var> = <var>k</var><sub>0</sub> + δ だとすると、本物のばねの力は「名目のばねの力」＋「δ × ばねの伸び」です。後ろの項を、名目のシステムの外から加わる力だと考えると、全体は図のように<strong>既知の部分 M</strong>と<strong>大きさしかわからない部分 Δ</strong>の輪になります。不確かさの問題が、フィードバックの安定性の問題に変わりました。</p>
+
+  <h2>小ゲイン定理</h2>
+  <div class="callout">
+    <p><b>小ゲイン定理</b>：M と Δ がどちらも安定で、すべての周波数で |M(<var>jω</var>)| · |Δ(<var>jω</var>)| &lt; 1 なら、輪は安定。</p>
+  </div>
+  <p>理由は直感的です。信号が輪を一周するたびに必ず小さくなるなら、どんな向き（位相）で戻ってきても、積み重なって発散することはありません。古典制御のハウリングは「一周して同じ向きで 1 倍以上」でしたが、1 倍未満ならそもそも起こりません。</p>
+  <p>Δ について「大きさが δ 以下」しかわからなくても、M の大きさの最大値（<strong>H∞ ノルム</strong>、‖M‖<sub>∞</sub>）が 1/δ より小さければ安定と言えます。デモの右下の図は、まさにこの |δ|·|T(<var>jω</var>)| を描いたものです。</p>
+
+  <h2>保証は「保守的」</h2>
+  <figure class="fig" data-fig="smallGain">
+    <div class="two"><canvas style="aspect-ratio: 16 / 10"></canvas><canvas style="aspect-ratio: 16 / 10"></canvas></div>
+    <div class="figctl"><label>不確かさ δ（実数） <output data-o="d"></output><input type="range" data-k="d" min="-2" max="1.5" step="0.01" value="0.3"></label></div>
+    <p class="readout"></p>
+    <figcaption>M(s) = 1/(s² + 0.4s + 1) に、実数の δ で正のフィードバックをかけた輪。小ゲイン定理が保証するのは |δ| &lt; 0.39 だけ。実際には δ &lt; 1 なら安定で、負の δ ならいくら大きくても安定。</figcaption>
+  </figure>
+  <p>小ゲイン定理は、Δ が「どんな位相でも取りうる」最悪の場合を想定しています。実際のばねの強さのずれは実数（位相 0° か 180°）なので、定理は必要以上に慎重です。これを<strong>保守性</strong>と呼びます。</p>
+  <p>保守性を減らす方法として、輪の出口と入口の大きさの比を調整する「D スケーリング」（デモの α）や、Δ の構造（実数か、複数の不確かさか）を考慮する <strong>μ 解析</strong>があります。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/robust/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/robust/figs.js"></script>
+</body>
+</html>

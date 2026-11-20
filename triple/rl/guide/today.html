@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>強化学習の今</title>
+<meta name="description" content="強化学習の成果と課題。ゲーム、ロボット、ドローン。安全性、試行回数、シミュレーションから実機へ。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>強化学習の今：成果と課題</h1>
+  <p class="g-lead">この 10 年で、強化学習は「おもちゃの問題」から、人間を超える成果を出す技術になりました。同時に、制御の現場に入るための課題もはっきりしてきました。</p>
+</header>
+<main class="g-body">
+  <h2>主な成果</h2>
+  <ul>
+    <li><b>ゲーム</b>：テレビゲームを画面から学ぶ DQN（2015 年）、囲碁で世界のトップ棋士に勝った AlphaGo（2016 年）。</li>
+    <li><b>脚で歩くロボット</b>：シミュレーションの中で何千万回も転び、学んだ歩き方を実機に移す方法が実用レベルに。</li>
+    <li><b>ドローンレース</b>：強化学習で学んだ制御器が、人間の世界チャンピオンに勝った（2023 年）。</li>
+    <li><b>工学的な最適化</b>：核融合炉のプラズマの形の制御（シミュレーションで学習）、データセンターの冷却など。</li>
+  </ul>
+
+  <h2>課題</h2>
+  <ul>
+    <li><b>試行回数</b>：成果の多くはシミュレーションの中で膨大な試行を重ねたもの。実機で同じことはできない。</li>
+    <li><b>シミュレーションと現実の差</b>：シミュレーションで学んだ方策は、モデル誤差（ロバスト制御が扱ってきた問題）に弱いことがある。わざとシミュレーションの条件をばらつかせて学ばせる（ドメインランダム化）などの工夫がある。</li>
+    <li><b>安全と保証</b>：学習した方策が、想定外の状況でどう振る舞うかを保証するのは難しい。安全性を保証する「安全フィルタ」（現代制御のデモで、レール端で使ったものと同じ考え方）と組み合わせる研究が盛ん。</li>
+    <li><b>報酬の設計</b>：何を報酬にするかで、思いもよらない「ずる」を覚えることがある。</li>
+  </ul>
+
+  <h2>5 つの考え方の地図の上で</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 260" role="img" aria-label="モデルの必要さと保証の強さで並べた 5 つの考え方">
+      <line class="mut" x1="80" y1="220" x2="720" y2="220"/>
+      <line class="mut" x1="80" y1="20" x2="80" y2="220"/>
+      <text x="400" y="250" text-anchor="middle" class="mu sm">モデルへの依存（左：少ない → 右：多い）</text>
+      <text x="40" y="120" text-anchor="middle" class="mu sm" transform="rotate(-90 40 120)">保証の強さ</text>
+      <circle class="fw" cx="200" cy="120" r="10"/><text x="200" y="100" text-anchor="middle">古典制御</text><text x="200" y="146" text-anchor="middle" class="mu sm">周波数応答を測ればよい</text>
+      <circle class="f2" cx="520" cy="110" r="10"/><text x="520" y="90" text-anchor="middle">現代制御</text><text x="520" y="136" text-anchor="middle" class="mu sm">正確なモデルが前提</text>
+      <circle class="fo" cx="460" cy="50" r="10"/><text x="460" y="34" text-anchor="middle">ロバスト制御</text><text x="560" y="58" class="mu sm">誤差の範囲まで含めて保証</text>
+      <circle class="f1" cx="640" cy="150" r="10"/><text x="640" y="130" text-anchor="middle">MPC</text><text x="640" y="176" text-anchor="middle" class="mu sm">予測にモデルを使う</text>
+      <circle class="f3" cx="130" cy="195" r="10"/><text x="160" y="190">強化学習</text><text x="160" y="206" class="mu sm">モデル不要、保証は弱い</text>
+    </svg>
+    <figcaption>大まかな位置づけ。どれが優れているのではなく、問題に応じて組み合わせて使う。最近の研究の多くは、これらの間をつなぐもの（学習したモデルで MPC、ロバスト性つきの強化学習、など）。</figcaption>
+  </figure>
+  <p>これで 5 つのシリーズを一巡しました。<a href="../../">見取り図</a>に戻って、気になったところをもう一度見てみてください。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

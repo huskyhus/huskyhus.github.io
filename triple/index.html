@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>制御工学の見取り図</title>
+<meta name="description" content="古典制御・現代制御・ロバスト制御・モデル予測制御・強化学習を、それぞれ動くデモと解説で紹介する。">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/guide.css">
+<link rel="stylesheet" href="css/series.css">
+</head>
+<body data-root="" data-series="">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← huskyhus</a></nav>
+  <p class="kicker">制御工学の見取り図</p>
+  <h1>「思いどおりに動かす」ための 5 つの考え方</h1>
+  <p class="g-lead">制御工学は、ものを思いどおりに動かすための学問です。100 年のあいだに、同じ問いへの答え方がいくつも生まれ、どれも今も使われています。5 つの考え方を、それぞれにいちばん似合う題材で、ブラウザの中で実際に動かしながら紹介します。</p>
+</header>
+<main class="g-body" style="max-width: 1100px">
+  <section id="seriesCards" class="series-grid" aria-label="5 つのシリーズ"></section>
+
+  <h2>年表</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 300" role="img" aria-label="1920 年代から現在までの制御理論の年表">
+      <line class="mut" x1="40" y1="270" x2="730" y2="270"/>
+      <g>
+        <text x="60" y="290" text-anchor="middle" class="mu sm">1920</text>
+        <text x="175" y="290" text-anchor="middle" class="mu sm">1940</text>
+        <text x="290" y="290" text-anchor="middle" class="mu sm">1960</text>
+        <text x="405" y="290" text-anchor="middle" class="mu sm">1980</text>
+        <text x="520" y="290" text-anchor="middle" class="mu sm">2000</text>
+        <text x="635" y="290" text-anchor="middle" class="mu sm">2020</text>
+      </g>
+      <a href="classical/"><rect class="area-w" x="60" y="200" width="230" height="56" rx="8"/>
+      <text x="70" y="222" class="b">1. 古典制御</text>
+      <text x="70" y="242" class="mu sm">PID・周波数応答・ナイキスト</text></a>
+      <a href="modern/"><rect class="area-2" x="270" y="140" width="200" height="56" rx="8"/>
+      <text x="280" y="162" class="b">2. 現代制御</text>
+      <text x="280" y="182" class="mu sm">状態空間・LQR・カルマンフィルタ</text></a>
+      <a href="robust/"><rect class="area-ok" x="390" y="80" width="200" height="56" rx="8"/>
+      <text x="400" y="102" class="b">3. ロバスト制御</text>
+      <text x="400" y="122" class="mu sm">H∞・μ：誤差に強い設計</text></a>
+      <a href="mpc/"><rect class="area-bad" x="370" y="20" width="370" height="56" rx="8" style="opacity: 0.15"/>
+      <text x="380" y="42" class="b">4. モデル予測制御</text>
+      <text x="380" y="62" class="mu sm">工場から自動車・ロボット・ロケットへ</text></a>
+      <a href="rl/"><rect class="area-2" x="560" y="200" width="180" height="56" rx="8" style="fill: var(--link3)"/>
+      <text x="570" y="222" class="b">5. 強化学習</text>
+      <text x="570" y="242" class="mu sm">試行錯誤から学ぶ</text></a>
+    </svg>
+    <figcaption>どれも前の時代を置き換えたのではなく、積み重なって今も使われている。</figcaption>
+  </figure>
+
+  <h2>同じ問いへの、5 つの答え方</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>相手について知っていること</th><th>何を計算するか</th><th>得意</th><th>苦手</th></tr></thead>
+      <tbody>
+        <tr><td><a href="classical/">古典制御</a></td><td>入力に対する出力の反応（周波数応答）</td><td>PID などの係数、安定余裕</td><td>測るだけで設計できる・単純</td><td>入出力が多い・制約・非線形</td></tr>
+        <tr><td><a href="modern/">現代制御</a></td><td>状態方程式（正確なモデル）</td><td>最適軌道、LQR のゲイン、状態の推定</td><td>多変数・最適・大きな動き</td><td>モデルのずれに弱いことがある</td></tr>
+        <tr><td><a href="robust/">ロバスト制御</a></td><td>モデル＋誤差の範囲</td><td>範囲全体で安定を保証する制御器</td><td>保証つき・ばらつきに強い</td><td>保守的・線形が前提</td></tr>
+        <tr><td><a href="mpc/">モデル予測制御</a></td><td>予測に使えるモデル</td><td>毎回、少し先までの最適化</td><td>制約を守る・状況の変化に即応</td><td>計算が重い・予測が外れると弱い</td></tr>
+        <tr><td><a href="rl/">強化学習</a></td><td>知らなくてよい（試せればよい）</td><td>試行錯誤から価値と方策を推定</td><td>モデルが書けない問題</td><td>試行回数・安全性の保証</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>読み方</h2>
+  <ul>
+    <li><b>はじめての人</b>：年代順（1 → 5）がおすすめ。各シリーズは「デモ」と「解説（7 ページ）」でできている。解説は制御工学を知らなくても読めるように書いてある。</li>
+    <li><b>数学に詳しい人</b>：各シリーズの解説の最後に「数学的に定式化すると」のページがある。定義・定理・証明の概略を、デモで実際に計算している形に合わせて書いた。</li>
+    <li><b>手を動かしたい人</b>：デモはすべてブラウザの中で計算している（最適化、リッカチ方程式、H∞ 制御器の合成、二次計画法、強化学習）。パラメータを変えて壊してみるのがいちばんの近道。</li>
+  </ul>
+
+  <h2>サイトマップ</h2>
+  <div id="sitemap" class="sitemap"></div>
+</main>
+<footer class="g-foot">静的な HTML / CSS / JavaScript だけで動く。計算はすべてこのブラウザの中。</footer>
+<script src="js/site.js"></script>
+</body>
+</html>

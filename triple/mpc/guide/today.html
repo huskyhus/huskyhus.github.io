@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MPC の今</title>
+<meta name="description" content="モデル予測制御の歴史と応用：化学プラント、自動車、ロボット、ロケット着陸。非線形 MPC と学習との融合。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>MPC の今：工場から自動車・ロケットまで</h1>
+  <p class="g-lead">MPC は理論より先に、現場で生まれた方法です。</p>
+</header>
+<main class="g-body">
+  <h2>石油化学のプラントから</h2>
+  <p>1970 年代後半、石油精製や化学のプラントで、MPC の原型（DMC、IDCOM など）が使われ始めました。プラントは動きがゆっくりなので、1 分に 1 回の計算でも間に合います。そして何より「温度や圧力の上限を守りながら、生産量をぎりぎりまで上げたい」という制約つきの要求がはっきりしていました。理論（安定性の保証など）が追いついたのは、1990〜2000 年代です。</p>
+
+  <h2>速い機械へ</h2>
+  <p>計算機と QP の解き方が速くなると、ミリ秒単位で動く機械にも MPC が広がりました。</p>
+  <ul>
+    <li><b>自動車</b>：エンジンの制御、自動運転の経路追従、アダプティブクルーズコントロール。</li>
+    <li><b>ロボット・ドローン</b>：脚で歩くロボットの重心の計画、ドローンの機敏な飛行。</li>
+    <li><b>ロケットの着陸</b>：燃料の制約を守りながら目標に降りる誘導則を、凸最適化として機上で解く方法が研究・実用化されている。</li>
+    <li><b>電力</b>：電力変換器、蓄電池や再生可能エネルギーの運用計画。</li>
+  </ul>
+
+  <h2>研究の最前線</h2>
+  <ul>
+    <li><b>非線形 MPC</b>：モデルが非線形でも、QP の代わりに非線形最適化（SQP など）を毎回解く。三重振り子の軌道計画をミリ秒で解き直すようなもの。</li>
+    <li><b>ロバスト MPC・確率的 MPC</b>：外乱や不確かさがあっても制約を守る保証。</li>
+    <li><b>学習と組み合わせる</b>：モデルを学習で作る、MPC の重みや終端の重みを学習する、強化学習の方策の中で MPC を使う。</li>
+  </ul>
+
+  <h2>得意と苦手</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>得意</th><th>苦手</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>制約を守りながら最善を尽くす／多入力多出力／状況の変化（目標・障害物）に即応／設計の意図を言葉に近い形で書ける</td>
+          <td>計算が重い（速い系・小さな計算機）／モデルが必要で、予測が系統的に外れると弱い／保証を得るには理論的な手間（終端条件、ロバスト化）が要る</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>モデルを書くこと自体が難しいときはどうするか。モデルを使わず、試行錯誤から直接振る舞いを学ぶのが、次の<a href="../../rl/">強化学習</a>です。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

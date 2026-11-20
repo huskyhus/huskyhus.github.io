@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>倒立振り子はなぜ難しい？</title>
+<meta name="description" content="不安定、劣駆動、カオス。三重倒立振り子が難しい 3 つの理由を図で説明する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+</head>
+<body data-root="../../" data-series="modern">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>倒立振り子はなぜ難しい？</h1>
+  <p class="g-lead">理由は 3 つ。放っておくと倒れる（不安定）、動かせる場所が 1 つしかない（劣駆動）、そしてほんの少しの違いが大きく育つ（カオス）。</p>
+</header>
+<main class="g-body">
+  <h2>1. 放っておくと倒れる</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 220" role="img" aria-label="谷底の玉は戻り、山頂の玉は転がり落ちる">
+      <path class="ink" d="M 40 70 C 120 70, 140 180, 200 180 C 260 180, 280 70, 360 70"/>
+      <circle class="fo" cx="200" cy="164" r="15"/>
+      <path class="so" d="M 160 140 Q 175 128 185 140"/>
+      <path class="so" d="M 240 140 Q 225 128 215 140"/>
+      <text x="200" y="210" text-anchor="middle" class="b">安定</text>
+      <text x="200" y="40" text-anchor="middle" class="mu">少し押しても、谷底に戻ってくる</text>
+      <path class="ink" d="M 400 180 C 480 180, 500 70, 560 70 C 620 70, 640 180, 720 180"/>
+      <circle class="fb" cx="560" cy="54" r="15"/>
+      <path class="sb" d="M 585 62 Q 620 70 640 110"/>
+      <path class="sb" d="M 535 62 Q 500 70 480 110"/>
+      <text x="560" y="210" text-anchor="middle" class="b">不安定</text>
+      <text x="560" y="26" text-anchor="middle" class="mu">ほんの少しずれただけで、どんどん離れる</text>
+    </svg>
+    <figcaption>ぶら下がった振り子は谷底の玉、逆立ちした振り子は山頂の玉。</figcaption>
+  </figure>
+  <p>ぶら下がった振り子は、押しても揺れて元に戻ります。逆さに立てた振り子は、わずかでも傾くと、重力がその傾きをさらに大きくする向きに働きます。<strong>放っておけば必ず倒れる</strong>状態を、制御工学では「不安定」と言います。</p>
+  <p>倒れる速さには目安があります。デモの三重振り子を真上で放すと、いちばん速い倒れ方では、ずれが約 0.06 秒ごとに 2.7 倍（e 倍）になります。0.4 秒で約 700 倍です。手で棒を立てるより、ずっと速い反応が必要です。</p>
+
+  <h2>2. 動かせるのは台車だけ</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 250" role="img" aria-label="手のひらで棒を立てる様子と、台車の上の三重振り子">
+      <!-- 手のひらの棒 -->
+      <line class="s1" x1="160" y1="180" x2="180" y2="40"/>
+      <ellipse class="fill-mut" cx="160" cy="190" rx="38" ry="10"/>
+      <path class="sw" d="M 110 220 L 210 220 M 200 213 L 210 220 L 200 227"/>
+      <text x="160" y="246" text-anchor="middle" class="mu">倒れそうな側へ手を動かす</text>
+      <!-- 台車と三重振り子 -->
+      <line class="mut" x1="380" y1="200" x2="720" y2="200"/>
+      <rect class="fill-ink" x="500" y="176" width="70" height="24" rx="4"/>
+      <line class="s1" x1="535" y1="182" x2="550" y2="120"/>
+      <line class="s2" x1="550" y1="120" x2="540" y2="66"/>
+      <line class="s3" x1="540" y1="66" x2="556" y2="22"/>
+      <circle class="fill-card" cx="550" cy="120" r="6" style="stroke: var(--muted); stroke-width: 2"/>
+      <circle class="fill-card" cx="540" cy="66" r="6" style="stroke: var(--muted); stroke-width: 2"/>
+      <circle class="fill-card" cx="535" cy="182" r="6" style="stroke: var(--muted); stroke-width: 2"/>
+      <text x="600" y="124" class="mu sm">関節：モーターなし</text>
+      <text x="590" y="70" class="mu sm">自由に回るだけ</text>
+      <path class="sw" d="M 470 230 L 600 230 M 590 223 L 600 230 L 590 237 M 480 223 L 470 230 L 480 237"/>
+      <text x="535" y="250" text-anchor="middle" class="mu">動かせるのはここだけ（台車の加速度）</text>
+    </svg>
+    <figcaption>左：手のひらで棒を立てるのと同じ。右：棒が 3 本つながると、1 か所の動きで 3 本全部を操らなければならない。</figcaption>
+  </figure>
+  <p>手のひらに棒を立てるとき、私たちは棒そのものには触れず、手を動かして支えます。デモの台車も同じで、モーターがあるのは台車だけ。3 本の棒をつなぐ関節は自由に回るだけです。</p>
+  <p>動かしたいもの（台車と 3 本の棒で 4 つ）より、直接動かせるもの（台車の 1 つ）が少ない。こういう系を<strong>劣駆動</strong>と呼びます。台車を右に動かすと、1 本目は左に傾き、2 本目と 3 本目はそれにつられて別々に動きます。この連鎖をうまく使って、全部を同時に立たせる必要があります。</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>本数</th><th>倒立のとき、放っておくと育つ動きの数</th><th>難しさの目安</th></tr></thead>
+      <tbody>
+        <tr><td>1 本</td><td class="num">1</td><td>大学の実験で定番。PID 系の調整でも立つ</td></tr>
+        <tr><td>2 本</td><td class="num">2</td><td>手での調整はかなり厳しい。LQR などの理論を使うのが普通</td></tr>
+        <tr><td>3 本（このデモ）</td><td class="num">3（育つ速さ 16, 9.5, 4.2 /秒）</td><td>理論なしでは立たない。下から振り上げるのは研究レベル</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>3. ほんの少しの違いが大きく育つ（カオス）</h2>
+  <p>下の図では、2 つの三重振り子を<strong>ほぼ同じ姿勢</strong>から放しています。違いは、3 本目の棒の角度だけで、その差は 100 万分の 1 ラジアン。1 km 先で 1 mm ずれる程度の角度です。台車は止めたままです。</p>
+  <figure class="fig">
+    <canvas data-demo="chaos" data-button="chaosBtn" data-readout="chaosOut" style="aspect-ratio: 16 / 7"></canvas>
+    <div class="btnrow"><button id="chaosBtn" type="button">もう一度</button><span id="chaosOut" class="readout"></span></div>
+    <figcaption>色つき：1 つ目の振り子。黄色：2 つ目。右のグラフは 2 つの角度の差（縦軸は 10 倍ごとの目盛）。差はほぼ直線的に、つまり指数関数的に増え、約 2 秒で目に見える差になり、3 秒後にはまったく別の動きになる。</figcaption>
+  </figure>
+  <p>これが<strong>カオス</strong>です。運動の法則は完全に決まっているのに、初めのわずかな違いが指数関数的に拡大するので、長い先は事実上予測できません。</p>
+  <p>制御にとっての意味は 2 つあります。</p>
+  <ul>
+    <li>「うまくいった動きを録画して再生する」ことはできません。毎回の小さな違いが育って、必ず外れます。<strong>動いている間ずっと、ずれを測って直し続ける</strong>必要があります（4 ページ）。</li>
+    <li>理想の動き（台本）を計算するときも、計算誤差が育ちます。<strong>計算そのものを工夫しないと、正しい台本が求まりません</strong>（次のページ）。</li>
+  </ul>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../data/seed.js"></script>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/model.js"></script>
+<script src="../../js/planner.js"></script>
+<script src="../../js/control.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/guide-demos.js"></script>
+</body>
+</html>

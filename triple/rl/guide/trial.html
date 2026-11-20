@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>試行錯誤で学ぶ</title>
+<meta name="description" content="強化学習の基本の言葉：エージェント、環境、状態、行動、報酬、方策。迷路を Q 学習で覚える。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>試行錯誤で学ぶ</h1>
+  <p class="g-lead">犬に「お手」を教えるとき、筋肉の動かし方は説明しません。できたらおやつをあげるだけです。強化学習は、この「やってみて、ほめられたら繰り返す」を計算機で行います。</p>
+</header>
+<main class="g-body">
+  <h2>登場するもの</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 200" role="img" aria-label="エージェントと環境のやりとり">
+      <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fill-ink"/></marker></defs>
+      <rect class="box-acc" x="80" y="60" width="180" height="80" rx="12"/>
+      <text x="170" y="96" text-anchor="middle" class="b">エージェント</text>
+      <text x="170" y="118" text-anchor="middle" class="mu sm">（学ぶ側：方策を持つ）</text>
+      <rect class="box" x="500" y="60" width="180" height="80" rx="12"/>
+      <text x="590" y="96" text-anchor="middle" class="b">環境</text>
+      <text x="590" y="118" text-anchor="middle" class="mu sm">（中身は教えてもらえない）</text>
+      <path class="ink" d="M 260 80 L 498 80" marker-end="url(#a6)"/>
+      <text x="380" y="72" text-anchor="middle">行動 a</text>
+      <path class="ink" d="M 500 122 L 262 122" marker-end="url(#a6)"/>
+      <text x="380" y="144" text-anchor="middle">次の状態 s′ と報酬 r</text>
+    </svg>
+  </figure>
+  <ul>
+    <li><b>状態</b>：今の様子（迷路ならどのマスにいるか、台車なら位置と速さ）。</li>
+    <li><b>行動</b>：選べる動き（上下左右、左へ押す・押さない・右へ押す）。</li>
+    <li><b>報酬</b>：1 歩ごとにもらえる点数。デモでは「まだ着いていない」ので毎歩 −1。早く着くほど合計が大きい（マイナスが小さい）。</li>
+    <li><b>方策</b>：状態を見て行動を決める規則。これを学ぶのが目的。</li>
+  </ul>
+  <p>目標は、<strong>これから得られる報酬の合計を最大にする方策</strong>を見つけることです。今の一歩の報酬ではなく、将来の合計を見るのがポイントです。</p>
+
+  <h2>迷路を覚える</h2>
+  <figure class="fig" data-fig="gridQ">
+    <canvas style="aspect-ratio: 16 / 10"></canvas>
+    <div class="btnrow"><button type="button">学習を進める</button><button type="button">やり直す</button></div>
+    <p class="readout"></p>
+    <figcaption>赤い点が迷路を歩き回り、ゴールに着いたら S から再挑戦する。最初はでたらめに歩くが、ゴールの近くから順に「この向きに行けばよい」（矢印）が決まっていき、だんだん最短の道を通るようになる。色の濃さは「ここからゴールまでの近さ」の見積もり。</figcaption>
+  </figure>
+  <p>この迷路では、各マスの各方向について「そちらへ進んだら、この先どれくらい良いか」という数（Q 値）を覚えています。1 歩進むたびに、「進んだ先の Q 値の最大」を使って、今いたマスの Q 値を少しだけ直します。ゴールに着いた情報は、挑戦を重ねるごとに、ゴールから遠いマスへと 1 マスずつ伝わっていきます。これが <strong>Q 学習</strong>です（1989 年、ワトキンス）。</p>
+
+  <h2>制御との違い</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>これまでの制御</th><th>強化学習</th></tr></thead>
+      <tbody>
+        <tr><td>相手について</td><td>モデル（式）を知っている</td><td>知らない。試すと結果が返ってくるだけ</td></tr>
+        <tr><td>良し悪しの基準</td><td>評価関数（ずれの 2 乗など）</td><td>報酬（もっと粗くてよい：着いたら +1 など）</td></tr>
+        <tr><td>答えの出し方</td><td>方程式を解く・最適化する</td><td>たくさん試して、経験から少しずつ直す</td></tr>
+        <tr><td>代償</td><td>モデルを作る手間</td><td>膨大な試行回数</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/rl/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/rl/figs.js"></script>
+</body>
+</html>

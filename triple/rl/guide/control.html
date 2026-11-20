@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>制御理論とのつながり</title>
+<meta name="description" content="LQR と強化学習の関係：リッカチ方程式はベルマン方程式、方策反復はクラインマンの反復。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>制御理論とのつながり：LQR も強化学習の一種</h1>
+  <p class="g-lead">強化学習と最適制御は、別々に育ちましたが、根は同じです。どちらも「将来のコストの合計を最小にする」問題で、どちらもベルマンの動的計画法から出発しています。</p>
+</header>
+<main class="g-body">
+  <h2>同じ問題の、違う呼び方</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>最適制御</th><th>強化学習</th></tr></thead>
+      <tbody>
+        <tr><td>制御器・制御則</td><td>方策</td></tr>
+        <tr><td>評価関数（コスト、小さくしたい）</td><td>報酬（大きくしたい）＝ −コスト</td></tr>
+        <tr><td>コスト関数・リアプノフ関数</td><td>価値関数</td></tr>
+        <tr><td>リッカチ方程式</td><td>ベルマン方程式（線形・二次の場合）</td></tr>
+        <tr><td>モデルを使って解く</td><td>モデルを使わず、試行から推定する</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>線形の系に二次のコストという LQR の設定では、価値関数はちょうど状態の二次式 <var>V</var>(<var>x</var>) = <var>x</var><sup>T</sup><var>Px</var> になり、ベルマン方程式は <var>P</var> についてのリッカチ方程式になります。三重振り子で何度も解いたあの方程式は、ベルマン方程式そのものだったのです。</p>
+
+  <h2>方策反復：評価して、改善する</h2>
+  <figure class="fig" data-fig="lqrPI">
+    <canvas style="aspect-ratio: 16 / 8"></canvas>
+    <p class="readout"></p>
+    <figcaption>台車（2 回積分の系）の LQR。適当なフィードバックゲインから始めて、(1) 今の方策のコスト（価値）を求める、(2) その価値を前提にいちばん良い方策に変える、を繰り返すと、数回でリッカチ方程式の答えに一致する。</figcaption>
+  </figure>
+  <p>強化学習の基本アルゴリズムである<strong>方策反復</strong>を LQR に当てはめると、リッカチ方程式を解く反復法と同じものになります（連続時間は 1968 年のクラインマン、図の離散時間は 1971 年のヒューワーによる）。モデルを使えば「評価」は方程式を解くだけですが、モデルがなければ、実際に動かしてデータからコストを推定することになります。これが、データから LQR を学ぶ強化学習（適応動的計画法）の出発点です。</p>
+
+  <h2>何が違うのか</h2>
+  <ul>
+    <li><b>モデル</b>：制御はモデルがある前提で、強化学習はない前提。中間に「モデルを学習してから計画する」（モデルベース強化学習）がある。MPC はその代表的な計画法として使われる。</li>
+    <li><b>保証</b>：制御は安定性やロバスト性の保証を重視し、強化学習は平均的な報酬の大きさを重視してきた。</li>
+    <li><b>試行の回数</b>：デモの台車は、人間なら数回で気づくことに数十回〜百回の挑戦を要した。モデルを知っていれば一瞬（「動いている向きに押す」）。強化学習は、モデルを作るのが難しいときに、この回数を払う価値がある。</li>
+  </ul>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/rl/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/rl/figs.js"></script>
+</body>
+</html>

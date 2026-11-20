@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>どこまで先を読むか</title>
+<meta name="description" content="予測ホライズンの長さと重み、終端の重みと安定性。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>どこまで先を読むか：ホライズンと重み</h1>
+  <p class="g-lead">先を長く読むほど賢くなりますが、計算は重くなります。短すぎると、気づいたときには手遅れです。</p>
+</header>
+<main class="g-body">
+  <h2>短すぎると間に合わない</h2>
+  <figure class="fig" data-fig="horizons">
+    <canvas style="aspect-ratio: 16 / 6"></canvas>
+    <figcaption>同じ障害物（60 m 先）に対して、ホライズンだけを変えた MPC の走り。0.5 秒先・1 秒先しか読まないと、障害物が見えた時点では、ハンドルを切る速さの上限のせいで、もうよけきれない。1.5 秒以上読めばよけられる。</figcaption>
+  </figure>
+  <p>ハンドルを切る速さに上限があるので、車線を変えるには最低でも 1.5 秒ほどかかります。ホライズンがそれより短いと、障害物が予測の窓に入った時点では、どんな操作をしても間に合いません。ホライズンは<strong>「やりたいことに必要な時間」より長く</strong>取る必要があります。</p>
+  <p>逆に長くすると、計算量が増えます。デモで N を 50（5 秒）にすると、30（3 秒）のときの数倍の時間がかかります。障害物が十分見えているなら、それ以上長くしても走りはほとんど変わりません。</p>
+
+  <h2>重み</h2>
+  <ul>
+    <li><b>横位置のずれ</b>：大きいほど、車線の真ん中へ急いで戻る。</li>
+    <li><b>ハンドル操作</b>：大きいほど、操作が穏やかになる（デモの「ハンドル操作の重み」）。小さくすると、制約ぎりぎりまで攻める。</li>
+  </ul>
+  <p>MPC の重みは、LQR の重みと同じ意味です。違うのは、制約が守られることが保証されているので、重みを「安全のため」に控えめにする必要がないことです。</p>
+
+  <h2>終端の重みと安定性</h2>
+  <p>予測は N ステップ先で打ち切られます。打ち切った先のことを考えないと、「窓の外に問題を先送りする」計画になり、閉ループが不安定になることさえあります。そこでデモでは、最後のステップに、その先を LQR で走ったときのコスト（離散リッカチ方程式の解）を重みとして足しています。こうすると、制約が効いていない場面では MPC と LQR の答えが一致し、安定性も理論的に保証できます。</p>
+  <div class="callout">
+    <p><b>デモで試す</b></p>
+    <p>ホライズンを 10 歩（1 秒）まで縮め、「次々に障害物」で走らせてみてください。障害物に接触する回数が増えます。右の欄の計算時間も見比べてみてください。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/mpc/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/mpc/figs.js"></script>
+</body>
+</html>

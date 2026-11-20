@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>最悪の場合を抑える</title>
+<meta name="description" content="H∞ 制御：一般化プラント、H∞ ノルム、γ の探索、2 本のリッカチ方程式による解。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="robust">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>最悪の場合を抑える：H∞ 制御</h1>
+  <p class="g-lead">小ゲイン定理は「この制御器なら大丈夫か」を判定する道具でした。H∞ 制御は逆に、「大丈夫になる制御器」を直接計算します。</p>
+</header>
+<main class="g-body">
+  <h2>平均ではなく、最悪を最小にする</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>LQG（H<sub>2</sub>）</th><th>H∞</th></tr></thead>
+      <tbody>
+        <tr><td>小さくするもの</td><td>雑音が入ったときの、ずれの 2 乗の平均</td><td>どんな入力に対しても、出力が入力の何倍になりうるかの最大値</td></tr>
+        <tr><td>周波数で見ると</td><td>|T(<var>jω</var>)|² の面積（全体の平均）</td><td>|T(<var>jω</var>)| の山の高さ（いちばん悪い周波数）</td></tr>
+        <tr><td>強み</td><td>平均的な性能が最高</td><td>小ゲイン定理と直結し、ロバスト安定を保証できる</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>この「山の高さ」が H∞ ノルムです。H∞ 制御は、閉ループの H∞ ノルムを γ 以下にする制御器を探します。小ゲイン定理と組み合わせると、γ ≤ 1 なら、想定した範囲の不確かさすべてに対して安定です。</p>
+
+  <h2>一般化プラント：要求をひとつの箱にまとめる</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 230" role="img" aria-label="一般化プラントと制御器">
+      <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fill-ink"/></marker></defs>
+      <rect class="box-acc" x="280" y="40" width="200" height="100" rx="10"/>
+      <text x="380" y="84" text-anchor="middle" class="b">一般化プラント</text>
+      <text x="380" y="106" text-anchor="middle" class="mu sm">台車＋重み</text>
+      <rect class="box" x="320" y="170" width="120" height="50" rx="10"/>
+      <text x="380" y="200" text-anchor="middle" class="b">制御器 K</text>
+      <line class="ink" x1="120" y1="70" x2="278" y2="70" marker-end="url(#a5)"/>
+      <text x="40" y="66" class="mu sm">w：外乱・不確かさ・雑音</text>
+      <line class="ink" x1="480" y1="70" x2="640" y2="70" marker-end="url(#a5)"/>
+      <text x="645" y="66" class="mu sm">z：小さくしたいもの</text>
+      <text x="645" y="82" class="mu sm">（位置・ばねの伸び・力）</text>
+      <path class="ink" d="M 480 120 L 560 120 L 560 195 L 442 195" marker-end="url(#a5)"/>
+      <text x="570" y="160" class="mu sm">y：測れるもの</text>
+      <path class="ink" d="M 320 195 L 200 195 L 200 120 L 278 120" marker-end="url(#a5)"/>
+      <text x="120" y="160" class="mu sm">u：押す力</text>
+    </svg>
+    <figcaption>入ってくるもの w から、小さくしたいもの z までの伝わり方 T<sub>zw</sub> の H∞ ノルムを γ 以下にする。不確かさの輪（前のページ）も、w と z のひとつとして入れておく。</figcaption>
+  </figure>
+  <p>デモの H∞ では、w = (右の台車への外乱, ばねの力のずれ, センサー雑音)、z = (右の台車の位置と速さ, ばねの伸び, 押す力) としています。重みの付け方で、「どれをどれくらい重視するか」を表します。</p>
+
+  <h2>解き方：2 本のリッカチ方程式</h2>
+  <p>1989 年、ドイル、グローバー、カーゴネカー、フランシスの 4 人（頭文字から DGKF）は、ある γ を達成できるかどうかが、<strong>2 本のリッカチ方程式</strong>の解の性質だけで判定でき、解も公式で書けることを示しました。LQR とカルマンフィルタのリッカチ方程式を「最悪の外乱」用に変形したものです。</p>
+  <p>あとは γ を二分探索して、達成できる最小の γ を求めます。デモでは、γ ≤ 1 を保てる範囲で性能の重みをできるだけ強くする、という二重の探索をしています（ブラウザで 0.2 秒ほど）。</p>
+  <figure class="fig" data-fig="gammaCurve">
+    <canvas style="aspect-ratio: 16 / 8"></canvas>
+    <p class="readout"></p>
+    <figcaption>性能の要求（位置と速さの重み）を強くするほど、達成できる γ は大きくなる。γ が 1 を超えると、小ゲイン定理で保証できるばねの範囲が狭まる。</figcaption>
+  </figure>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/robust/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/robust/figs.js"></script>
+</body>
+</html>

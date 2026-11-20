@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>古典制御の強みと限界</title>
+<meta name="description" content="古典制御が今も使われる理由と、苦手なこと。現代制御・ロバスト制御・MPC・強化学習への橋渡し。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="classical">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>古典制御の強みと限界</h1>
+  <p class="g-lead">「古典」と呼ばれていますが、古いから使われなくなったわけではありません。今も現場の主力です。何が得意で、何が苦手なのかを整理します。</p>
+</header>
+<main class="g-body">
+  <h2>強み</h2>
+  <ul>
+    <li><b>測って設計できる</b>：式を立てなくても、実物の周波数応答を測ればボード線図が描け、安定性と余裕がわかる。モデル化の手間が小さい。</li>
+    <li><b>余裕が目で見える</b>：ゲイン余裕・位相余裕は、「どれくらいずれても大丈夫か」をそのまま表す。部品のばらつきや経年変化に強い設計がしやすい。</li>
+    <li><b>単純</b>：PID は 3 つの数だけ。実装も、現場での再調整も簡単。故障したときに何が起きているかも推測しやすい。</li>
+    <li><b>原理的な限界がわかる</b>：「ここを速くすれば、ここが必ず悪くなる」という限界（ボードの積分定理など）が、周波数の言葉ではっきり言える。</li>
+  </ul>
+
+  <h2>苦手なこと</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>苦手</th><th>例</th><th>得意な理論</th></tr></thead>
+      <tbody>
+        <tr><td>入力や出力がたくさんあって、互いに影響し合う</td><td>三重振り子（入力 1、見るべき量 8）、飛行機の姿勢、化学プラント</td><td><a href="../../modern/">現代制御</a></td></tr>
+        <tr><td>モデルの誤差を、数式で保証つきで扱いたい</td><td>ばねの強さが半分〜2 倍まで変わる</td><td><a href="../../robust/">ロバスト制御</a></td></tr>
+        <tr><td>上限・下限（制約）を守りながら最善を尽くす</td><td>ハンドルの切れ角、車線の幅、タンクの容量</td><td><a href="../../mpc/">モデル予測制御</a></td></tr>
+        <tr><td>モデルを書くこと自体が難しい</td><td>脚で歩く、物をつかむ、ゲーム</td><td><a href="../../rl/">強化学習</a></td></tr>
+        <tr><td>大きく非線形な動き</td><td>振り子を下から振り上げる</td><td>現代制御（最適軌道）、非線形制御</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>PID の 3 つのつまみでは、「1 つのずれを見て 1 つの操作を決める」以上のことはできません。現代制御の三重振り子では、8 つの量を同時に見て 1 つの操作を決める必要がありました。この限界を超えるために、1960 年代に状態空間の考え方（現代制御）が生まれました。</p>
+
+  <h2>古典制御は消えていない</h2>
+  <p>現代制御が登場したあと、1970 年代になって「現代制御で設計したものは、モデルが少しずれただけで壊れやすい」ことがわかってきました。そこで 1980 年代、古典制御の「周波数ごとの余裕」という見方を現代制御の数学で表し直したのがロバスト制御です。古典制御の考え方は、形を変えて今も理論の中心にあります。</p>
+  <p>現場では今でも、制御ループの大部分が PID です。新しい理論が使われる場合でも、その内側では電流や速度を PID が制御している、という構成がよくあります。</p>
+  <div class="callout">
+    <p><b>次に読むなら</b></p>
+    <p>古典制御で 1 つのループを周波数で見る感覚がつかめたら、<a href="../../modern/guide/">現代制御</a>で「たくさんの量を同時に扱う」世界へ。その次の<a href="../../robust/guide/">ロバスト制御</a>で、2 つの見方が合流します。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

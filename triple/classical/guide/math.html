@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>古典制御の数学的定式化</title>
+<meta name="description" content="線形時不変系、内部安定性、ナイキストの安定判別、安定余裕、内部モデル原理、ボードの積分定理、コロケーションと受動性を数学的に定式化する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+</head>
+<body data-root="../../" data-series="classical">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>数学的に定式化すると</h1>
+  <p class="g-lead">1 入力 1 出力の線形時不変系を、右半平面で解析的な関数として扱う。中心にあるのは偏角の原理（ナイキストの判別）と、解析関数の境界値に課される積分の制約（ボードの定理）である。読者には複素関数論（留数定理、偏角の原理、ポアソン積分）を仮定する。</p>
+</header>
+<main class="g-body mathdoc">
+  <ol class="toc-local">
+    <li><a href="#c1">伝達関数と安定性</a></li>
+    <li><a href="#c2">フィードバック系の内部安定性</a></li>
+    <li><a href="#c3">ナイキストの安定判別</a></li>
+    <li><a href="#c4">安定余裕と感度関数</a></li>
+    <li><a href="#c5">定常偏差と内部モデル原理</a></li>
+    <li><a href="#c6">ボードの感度積分</a></li>
+    <li><a href="#c7">むだ時間とパデ近似</a></li>
+    <li><a href="#c8">2 慣性系：コロケーションと受動性</a></li>
+  </ol>
+
+  <h2 id="c1">1. 伝達関数と安定性</h2>
+  <p>\(\mathcal{R}_p\) を実係数のプロパーな有理関数全体（\(\deg n \le \deg d\)）とする。線形常微分方程式 \(\sum a_k y^{(k)} = \sum b_k u^{(k)}\)（初期値 0）にラプラス変換 \(\hat f(s) = \int_0^\infty f(t)e^{-st}dt\) を施すと \(\hat y = G\hat u\)、\(G = n/d \in \mathcal{R}_p\) を得る。</p>
+  <div class="env defn"><b>定義 1</b>
+    \(G\) が<b>安定</b>であるとは、\(G\) が閉右半平面 \(\overline{\mathbb{C}}_+ = \{\operatorname{Re}s \ge 0\}\) に極を持たないことをいう。安定でプロパーな実有理関数の全体を \(\mathcal{RH}_\infty\) と書く。
+  </div>
+  <div class="env prop"><b>命題 2</b>
+    \(G\in\mathcal{R}_p\) について次は同値：(i) \(G\in\mathcal{RH}_\infty\)、(ii) インパルス応答 \(g\)（\(\hat g = G\)）が \(D\delta + L^1(0,\infty)\) に属する、(iii) 有界な入力に対して出力が有界（BIBO 安定）。
+  </div>
+  <p class="proof">(i)⇒(ii)：部分分数展開で \(g\) は \(t^k e^{p t}\)（\(\operatorname{Re}p<0\)）の線形結合と定数×デルタ関数。(ii)⇒(iii)：ヤングの不等式 \(\|g*u\|_\infty \le \|g\|_{1}\|u\|_\infty\)。(iii)⇒(i)：閉右半平面の極 \(p\) があると、\(u = e^{\bar{p}t}\) の実部などの有界な入力（\(\operatorname{Re}p = 0\) なら共振入力）で出力が非有界になる。</p>
+
+  <h2 id="c2">2. フィードバック系の内部安定性</h2>
+  <p>対象 \(P\)、制御器 \(C\) を単位フィードバックで結ぶ。外部入力を \(r\)（目標）、\(d\)（入力外乱）とし、偏差 \(e\)、操作量 \(u\) を出力とすると、</p>
+  $$ \begin{pmatrix} e\\ u\end{pmatrix} = \begin{pmatrix} S & -PS\\ CS & S\end{pmatrix}\begin{pmatrix} r\\ d\end{pmatrix},\qquad S = \frac{1}{1+L},\ \ T = \frac{L}{1+L},\ \ L = PC. $$
+  <div class="env defn"><b>定義 3</b>
+    閉ループが<b>内部安定</b>であるとは、4 つの伝達関数 \(S, PS, CS, T\)（デモの文脈では「4 つ組」）がすべて \(\mathcal{RH}_\infty\) に属することをいう。
+  </div>
+  <div class="env prop"><b>命題 4</b>
+    \(P = n_P/d_P\)、\(C = n_C/d_C\) をそれぞれ既約分数とする。内部安定 ⟺ 特性多項式 \(\chi = n_Pn_C + d_Pd_C\) のすべての根が開左半平面にある。
+  </div>
+  <p class="proof">4 つの伝達関数はいずれも \(\chi\) を分母に持ち、分子は \(d_Pd_C, n_Pd_C, d_Pn_C, n_Pn_C\)。既約性から、これらの分子が \(\chi\) の根を同時に打ち消すことはない。</p>
+  <p>\(T\) だけが安定でも内部安定とは限らない（不安定な極と零点の打ち消し）。デモでは閉ループの状態空間表現の固有値を直接計算して内部安定を判定している。</p>
+
+  <h2 id="c3">3. ナイキストの安定判別</h2>
+  <div class="env thm"><b>定理 5（偏角の原理）</b>
+    \(F\) が単純閉曲線 \(\Gamma\) の内部とその上で有理型で、\(\Gamma\) 上に零点も極もないとする。\(\Gamma\) を正の向きに一周したときの \(F(\Gamma)\) の原点のまわりの回転数は \(Z - P\)（\(\Gamma\) の内部の零点の数から極の数を引いたもの、重複度込み）に等しい。
+  </div>
+  <div class="env thm"><b>定理 6（ナイキスト）</b>
+    \(L\in\mathcal{R}_p\) の閉右半平面の極の数を \(P_+\) とする（虚軸上の極は小さな半円で避ける）。\(\Gamma_R\) を虚軸の \([-jR, jR]\) と右半円からなる曲線（時計回り）とし、\(R\to\infty\) とする。\(L(\Gamma_R)\) が \(-1\) を通らず、\(-1\) のまわりを反時計回りに \(N\) 回まわるとき、閉ループの右半平面の極の数は \(Z = P_+ - N\)。したがって（\(P\) と \(C\) の間に右半平面での打ち消しがなければ）内部安定 ⟺ \(N = P_+\)。
+  </div>
+  <p class="proof">\(F = 1 + L = \chi/(d_Pd_C)\)。\(F\) の零点は閉ループの極、極は開ループの極。定理 5 を \(\Gamma_R\)（時計回り）に適用すると、\(F(\Gamma_R)\) の原点のまわりの時計回りの回転数は \(Z - P_+\)。\(F(\Gamma_R)\) が原点をまわることと \(L(\Gamma_R)\) が \(-1\) をまわることは同じ。\(L\) がプロパーなので大きな半円の像は 1 点（\(L(\infty)\)）に縮む。</p>
+  <p>むだ時間 \(e^{-sT}\) を含む場合、\(F\) は有理関数ではないが、閉右半平面で有理型かつ \(|s|\to\infty\) で \(|L(s)|\) が一様に小さくなるなら、偏角の原理はそのまま使える（\(\Gamma_R\) の上で）。デモのナイキスト線図はむだ時間を厳密に含めて描いている。一方、閉ループの極の計算はむだ時間を 2 次のパデ近似（第 7 節）で置き換えている。</p>
+
+  <h2 id="c4">4. 安定余裕と感度関数</h2>
+  <div class="env defn"><b>定義 7</b>
+    ゲイン交差周波数 \(\omega_c\)（\(|L(j\omega_c)| = 1\)）での \(\pi + \arg L(j\omega_c)\) を<b>位相余裕</b>、位相交差周波数 \(\omega_\pi\)（\(\arg L(j\omega_\pi) \equiv -\pi\)）での \(1/|L(j\omega_\pi)|\) を<b>ゲイン余裕</b>、\(s_m = \inf_\omega|1 + L(j\omega)| = 1/\|S\|_\infty\) を<b>ベクトル余裕</b>と呼ぶ。
+  </div>
+  <div class="env prop"><b>命題 8</b>
+    閉ループが安定で \(s_m > 0\) なら、ゲイン余裕 \(\ge 1/(1 - s_m)\)、位相余裕 \(\ge 2\arcsin(s_m/2)\)。
+  </div>
+  <p class="proof">ナイキスト線図は \(-1\) を中心とする半径 \(s_m\) の円板に入らない。位相交差では \(L(j\omega_\pi) \in (-\infty, 0)\) なので \(|L| \le 1 - s_m\)（安定な側）。ゲイン交差では \(|L| = 1\) なので、\(L\) と \(-1\) の距離 \(2\sin(\phi_m/2) \ge s_m\)。</p>
+  <p>逆は成り立たない。ゲイン余裕と位相余裕は、ナイキスト線図と実軸・単位円の交点の情報しか使わないので、両方が大きくても \(s_m\) が小さいことがある。さらに複数の交差があるとき、各交差の余裕だけでは安定性そのものが判定できない（デモの「腕を測る」：位相余裕は約 50° だが、共振による周回で \(N \ne P_+\) となり不安定）。条件付き安定な系では、ゲインを下げる向きの余裕 \(|L(j\omega_\pi)| > 1\) となる交差も意味を持つ。</p>
+
+  <h2 id="c5">5. 定常偏差と内部モデル原理</h2>
+  <div class="env prop"><b>命題 9（最終値定理）</b>
+    \(sE(s)\) が閉右半平面で解析的なら \(\lim_{t\to\infty}e(t) = \lim_{s\to 0}sE(s)\)。
+  </div>
+  <div class="env prop"><b>命題 10</b>
+    閉ループが内部安定とする。ステップ目標 \(\hat r = 1/s\) に対して \(e(\infty) = 0\) ⟺ \(S(0) = 0\) ⟺ \(L\) が \(s = 0\) に極を持つ。ランプ目標 \(1/s^2\) なら \(L\) の原点の極が 2 位以上であることが必要十分。
+  </div>
+  <p>一般に、目標や外乱を生成する系（\(1/s\)、\(\omega/(s^2+\omega^2)\) など）の極を制御器が一巡伝達関数の中に持つことが、漸近的な追従・除去の必要十分条件になる（フランシス–ウォナムの内部モデル原理）。PID の積分は \(1/s\) の内部モデルである。デモのサーボは対象自身が \(1/s^2\) を含むので、目標のステップに対しては積分なしでも偏差は残らないが、<b>入力端の</b>ステップ外乱（腕にかかる一定トルク）を除去するには制御器側に \(1/s\) が必要である（\(PS(0) \ne 0\) が積分なしでは残る）。</p>
+
+  <h2 id="c6">6. ボードの感度積分</h2>
+  <div class="env thm"><b>定理 11（ボード、フロイデンベルグ–ルーズ）</b>
+    \(L\) が有理関数で相対次数 2 以上、閉ループが内部安定で、\(L\) の開右半平面の極を \(p_1,\dots,p_m\) とする。このとき
+    $$ \int_0^\infty \ln|S(j\omega)|\,d\omega = \pi\sum_{i=1}^m \operatorname{Re}p_i \ \ (\ge 0). $$
+  </div>
+  <p class="proof">\(\ln S\) は、\(S\) の右半平面の零点（\(= L\) の不安定な極）をブラシュケ積で取り除けば右半平面で解析的になる。\(\ln S(s) = O(1/s^2)\)（相対次数 2 以上より）を使い、虚軸と大きな半円からなる閉曲線でコーシーの積分定理を適用すると、半円の寄与は 0 に収束し、残るのはブラシュケ因子の寄与 \(\pi\sum\operatorname{Re}p_i\)。</p>
+  <p>したがって \(|S|<1\)（外乱を抑える）帯域の面積は、どこかで \(|S|>1\) の帯域の面積で必ず埋め合わされる（ウォーターベッド効果）。デモのサーボは開右半平面に極を持たない（原点の極は極限操作で扱える）ので右辺は 0 である。右半平面の零点 \(z\) があるとポアソン積分による重み付き版 \(\int \ln|S(j\omega)|\,\frac{\operatorname{Re}z}{|z - j\omega|^2}d\omega \ge 0\) が成り立ち、制約はさらに強くなる。</p>
+
+  <h2 id="c7">7. むだ時間とパデ近似</h2>
+  <p>\(e^{-sT}\) は \(|e^{-j\omega T}| = 1\) の全域通過で、位相は \(-\omega T\)。\((2,2)\) 次のパデ近似</p>
+  $$ e^{-sT} \approx \frac{1 - sT/2 + (sT)^2/12}{1 + sT/2 + (sT)^2/12} $$
+  <p>は \(s = 0\) のまわりで \(e^{-sT}\) とテイラー展開が 4 次まで一致し（誤差 \(O((sT)^5)\)）、虚軸上でも絶対値 1 の全域通過である。位相の誤差は \(\omega T\) が 1 を超えると大きくなる。デモの閉ループの極は、この近似を状態空間に組み込んで計算している。</p>
+
+  <h2 id="c8">8. 2 慣性系：コロケーションと受動性</h2>
+  <p>デモの対象は \(J_m\ddot\theta_m = \tau - k(\theta_m - \theta_l) - c(\dot\theta_m - \dot\theta_l) - b_m\dot\theta_m\)、\(J_l\ddot\theta_l = k(\theta_m - \theta_l) + c(\dot\theta_m - \dot\theta_l) - b_l\dot\theta_l\)。粘性摩擦を省くと、トルクから角度への伝達関数は</p>
+  $$ P_m(s) = \frac{J_ls^2 + cs + k}{s^2\,[J_mJ_ls^2 + (J_m+J_l)(cs+k)]},\qquad P_l(s) = \frac{cs + k}{s^2\,[J_mJ_ls^2 + (J_m+J_l)(cs+k)]}. $$
+  <p>\(c = 0\) なら \(P_m\) の零点 \(\pm j\omega_a\)（\(\omega_a^2 = k/J_l\)）と極 \(\pm j\omega_r\)（\(\omega_r^2 = k(1/J_m + 1/J_l)\)）は虚軸上で交互に並ぶ（\(\omega_a < \omega_r\)）。</p>
+  <div class="env prop"><b>命題 12（コロケーションの PD はつねに安定化する）</b>
+    \(J_m, J_l, k > 0\)、\(c, b_m, b_l \ge 0\) を任意とする。\(\tau = -K_p\theta_m - K_d\dot\theta_m\)（\(K_p, K_d > 0\)）とすると、閉ループの原点は大域漸近安定である。
+  </div>
+  <p class="proof">\(V = \tfrac12J_m\dot\theta_m^2 + \tfrac12J_l\dot\theta_l^2 + \tfrac12k(\theta_m - \theta_l)^2 + \tfrac12K_p\theta_m^2\) は正定値で、\(\dot V = -K_d\dot\theta_m^2 - c(\dot\theta_m - \dot\theta_l)^2 - b_m\dot\theta_m^2 - b_l\dot\theta_l^2 \le 0\)。\(\dot V \equiv 0\) となる軌道では \(\dot\theta_m \equiv 0\) なので \(\theta_m\) は一定。\(c > 0\) なら \(\dot V\equiv 0\) から \(\dot\theta_l = \dot\theta_m = 0\)。\(c = 0\) なら第 1 式から \(k(\theta_m - \theta_l) = -K_p\theta_m\)（一定）となり、やはり \(\theta_l\) は一定。いずれにせよ第 2 式から \(k(\theta_m - \theta_l) = 0\)、第 1 式から \(K_p\theta_m = 0\)。よって最大の不変集合は原点のみで、\(V\) は放射状に非有界なので、ラサールの不変原理により大域漸近安定。</p>
+  <p>これは、コロケーションでは \(s\,P_m(s)\)（トルクから速度）が正実関数（受動的）であり、PD 制御器も受動的であるため、受動系のフィードバック結合が安定になることの具体例である。積分やむだ時間を加えると受動性は失われ、保証はなくなる（デモの「攻めた PID」）。非コロケーションの \(P_l\) は零点を持たず、\(\omega_r\) を越えると位相がさらに \(-180°\) 遅れるため、同じ PD でも不安定になりうる。ノッチ \(N(s) = (s^2 + 2\zeta_z\omega_ns + \omega_n^2)/(s^2 + 2\zeta_p\omega_ns + \omega_n^2)\)（\(\zeta_z \ll \zeta_p\)）は \(\omega_n \approx \omega_r\) で \(|L|\) を下げ、この周回を消す。</p>
+
+  <h2>参考文献</h2>
+  <ul class="refs">
+    <li>H. Nyquist, Regeneration theory, <i>Bell Syst. Tech. J.</i> 11 (1932).</li>
+    <li>H. W. Bode, <i>Network Analysis and Feedback Amplifier Design</i>, Van Nostrand, 1945.</li>
+    <li>J. Freudenberg, D. Looze, Right half plane poles and zeros and design tradeoffs in feedback systems, <i>IEEE TAC</i> 30 (1985).</li>
+    <li>B. A. Francis, W. M. Wonham, The internal model principle of control theory, <i>Automatica</i> 12 (1976).</li>
+    <li>K. J. Åström, R. M. Murray, <i>Feedback Systems</i>, 2nd ed., Princeton Univ. Press, 2021.</li>
+    <li>J. C. Doyle, B. A. Francis, A. R. Tannenbaum, <i>Feedback Control Theory</i>, Macmillan, 1992.</li>
+  </ul>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/auto-render.min.js"></script>
+<script>renderMathInElement(document.body, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "\\(", right: "\\)", display: false }], throwOnError: false });</script>
+</body>
+</html>

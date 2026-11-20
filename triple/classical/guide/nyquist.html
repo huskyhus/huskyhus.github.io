@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>安定の余裕</title>
+<meta name="description" content="なぜ位相 −180° が危ないのか。ナイキストの安定判別と、ゲイン余裕・位相余裕。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="classical">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>安定の余裕：ナイキストの安定判別</h1>
+  <p class="g-lead">フィードバックは強くするほど速くなりますが、強すぎるとある日突然、揺れが止まらなくなります。その境目を、一巡伝達関数の図から読み取ります。</p>
+</header>
+<main class="g-body">
+  <h2>ハウリングと同じ仕組み</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 200" role="img" aria-label="マイクとスピーカーのハウリング">
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="fill-ink"/></marker></defs>
+      <rect class="box" x="60" y="60" width="110" height="60" rx="10"/><text x="115" y="96" text-anchor="middle">マイク</text>
+      <rect class="box" x="300" y="60" width="140" height="60" rx="10"/><text x="370" y="96" text-anchor="middle">アンプ（×ゲイン）</text>
+      <rect class="box" x="570" y="60" width="120" height="60" rx="10"/><text x="630" y="96" text-anchor="middle">スピーカー</text>
+      <line class="ink" x1="170" y1="90" x2="298" y2="90" marker-end="url(#a3)"/>
+      <line class="ink" x1="440" y1="90" x2="568" y2="90" marker-end="url(#a3)"/>
+      <path class="sw" d="M 630 120 C 630 190, 115 190, 115 122" marker-end="url(#a3)"/>
+      <text x="372" y="182" text-anchor="middle" class="mu sm">音が空気を伝わって戻ってくる（遅れ）</text>
+      <text x="372" y="40" text-anchor="middle" class="mu sm">一周してちょうど同じ向き（360°ずれ）で、1 倍以上になって戻る周波数があると、その音がどんどん大きくなる</text>
+    </svg>
+  </figure>
+  <p>フィードバック制御は、ずれを「打ち消す向き」に戻すので、信号は一周すると符号が反転します（−180°）。ところが一巡伝達関数 <var>L</var> の中でさらに 180° 遅れる周波数があると、合わせて 360°、つまり<strong>強め合う向き</strong>で戻ってきます。そのとき |<var>L</var>| ≥ 1 なら、その周波数の揺れは一周ごとに大きくなります。マイクのハウリングと同じです。</p>
+
+  <h2>ナイキスト線図</h2>
+  <figure class="fig" data-fig="nyquistGain">
+    <div class="two"><canvas style="aspect-ratio: 1 / 1"></canvas><canvas style="aspect-ratio: 4 / 3"></canvas></div>
+    <div class="figctl">
+      <label>ゲイン K <output data-o="K"></output><input type="range" data-k="K" min="0.2" max="8" step="0.05" value="1.5"></label>
+    </div>
+    <figcaption>L(s) = K e<sup>−0.1s</sup> / (s(0.5s + 1))。左：L(jω) を複素平面に描いたもの。点線は |L| = 1 の円、× は −1。右：閉ループのステップ応答。K を上げていくと、曲線が −1 を囲むようになり、その瞬間に揺れが止まらなくなる。</figcaption>
+  </figure>
+  <p>周波数を 0 から ∞ まで動かしながら、<var>L</var>(<var>jω</var>) の値を複素平面に描いたものが<strong>ナイキスト線図</strong>です。−1 の点が特別なのは、そこで <var>L</var> = −1、つまり 1 + <var>L</var> = 0（閉ループの分母が 0）になるからです。</p>
+  <p><strong>ナイキストの安定判別</strong>：開ループが安定なら、ナイキスト線図が −1 を囲まなければ閉ループは安定、囲めば不安定です（開ループに不安定な極があるときは、その数だけ逆向きに囲む必要がある）。複素関数論の偏角の原理から導かれます。</p>
+
+  <h2>余裕：どこまで攻めてよいか</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 260" role="img" aria-label="ナイキスト線図上のゲイン余裕と位相余裕">
+      <line class="mut" x1="60" y1="130" x2="720" y2="130"/>
+      <line class="mut" x1="460" y1="20" x2="460" y2="240"/>
+      <circle class="mut dash" cx="460" cy="130" r="90"/>
+      <line class="sb" x1="364" y1="124" x2="376" y2="136"/><line class="sb" x1="376" y1="124" x2="364" y2="136"/>
+      <text x="370" y="152" text-anchor="middle" class="mu sm">−1</text>
+      <path class="s2" d="M 470 30 C 460 90, 420 140, 380 150 C 360 155, 330 150, 300 130" style="stroke-width:1"/>
+      <path class="s2" d="M 220 230 C 300 220, 380 200, 410 130 C 430 90, 450 60, 470 30" style="stroke-dasharray: 0"/>
+      <circle class="fw" cx="410" cy="130" r="5"/>
+      <line class="sw" x1="370" y1="118" x2="410" y2="118"/>
+      <text x="390" y="110" text-anchor="middle" class="mu sm">ゲイン余裕</text>
+      <circle class="fo" cx="401" cy="197" r="5"/>
+      <path class="so" d="M 370 130 A 90 90 0 0 0 401 197"/>
+      <text x="340" y="196" class="mu sm">位相余裕</text>
+    </svg>
+    <figcaption>ゲイン余裕：曲線が負の実軸を横切る点が −1 からどれだけ手前か（あと何倍ゲインを上げられるか）。位相余裕：曲線が単位円を横切る点が −1 から何度離れているか（あと何度遅れても大丈夫か）。</figcaption>
+  </figure>
+  <ul>
+    <li><b>ゲイン余裕</b>：あと何 dB ゲインを上げると不安定になるか。目安 6〜10 dB 以上。部品のばらつきや温度でゲインは変わります。</li>
+    <li><b>位相余裕</b>：あと何度遅れると不安定になるか。目安 30〜60°。位相余裕が小さいほど、ステップ応答の行き過ぎが大きくなります（45° でおよそ 20〜25%）。</li>
+    <li><b>感度の最大値</b> max |<var>S</var>|：曲線と −1 の最短距離の逆数。ゲインと位相が同時にずれる場合も含めた余裕です。6 dB（距離 0.5）以下が目安。</li>
+  </ul>
+
+  <h2>余裕の数字はうそをつくことがある</h2>
+  <p>デモの「腕を測る」を選んでみてください。位相余裕は約 50° と立派なのに、閉ループは<strong>不安定</strong>です。共振のところで曲線が大きく回り込み、−1 を囲んでいるからです。ゲイン余裕と位相余裕は、曲線が単位円と実軸を横切る数点しか見ていません。複雑な相手では、ナイキスト線図全体（あるいは閉ループの極）を見ないと判断を誤ります。</p>
+  <p>また、デモの既定の PID には「下げる向きのゲイン余裕」もあります。サーボは 2 回積分、PID は 1 回積分なので、低い周波数では位相が −270° から始まり、途中で −180° を上に横切ります。この場合、ゲインを<strong>下げすぎても</strong>不安定になります（条件付き安定）。</p>
+
+  <details class="more">
+    <summary>もう少し詳しく：偏角の原理</summary>
+    <p>有理関数 <var>F</var>(<var>s</var>) = 1 + <var>L</var>(<var>s</var>) について、複素平面の右半分を囲む閉曲線（虚軸と大きな半円）に沿って <var>s</var> を一周させると、<var>F</var>(<var>s</var>) が原点を回る回数 <var>N</var>（時計回りを正）は、囲まれた零点の数 <var>Z</var> と極の数 <var>P</var> の差 <var>N</var> = <var>Z</var> − <var>P</var> に等しい。<var>F</var> の零点は閉ループの極、<var>F</var> の極は開ループの極なので、閉ループの不安定な極の数は <var>Z</var> = <var>N</var> + <var>P</var>。<var>F</var> が原点を回ることは、<var>L</var> が −1 を回ることと同じ。虚軸上の極（デモの積分）は小さな半円でよける。</p>
+  </details>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/classical/servo.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/classical/figs.js"></script>
+</body>
+</html>

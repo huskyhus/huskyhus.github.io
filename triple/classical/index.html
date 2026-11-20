@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サーボを調整する</title>
+<meta name="description" content="ロボット関節のサーボを PID で調整し、ボード線図・ナイキスト線図・安定余裕を見ながら、共振と遅れに向き合う古典制御のデモ。">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/guide.css">
+<link rel="stylesheet" href="../css/series.css">
+</head>
+<body data-root="../" data-series="classical">
+<nav id="siteNav"></nav>
+<header class="top">
+  <nav class="crumbs"><a class="back" href="../">← 制御工学の見取り図</a><a class="back" href="guide/">解説を読む →</a></nav>
+  <p class="series-kicker" style="--sc: var(--warn)">古典制御</p>
+  <h1>ロボット関節のサーボを調整する</h1>
+  <p class="lead">モーターが、少しねじれる軸を介して腕を回します。PID の 3 つのつまみで腕を目標の角度へ動かし、ボード線図とナイキスト線図で「どれくらい余裕を持って安定か」を確かめます。軸の共振、計算の遅れ、測る場所の違いが、どう効いてくるかを試せます。</p>
+  <p class="lead-link">はじめての人は <a href="guide/">解説（全 8 ページ）</a> から。</p>
+</header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card" aria-label="サーボ">
+      <div class="hud">
+        <span id="cBadge" class="badge">安定</span>
+        <span>目標 <b id="cTarget">0</b>°</span>
+        <span>腕 <b id="cArm">0</b>°</span>
+        <span>トルク <b id="cTau">0.00</b> N·m</span>
+      </div>
+      <canvas id="cScene" style="aspect-ratio: 16 / 9; cursor: crosshair" aria-label="モーターと腕のアニメーション"></canvas>
+      <div class="transport">
+        <button id="cStep" class="primary" type="button">目標を 60° へ</button>
+        <button id="cKick" type="button">腕を叩く</button>
+        <button id="cReset" type="button">リセット</button>
+        <div class="seg" role="radiogroup" aria-label="再生速度">
+          <input type="radio" name="cSpeed" id="cs1" value="1" checked><label for="cs1">1×</label>
+          <input type="radio" name="cSpeed" id="cs4" value="0.25"><label for="cs4">¼×</label>
+          <input type="radio" name="cSpeed" id="cs10" value="0.1"><label for="cs10">1/10×</label>
+        </div>
+      </div>
+      <p class="hint">クリックした向きが新しい目標になる。橙の線はモーター側、青い腕が実際に動かしたいもの。その差が軸のねじれ。</p>
+      <canvas id="cLive" style="aspect-ratio: 16 / 6" aria-label="直近の時間変化"></canvas>
+      <div class="legend">
+        <span class="dash" style="--c: var(--muted)">目標</span>
+        <span style="--c: var(--link2)">腕の角度</span>
+        <span style="--c: var(--warn)">モーターの角度</span>
+        <span style="--c: var(--bad)">トルク（右目盛）</span>
+      </div>
+    </section>
+
+    <section class="card" aria-label="ボード線図">
+      <h2>ボード線図：一巡伝達関数 L(jω) = C(jω) P(jω) e<sup>−jωT</sup></h2>
+      <canvas id="cBode" style="aspect-ratio: 16 / 10"></canvas>
+      <div class="legend">
+        <span style="--c: var(--ink)">|L|・∠L</span>
+        <span class="dash" style="--c: var(--link1)">感度 |S| = |1/(1+L)|</span>
+        <span style="--c: var(--ok)">位相余裕</span>
+        <span style="--c: var(--warn)">ゲイン余裕</span>
+      </div>
+    </section>
+
+    <section class="card" aria-label="ステップ応答">
+      <h2>ステップ応答（目標を 1 rad 動かしたとき、トルク制限なし）</h2>
+      <canvas id="cStepCv" style="aspect-ratio: 16 / 7"></canvas>
+      <div class="legend">
+        <span style="--c: var(--link2)">腕</span>
+        <span style="--c: var(--warn)">モーター</span>
+        <span class="dash" style="--c: var(--muted)">目標と ±2%</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <aside class="panel card" aria-label="設定">
+      <h2>まとめて設定</h2>
+      <div class="btnrow presets" id="cPresets"></div>
+      <div id="cPresetNote" class="status"></div>
+
+      <h2>制御器（PID）</h2>
+      <div class="ctrl"><label for="cKp">比例 K<sub>p</sub></label><output id="cKpOut"></output><input type="range" id="cKp" min="0" max="100" step="1"></div>
+      <div class="ctrl"><label for="cKi">積分 K<sub>i</sub></label><output id="cKiOut"></output><input type="range" id="cKi" min="0" max="100" step="1"></div>
+      <div class="ctrl"><label for="cKd">微分 K<sub>d</sub></label><output id="cKdOut"></output><input type="range" id="cKd" min="0" max="100" step="1"></div>
+      <label class="switch"><input type="checkbox" id="cNotch"> ノッチフィルタ（共振の周波数だけ弱める）</label>
+      <div class="ctrl"><label for="cFn">ノッチの周波数</label><output id="cFnOut"></output><input type="range" id="cFn" min="3" max="40" step="0.5"></div>
+      <label class="switch"><input type="checkbox" id="cAw" checked> 積分の巻き上がり防止（アンチワインドアップ）</label>
+
+      <h2>対象と現実</h2>
+      <div class="seg full" role="radiogroup" aria-label="測る場所">
+        <input type="radio" name="cSensor" id="cSm" value="motor" checked><label for="cSm">モーターの角度を測る</label>
+        <input type="radio" name="cSensor" id="cSl" value="load"><label for="cSl">腕の角度を測る</label>
+      </div>
+      <div class="ctrl"><label for="cFr">軸の共振周波数（硬さ）</label><output id="cFrOut"></output><input type="range" id="cFr" min="5" max="60" step="0.5"></div>
+      <div class="ctrl"><label for="cRatio">腕の重さ（慣性比 J<sub>l</sub>/J<sub>m</sub>）</label><output id="cRatioOut"></output><input type="range" id="cRatio" min="0.5" max="10" step="0.1"></div>
+      <div class="ctrl"><label for="cTd">むだ時間（計算・通信の遅れ）</label><output id="cTdOut"></output><input type="range" id="cTd" min="0" max="15" step="0.5"></div>
+      <div class="ctrl"><label for="cTmax">トルクの上限</label><output id="cTmaxOut"></output><input type="range" id="cTmax" min="0.5" max="10" step="0.1"></div>
+
+      <h2>診断</h2>
+      <dl class="info" id="cInfo"></dl>
+    </aside>
+
+    <section class="card" aria-label="ナイキスト線図">
+      <h2>ナイキスト線図（−1 の近く）</h2>
+      <canvas id="cNyq" style="aspect-ratio: 1 / 1"></canvas>
+      <p class="note">L(jω) が −1 の点（×）を左回りに何回囲むかで、閉ループの安定が決まる。点線の円は |L| = 1。</p>
+    </section>
+  </div>
+</main>
+
+<section class="explain guide-cta">
+  <h2>解説</h2>
+  <ol class="toc" data-series="classical"></ol>
+</section>
+<footer></footer>
+
+<script src="../js/linalg.js"></script>
+<script src="../js/plot.js"></script>
+<script src="../js/lti.js"></script>
+<script src="../js/classical/servo.js"></script>
+<script src="../js/site.js"></script>
+<script src="../js/classical/demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>試行錯誤で谷を抜け出す</title>
+<meta name="description" content="エンジンの弱い台車が、試行錯誤だけで谷から抜け出す方法を学ぶ強化学習のデモ。価値関数と方策が育っていく様子を見る。">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/guide.css">
+<link rel="stylesheet" href="../css/series.css">
+</head>
+<body data-root="../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="top">
+  <nav class="crumbs"><a class="back" href="../">← 制御工学の見取り図</a><a class="back" href="guide/">解説を読む →</a></nav>
+  <p class="series-kicker" style="--sc: var(--link3)">強化学習</p>
+  <h1>試行錯誤で谷を抜け出す</h1>
+  <p class="lead">谷底の台車は、エンジンが弱くて右の坂を直接は登れません。しかも学習する側は、坂の形も重力も知りません。わかるのは自分の位置と速さ、そして「まだ着いていない」（1 歩ごとに −1 点）ということだけ。何百回も挑戦するうちに、どう動けばよいかを学んでいきます。</p>
+  <p class="lead-link">はじめての人は <a href="guide/">解説（全 8 ページ）</a> から。</p>
+</header>
+
+<main class="layout">
+  <div class="col">
+    <section class="card" aria-label="台車">
+      <div class="hud">
+        <span id="qBadge" class="badge info">学習前</span>
+        <span>挑戦 <b id="qEp">0</b> 回</span>
+        <span>直近 <b id="qLast">—</b> 歩</span>
+        <span>今 <b id="qNow">0</b> 歩目</span>
+      </div>
+      <canvas id="qScene" style="aspect-ratio: 16 / 7" aria-label="谷と台車"></canvas>
+      <div class="transport">
+        <button id="qWatch" class="primary" type="button">学習しながら 1 回見る</button>
+        <button id="q10" type="button">10 回学習</button>
+        <button id="q100" type="button">100 回学習</button>
+        <button id="qGreedy" type="button">今の実力で走る</button>
+        <button id="qRule" type="button">人の規則で走る</button>
+        <button id="qReset" type="button">学習をやり直す</button>
+      </div>
+      <p class="hint">「今の実力で走る」は探索をせず、いちばん良いと思う行動だけを取る。「人の規則」は「動いている向きに押す」という、物理を知っている人の答え。</p>
+    </section>
+
+    <section class="card" aria-label="学習曲線">
+      <h2>学習曲線：頂上に着くまでにかかった歩数（少ないほど良い）</h2>
+      <canvas id="qCurve" style="aspect-ratio: 16 / 6"></canvas>
+      <div class="legend">
+        <span style="--c: var(--link3)">各回</span>
+        <span style="--c: var(--ink)">10 回の平均</span>
+        <span class="dash" style="--c: var(--warn)">人の規則（平均）</span>
+      </div>
+    </section>
+
+    <section class="card" aria-label="価値と方策">
+      <h2>学んだもの：位置と速さの平面で見る</h2>
+      <div class="fig-pair">
+        <figure><canvas id="qValue" style="aspect-ratio: 1 / 1"></canvas><figcaption>価値（ゴールまであと何歩か、の見積もり）。暗いほど遠い。</figcaption></figure>
+        <figure><canvas id="qPolicy" style="aspect-ratio: 1 / 1"></canvas><figcaption>方策（その状態でどちらに押すか）。<span style="color: var(--link1)">■</span> 左、<span style="color: var(--muted)">■</span> 押さない、<span style="color: var(--link3)">■</span> 右。線は直近の走り。</figcaption></figure>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <aside class="panel card" aria-label="設定">
+      <h2>学習のしかた（Sarsa(λ)）</h2>
+      <div class="ctrl"><label for="qAlpha">学習率 α（1 回でどれだけ直すか）</label><output id="qAlphaOut"></output><input type="range" id="qAlpha" min="0.05" max="1" step="0.05" value="0.5"></div>
+      <div class="ctrl"><label for="qLambda">適格度トレース λ（どこまで遡って褒めるか）</label><output id="qLambdaOut"></output><input type="range" id="qLambda" min="0" max="0.99" step="0.01" value="0.9"></div>
+      <div class="ctrl"><label for="qEps">探索 ε（わざとでたらめに動く割合）</label><output id="qEpsOut"></output><input type="range" id="qEps" min="0" max="0.3" step="0.01" value="0"></div>
+      <div class="seg full" role="radiogroup" aria-label="価値の初期値">
+        <input type="radio" name="qInit" id="qiO" value="0" checked><label for="qiO">楽観的に始める</label>
+        <input type="radio" name="qInit" id="qiP" value="-200"><label for="qiP">悲観的に始める</label>
+      </div>
+      <div class="ctrl"><label for="qTil">タイルの枚数（細かさ）</label><output id="qTilOut"></output><input type="range" id="qTil" min="1" max="16" step="1" value="8"></div>
+      <p class="note">学習のしかたを変えたら「学習をやり直す」で最初から。</p>
+
+      <h2>環境（学習する側は知らない）</h2>
+      <div class="ctrl"><label for="qPow">エンジンの強さ</label><output id="qPowOut"></output><input type="range" id="qPow" min="0.5" max="1.5" step="0.05" value="1"></div>
+      <div class="ctrl"><label for="qGrav">重力</label><output id="qGravOut"></output><input type="range" id="qGrav" min="0.6" max="1.4" step="0.05" value="1"></div>
+      <p class="note">学習の途中で変えると、それまでの経験が合わなくなる。学び直す様子を見られる。</p>
+      <dl class="kv" id="qInfo"></dl>
+    </aside>
+  </div>
+</main>
+
+<section class="explain guide-cta">
+  <h2>解説</h2>
+  <ol class="toc" data-series="rl"></ol>
+</section>
+<footer></footer>
+
+<script src="../js/plot.js"></script>
+<script src="../js/rl/core.js"></script>
+<script src="../js/site.js"></script>
+<script src="../js/rl/demo.js"></script>
+</body>
+</html>

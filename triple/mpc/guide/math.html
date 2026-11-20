@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モデル予測制御の数学的定式化</title>
+<meta name="description" content="有限ホライズン最適制御、縮約した二次計画問題、閉ループの安定性（終端費用と終端集合）、ソフト制約と厳密ペナルティ、主双対内点法、ロバスト MPC を数学的に定式化する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../vendor/katex/katex.min.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>数学的に定式化すると</h1>
+  <p class="g-lead">MPC は、パラメータ（現在の状態）に依存する有限次元の凸最適化問題の族と、その解の第 1 成分で定まる非線形な状態フィードバックである。閉ループの性質は、最適値関数をリアプノフ関数として使う議論で調べる。</p>
+</header>
+<main class="g-body mathdoc">
+  <ol class="toc-local">
+    <li><a href="#p1">有限ホライズン最適制御問題</a></li>
+    <li><a href="#p2">縮約と二次計画問題</a></li>
+    <li><a href="#p3">制約がなければ LQR</a></li>
+    <li><a href="#p4">閉ループの安定性</a></li>
+    <li><a href="#p5">ソフト制約と厳密ペナルティ</a></li>
+    <li><a href="#p6">主双対内点法</a></li>
+    <li><a href="#p7">陽的 MPC</a></li>
+    <li><a href="#p8">外乱とロバスト MPC</a></li>
+  </ol>
+
+  <h2 id="p1">1. 有限ホライズン最適制御問題</h2>
+  <p>離散時間の線形系 \(x^+ = Ax + Bu\)（\(x\in\mathbb{R}^n,\ u\in\mathbb{R}^m\)）、多面体の制約集合 \(\mathbb{X}\subset\mathbb{R}^n\)、\(\mathbb{U}\subset\mathbb{R}^m\)（原点を内部に含む）、段階費用 \(\ell(x,u) = x^\top Qx + u^\top Ru\)（\(Q\succeq0,\ R\succ0\)）、終端費用 \(V_f(x) = x^\top Px\)、終端集合 \(\mathbb{X}_f\) を考える。</p>
+  <div class="env defn"><b>定義 1</b>
+    $$ \mathbb{P}_N(x):\ \ V_N^0(x) = \min_{\mathbf{u} = (u_0,\dots,u_{N-1})}\ \sum_{k=0}^{N-1}\ell(x_k,u_k) + V_f(x_N) $$
+    $$ \text{s.t.}\ \ x_0 = x,\ \ x_{k+1} = Ax_k + Bu_k,\ \ x_k\in\mathbb{X},\ u_k\in\mathbb{U},\ \ x_N\in\mathbb{X}_f. $$
+    許容集合が空でない \(x\) の全体を \(\mathcal{X}_N\) とし、最適解 \(\mathbf{u}^0(x)\) の第 1 成分で \(\kappa_N(x) = u_0^0(x)\) と定める。MPC の閉ループは \(x^+ = Ax + B\kappa_N(x)\)。
+  </div>
+  <p>デモでは状態 \(x = (y, \psi, \delta)\)（または横滑りを含む 5 次元）、入力は切れ角速度 \(r\)、制約は \(|r|\le r_{\max}\)、\(|\delta|\le\delta_{\max}\)、時刻ごとに変わる横位置の帯 \(y_k\in[\underline y_k, \overline y_k]\)（障害物によって \(k\) に依存する。厳密には時変の問題で、以下の定常の理論はそのままは当てはまらない）。</p>
+
+  <h2 id="p2">2. 縮約と二次計画問題</h2>
+  <p>\(x_k = A^kx + \sum_{j\lt k}A^{k-1-j}Bu_j\) を代入して状態を消去すると、\(\mathbf{x} = \Phi x + \Gamma\mathbf{u}\)（\(\Phi\in\mathbb{R}^{Nn\times n}\)、\(\Gamma\) はブロック下三角のテプリッツ行列）。目的関数は</p>
+  $$ V_N(x,\mathbf{u}) = \tfrac12\mathbf{u}^\top\underbrace{2(\Gamma^\top\bar Q\Gamma + \bar R)}_{H}\mathbf{u} + \underbrace{2x^\top\Phi^\top\bar Q\Gamma}_{q(x)^\top}\mathbf{u} + \text{const},\qquad \bar Q = \operatorname{diag}(Q,\dots,Q,Q+P),\ \bar R = \operatorname{diag}(R,\dots,R), $$
+  <p>制約は \(G\mathbf{u}\le h + Ex\) の形になる。\(H\succ0\) なので \(\mathbb{P}_N(x)\) は狭義凸の二次計画問題（QP）で、許容集合が空でなければ最適解はただ一つ。デモの QP は、\(N = 30\) で変数 60（入力 30、余裕変数 30）、不等式 210 本である（入力は \(\tilde r = r/r_{\max}\) と尺度をそろえている）。</p>
+
+  <h2 id="p3">3. 制約がなければ LQR</h2>
+  <div class="env prop"><b>命題 2</b>
+    制約がない（\(\mathbb{X} = \mathbb{R}^n,\ \mathbb{U} = \mathbb{R}^m,\ \mathbb{X}_f = \mathbb{R}^n\)）とし、\(P\) を離散リッカチ代数方程式の安定化解とする。このとき任意の \(N\ge1\) で \(V_N^0(x) = x^\top Px\)、\(\kappa_N(x) = -Kx\)（LQR のゲイン）。
+  </div>
+  <p class="proof">動的計画法で後ろから解くと、\(V_f = x^\top Px\) から 1 段戻した価値関数はリッカチ漸化式 \(P\mapsto Q + A^\top PA - A^\top PB(R + B^\top PB)^{-1}B^\top PA\) を 1 回適用したものだが、\(P\) はその不動点なので変化しない。</p>
+  <p>デモで終端費用に LQR の \(P\) を使うのはこのためで、制約が効いていない場面では MPC と LQR の出力は一致する。MPC が LQR と違う振る舞いをするのは、予測の中で制約が有効になるときだけである。</p>
+
+  <h2 id="p4">4. 閉ループの安定性</h2>
+  <div class="env thm"><b>定理 3（Mayne–Rawlings–Rao–Scokaert, 2000 の基本形）</b>
+    次を仮定する。(i) \(\mathbb{X}_f\subset\mathbb{X}\) は閉集合で、局所制御則 \(\kappa_f\) について \(\kappa_f(x)\in\mathbb{U}\)、\(Ax + B\kappa_f(x)\in\mathbb{X}_f\)（\(x\in\mathbb{X}_f\)）。(ii) \(V_f(Ax + B\kappa_f(x)) - V_f(x) \le -\ell(x,\kappa_f(x))\)（\(x\in\mathbb{X}_f\)）。(iii) \(Q\succ 0\)。このとき
+    <ol>
+      <li>（再帰的実行可能性）\(x\in\mathcal{X}_N\) なら \(Ax + B\kappa_N(x)\in\mathcal{X}_N\)。</li>
+      <li>（値の減少）\(V_N^0(x^+) \le V_N^0(x) - \ell(x,\kappa_N(x))\)。</li>
+      <li>原点は閉ループの漸近安定な平衡点で、吸引領域は \(\mathcal{X}_N\) を含む。</li>
+    </ol>
+  </div>
+  <p class="proof">\(\mathbf{u}^0(x) = (u_0^0,\dots,u_{N-1}^0)\) と対応する状態列 \(x_N^0\in\mathbb{X}_f\) に対して、候補 \(\tilde{\mathbf{u}} = (u_1^0,\dots,u_{N-1}^0,\kappa_f(x_N^0))\) は \(x^+\) で許容（(i)）。その費用は \(V_N^0(x) - \ell(x,u_0^0) - V_f(x_N^0) + \ell(x_N^0,\kappa_f(x_N^0)) + V_f(Ax_N^0 + B\kappa_f(x_N^0))\) で、(ii) によりこれは \(V_N^0(x) - \ell(x,u_0^0)\) 以下。最適値はこれ以下なので 2.。\(V_N^0\) は \(\mathcal{X}_N\) 上で連続（多面体の制約を持つ凸 QP の値関数）かつ \(c_1|x|^2\le V_N^0(x)\le c_2|x|^2\)（原点の近傍）なので、リアプノフ関数となり 3.。</p>
+  <p>LQR の \(P\) と \(\kappa_f = -Kx\) は (ii) を等号で満たす。\(\mathbb{X}_f\) としては、\(x^+ = (A - BK)x\) のもとで制約を満たし続ける最大の正不変集合（多面体、有限個の不等式で計算できる）をとればよい。デモは \(\mathbb{X}_f\) を明示的には課しておらず、また制約は時変で、さらにソフト化している（第 5 節）ので、定理の結論は「十分ホライズンが長く、障害物の外では局所的に成り立つ」程度の意味しか持たない。</p>
+
+  <h2 id="p5">5. ソフト制約と厳密ペナルティ</h2>
+  <p>横位置の制約は、物理的に満たせない状況（障害物が近すぎる）がありうるので、余裕変数 \(\varepsilon_k\ge0\) を入れて \(\underline y_k - \varepsilon_k\le y_k\le\overline y_k + \varepsilon_k\) とし、目的関数に \(\rho\sum(\varepsilon_k + \varepsilon_k^2)\) を加える。</p>
+  <div class="env prop"><b>命題 4（厳密ペナルティ）</b>
+    元の（ハードな）問題が許容で、その制約に対する最適なラグランジュ乗数を \(\lambda^*\) とする。\(\rho > \|\lambda^*\|_\infty\) なら、ソフト化した問題の最適解は \(\varepsilon = 0\) で、元の問題の最適解と一致する。
+  </div>
+  <p class="proof">ソフト化した問題の KKT 条件で \(\varepsilon = 0\) を仮定すると、\(\varepsilon\) に関する停留条件は \(\rho - \lambda_k - \nu_k = 0\)（\(\nu_k\ge0\) は \(\varepsilon_k\ge0\) の乗数）。\(\rho > \lambda_k^*\) なら \(\nu_k = \rho - \lambda_k^* > 0\) として KKT 条件が満たされ、凸性から最適。</p>
+  <p>1 次の項がなければ（\(\rho\varepsilon^2\) だけなら）、どれほど \(\rho\) を大きくしても、制約が有効な場面でわずかな違反が残る。デモのバッジ「制約を守りきれない」は \(\max_k\varepsilon_k > 0.05\) を表示している。</p>
+
+  <h2 id="p6">6. 主双対内点法</h2>
+  <p>QP \(\min\tfrac12z^\top Hz + q^\top z\) s.t. \(Gz\le h\) の KKT 条件は、スラック \(s\ge0\)、乗数 \(\lambda\ge0\) を用いて</p>
+  $$ Hz + q + G^\top\lambda = 0,\qquad Gz + s - h = 0,\qquad s_i\lambda_i = 0. $$
+  <p>主双対内点法は相補性を \(s_i\lambda_i = \mu\) に緩めた系（中心パス）を、\(\mu\downarrow0\) としながらニュートン法で追跡する。ニュートン方程式は \(\Delta s, \Delta\lambda\) を消去すると</p>
+  $$ (H + G^\top WG)\,\Delta z = -r_d - G^\top(Wr_p - S^{-1}r_c),\qquad W = \operatorname{diag}(\lambda_i/s_i) $$
+  <p>に縮約され、\(H + G^\top WG\succ0\) なのでコレスキー分解で解ける。メロトラの予測子・修正子法は、まず \(\mu = 0\) を目指す予測ステップから中心化パラメータ \(\sigma = (\mu_{\mathrm{aff}}/\mu)^3\) を決め、2 次の補正項 \(\Delta s_{\mathrm{aff}}\circ\Delta\lambda_{\mathrm{aff}}\) を加えた修正ステップをとる。短ステップの経路追跡法は \(O(\sqrt{m}\log(1/\epsilon))\) 回の反復で \(\epsilon\) 最適解を与える（多項式時間）。実用上のメロトラ法の反復回数は問題の大きさにほとんど依存せず、デモでは中央値 13 回、最大 21 回で \(10^{-8}\) の精度に達した。</p>
+
+  <h2 id="p7">7. 陽的 MPC</h2>
+  <div class="env thm"><b>定理 5（Bemporad–Morari–Dua–Pistikopoulos, 2002）</b>
+    \(\mathbb{P}_N(x)\) が狭義凸 QP で制約が多面体なら、\(\mathcal{X}_N\) は多面体であり、\(\mathcal{X}_N\) を有限個の多面体に分割して、各片で \(\mathbf{u}^0(x)\) がアフィンとなる。\(\mathbf{u}^0\) は連続で、\(V_N^0\) は連続な区分二次関数で凸である。
+  </div>
+  <p class="proof">有効制約集合 \(\mathcal{A}\) を固定すると、KKT 条件は \(x\) について線形な方程式系になり、解はアフィン。主許容性と双対許容性 \(\lambda_{\mathcal{A}}\ge0\) の条件が \(x\) の多面体を定める。有効制約集合の候補は有限個。</p>
+  <p>したがって MPC の制御則は、オンラインで最適化を解かなくても、区分アフィンな表として前もって計算できる。ただし片の数は制約の数とホライズンについて組合せ的に増えるので、デモ程度の大きさ（不等式 210 本）では現実的でない。</p>
+
+  <h2 id="p8">8. 外乱とロバスト MPC</h2>
+  <p>\(x^+ = Ax + Bu + w\)、\(w\in\mathbb{W}\)（コンパクト）とする。名目 MPC の値関数が連続なら、閉ループは十分小さな \(\mathbb{W}\) について入力対状態安定（ISS）になるが、値関数が不連続な問題（非凸な制約など）ではロバスト性が 0 になりうることが知られている（Grimm–Messina–Tuna–Teel, 2004）。</p>
+  <p><b>チューブ MPC</b>（Mayne–Seron–Raković, 2005）は、\(x = z + e\)（\(z\) は名目軌道）、\(u = v + K_e(x - z)\) と分解する。\(\mathcal{E}\) を \(e^+ = (A + BK_e)e + w\) のロバスト正不変集合とし、名目の問題を引き締めた制約 \(z_k\in\mathbb{X}\ominus\mathcal{E}\)、\(v_k\in\mathbb{U}\ominus K_e\mathcal{E}\)（ミンコフスキー差）で解けば、すべての \(w\in\mathbb{W}\) について元の制約が満たされ、状態は \(\mathcal{E}\) の近傍に収束する。デモの「横滑り」はモデル誤差（状態に依存する \(w\)）の例であり、引き締めの量は誤差の上界に依存する。</p>
+
+  <h2>参考文献</h2>
+  <ul class="refs">
+    <li>D. Q. Mayne, J. B. Rawlings, C. V. Rao, P. O. M. Scokaert, Constrained model predictive control: Stability and optimality, <i>Automatica</i> 36 (2000).</li>
+    <li>J. B. Rawlings, D. Q. Mayne, M. M. Diehl, <i>Model Predictive Control: Theory, Computation, and Design</i>, 2nd ed., Nob Hill, 2017.</li>
+    <li>A. Bemporad, M. Morari, V. Dua, E. N. Pistikopoulos, The explicit linear quadratic regulator for constrained systems, <i>Automatica</i> 38 (2002).</li>
+    <li>S. Mehrotra, On the implementation of a primal-dual interior point method, <i>SIAM J. Optim.</i> 2 (1992).</li>
+    <li>G. Grimm, M. J. Messina, S. E. Tuna, A. R. Teel, Examples when nonlinear model predictive control is nonrobust, <i>Automatica</i> 40 (2004).</li>
+    <li>D. Q. Mayne, M. M. Seron, S. V. Raković, Robust model predictive control of constrained linear systems with bounded disturbances, <i>Automatica</i> 41 (2005).</li>
+  </ul>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+<script src="../../vendor/katex/katex.min.js"></script>
+<script src="../../vendor/katex/auto-render.min.js"></script>
+<script>renderMathInElement(document.body, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "\\(", right: "\\)", display: false }], throwOnError: false });</script>
+</body>
+</html>

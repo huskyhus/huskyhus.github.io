@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ロバスト制御の解説</title>
+<meta name="description" content="ばねでつながった台車を題材に、モデルの不確かさ、LQG の脆さ、小ゲイン定理、H∞ 制御、ロバスト性と性能のトレードオフを説明する。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="robust">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>ロバスト制御：間違っていても壊れない</h1>
+  <p class="g-lead">現代制御は「モデルが正しければ最適」な答えをくれます。でもモデルは必ずどこか間違っています。ロバスト制御は、その間違いの大きさを最初から設計に入れ、「この範囲のどんな相手でも安定」と保証する考え方です。</p>
+</header>
+<main class="g-body">
+  <figure class="fig">
+    <svg viewBox="0 0 760 170" role="img" aria-label="ばねでつながった 2 つの台車">
+      <line class="mut" x1="40" y1="130" x2="720" y2="130"/>
+      <rect class="fill-ink" x="170" y="70" width="90" height="56" rx="6"/>
+      <text x="215" y="58" text-anchor="middle" class="mu sm">ここを押す</text>
+      <path class="sw" d="M 260 98 L 280 82 L 300 114 L 320 82 L 340 114 L 360 82 L 380 114 L 400 82 L 420 114 L 440 98"/>
+      <text x="350" y="60" text-anchor="middle" class="mu sm">強さ k が 0.5〜2 のどこか</text>
+      <rect class="f2" x="440" y="70" width="90" height="56" rx="6"/>
+      <text x="485" y="58" text-anchor="middle" class="mu sm">ここを測る</text>
+      <path class="sw" d="M 120 98 L 165 98 M 155 90 L 165 98 L 155 106"/>
+      <text x="580" y="104" class="mu sm">← 叩かれても</text>
+      <text x="580" y="120" class="mu sm">　 元の位置に戻したい</text>
+    </svg>
+  </figure>
+  <ol class="toc" data-series="robust"></ol>
+  <a class="cta-demo" href="../">デモを開く</a>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

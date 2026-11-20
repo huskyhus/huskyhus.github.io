@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PID をきちんと</title>
+<meta name="description" content="PID の P・I・D それぞれの効き、定常偏差、積分の巻き上がり、微分先行型、調整則。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="classical">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>PID をきちんと</h1>
+  <p class="g-lead">現代制御の 1 ページ目で紹介した PID を、もう一段詳しく見ます。実際に使うときに必ずぶつかる「残るずれ」「巻き上がり」「微分の跳ね」への対処も含めて。</p>
+</header>
+<main class="g-body">
+  <h2>3 つの役割</h2>
+  <div class="math"><span class="row"><var>u</var>(<var>t</var>) = <var>K<sub>p</sub></var> <var>e</var>(<var>t</var>) + <var>K<sub>i</sub></var> ∫ <var>e</var> d<var>t</var> + <var>K<sub>d</sub></var> d<var>e</var>/d<var>t</var>,　　<var>C</var>(<var>s</var>) = <var>K<sub>p</sub></var> + <var>K<sub>i</sub></var>/<var>s</var> + <var>K<sub>d</sub> s</var></span></div>
+  <ul>
+    <li><b>P</b>：ずれに比例して押す。強くすると速くなるが、揺れやすくなる。</li>
+    <li><b>I</b>：ずれをため込んで押す。外乱があっても最後にはずれを 0 にする。強すぎると揺れる。</li>
+    <li><b>D</b>：ずれの変化を見てブレーキをかける。揺れを抑えるが、雑音を拾いやすい。</li>
+  </ul>
+
+  <h2>試してみる：むだ時間のある温度調節</h2>
+  <figure class="fig" data-fig="pidHeater">
+    <canvas style="aspect-ratio: 16 / 8"></canvas>
+    <div class="figctl">
+      <label>K<sub>p</sub> <output data-o="kp"></output><input type="range" data-k="kp" min="0" max="10" step="0.05" value="2"></label>
+      <label>K<sub>i</sub> <output data-o="ki"></output><input type="range" data-k="ki" min="0" max="1" step="0.005" value="0.25"></label>
+      <label>K<sub>d</sub> <output data-o="kd"></output><input type="range" data-k="kd" min="0" max="10" step="0.1" value="0"></label>
+      <label class="chk"><input type="checkbox" data-k="aw" checked> 積分の巻き上がり防止</label>
+    </div>
+    <figcaption>ヒーターの出力が温度に効くまで 2 分かかり（むだ時間）、そこから時定数 8 分で温まる部屋。目標 80℃、30 分で 50℃ に下げ、45 分で窓を開けて冷やす。ヒーターは 0〜100% しか出せない。</figcaption>
+  </figure>
+  <p>いろいろ試すと、次のことがわかります。</p>
+  <ul>
+    <li><b>K<sub>i</sub> を 0 にする</b>と、目標に届かずに止まります（<strong>定常偏差</strong>）。窓を開けたあとも、低いままです。P だけでは「ずれがあるから押す」ので、押す力とずれがつり合ったところで止まってしまうからです。</li>
+    <li><b>K<sub>p</sub> や K<sub>i</sub> を大きくしすぎる</b>と、揺れます。むだ時間の間、ヒーターは効いていないのに押し続けてしまうからです（5 ページで詳しく）。</li>
+    <li><b>巻き上がり防止を外す</b>と、最初の立ち上がりで 80℃ を大きく越えます（既定のつまみで約 87℃。防止ありなら約 79℃）。</li>
+  </ul>
+
+  <h2>積分の巻き上がり（ワインドアップ）</h2>
+  <p>ヒーターが 100% で頭打ちになっている間も、積分はずれをため込み続けます。いざ目標に近づいても、たまった分を吐き出すまでヒーターは強いままで、大きく行き過ぎます。対策は、<strong>出力が頭打ちのときは積分を止める</strong>（条件付き積分）か、頭打ちの分だけ積分を戻す（バックカリキュレーション）ことです。デモのサーボでも、トルクの上限を小さくして「巻き上がり防止」を外すと、同じことが起こります。</p>
+
+  <h2>微分の跳ね（微分キック）と微分先行型</h2>
+  <p>目標を急に変えると、ずれ <var>e</var> も急に変わり、その微分は一瞬とても大きくなります。モーターに一瞬大きなトルクがかかります。そこで実際の PID では、<strong>微分は目標を含まない測定値にだけかける</strong>（微分先行型、PI-D）のが普通です。デモのサーボもこの形にしてあります。測定値の雑音を拾わないように、微分には必ず弱いローパスフィルタをつけます。</p>
+
+  <h2>どう調整するか</h2>
+  <p>古典的な調整則に、ジーグラー・ニコルスの方法（1942 年）があります。</p>
+  <ol>
+    <li>I と D を切り、P だけを少しずつ上げて、ちょうど揺れ続けるところ（限界ゲイン <var>K<sub>u</sub></var>、そのときの周期 <var>T<sub>u</sub></var>）を探す。</li>
+    <li><var>K<sub>p</sub></var> = 0.6 <var>K<sub>u</sub></var>、<var>K<sub>i</sub></var> = 1.2 <var>K<sub>u</sub></var>/<var>T<sub>u</sub></var>、<var>K<sub>d</sub></var> = 0.075 <var>K<sub>u</sub> T<sub>u</sub></var> とする。</li>
+  </ol>
+  <p>実験だけでモデルなしに決められるのが強みですが、揺れが 1 周期で 1/4 に減る程度の「かなり攻めた」設定になります。現在は、モデルを簡単に同定して（むだ時間と時定数など）から計算する方法や、自動調整（オートチューニング）機能が広く使われています。</p>
+  <div class="callout">
+    <p><b>デモのサーボに当てはめると</b></p>
+    <p>モーターの角度は、トルクを 2 回積分したもの（1/<var>Js</var>²）です。P だけだと、位相がもともと −180° 近くあるので、ほとんど減衰しません。D でブレーキ（位相を進める）をかけることが、このサーボでは必須です。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/lti.js"></script>
+<script src="../../js/classical/servo.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/classical/figs.js"></script>
+</body>
+</html>

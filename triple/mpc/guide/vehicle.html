@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>題材：車線変更</title>
+<meta name="description" content="車の横方向の動きのモデル：簡単な運動学モデルと、タイヤの横滑りを含む 2 輪モデル。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="mpc">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>題材：車線変更</h1>
+  <p class="g-lead">MPC は「予測」に使うモデルが命です。車の横の動きを、2 段階の細かさでモデル化します。</p>
+</header>
+<main class="g-body">
+  <h2>設定</h2>
+  <ul>
+    <li>2 車線の道路（幅 3.5 m × 2）。車は一定の速さ（既定 20 m/s ＝ 時速 72 km）で前に進み、制御するのは横の動きだけ。</li>
+    <li>入力は「ハンドルを切る速さ」。ハンドルの角度そのものではなく、その変化の速さを決める（急ハンドルを避けるため）。</li>
+    <li>制約：道からはみ出さない／障害物の横を通るときは隣の車線にいる／横加速度は 5 m/s² 以下（乗り心地。前輪の切れ角に直すと約 2°）／ハンドルを切る速さは毎秒約 3° 以下。</li>
+  </ul>
+
+  <h2>簡単なモデル：自転車のように</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 760 210" role="img" aria-label="自転車モデル">
+      <line class="mut dash" x1="40" y1="150" x2="720" y2="150"/>
+      <g transform="rotate(-8 300 120)">
+        <rect class="fill-mut" x="220" y="108" width="260" height="24" rx="6" style="opacity: 0.35"/>
+        <rect class="fill-ink" x="230" y="112" width="44" height="16" rx="3"/>
+        <g transform="rotate(-14 430 120)"><rect class="f1" x="408" y="112" width="44" height="16" rx="3"/></g>
+        <line class="ink" x1="252" y1="120" x2="430" y2="120"/>
+      </g>
+      <text x="252" y="182" text-anchor="middle" class="mu sm">後輪</text>
+      <text x="450" y="70" text-anchor="middle" class="mu sm">前輪（切れ角 δ）</text>
+      <text x="580" y="100" class="mu sm">向き ψ</text>
+      <text x="80" y="140" class="mu sm">横位置 y</text>
+      <text x="340" y="200" text-anchor="middle" class="mu sm">ホイールベース L = 2.8 m</text>
+    </svg>
+  </figure>
+  <p>4 つの車輪を前後 2 つにまとめ、タイヤは向いている方向にだけ進む（横に滑らない）と考えます。すると動きは 3 つの式で書けます。</p>
+  <div class="math"><span class="row">横位置の変化 = 速さ × 向き,　向きの変化 = 速さ × 切れ角 ÷ L,　切れ角の変化 = ハンドルを切る速さ（入力）</span></div>
+  <p>状態は 3 つ（横位置、向き、切れ角）、入力は 1 つ。デモの「簡単なモデル」です。</p>
+
+  <h2>横滑りも考えたモデル</h2>
+  <p>実際のタイヤは、曲がるとき少し横に滑りながら力を出します（滑り角）。この効果を入れると、状態に「横方向の速さ」と「回転の速さ（ヨーレート）」が加わり、5 つになります。ハンドルを切ってから車の向きが変わるまでに、わずかな遅れが生まれます。</p>
+  <p>デモの「タイヤが横滑りする」を選ぶと、シミュレーションの中の実際の車がこのモデルで動きます。MPC が簡単なモデルのまま予測すると、予測と実際がずれます。何が起こるかは 6 ページで見ます。</p>
+
+  <h2>比べる相手：LQR ＋ 飽和</h2>
+  <p>デモの半透明の車は、同じモデル・同じ重みの LQR です。ただし LQR は制約を知らないので、(1) 障害物の何秒前に隣の車線を目標にするかという単純な規則と、(2) 計算した操作が上限を超えたら上限で切る（飽和）、という後付けの工夫をしています。現場でよく使われる、ごく普通の作り方です。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/site.js"></script>
+</body>
+</html>

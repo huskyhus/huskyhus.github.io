@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>試すか、使うか</title>
+<meta name="description" content="探索と活用のジレンマ。多腕バンディット、ε-貪欲法、楽観的な初期値。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>試すか、使うか：探索と活用</h1>
+  <p class="g-lead">いつものお店に行くか、新しいお店を試すか。わかっている最善を使い続けると、もっと良いものに出会えません。試してばかりでは、良いものを楽しめません。</p>
+</header>
+<main class="g-body">
+  <h2>スロットマシンの問題</h2>
+  <figure class="fig" data-fig="bandit">
+    <canvas style="aspect-ratio: 16 / 8"></canvas>
+    <div class="figctl">
+      <label>自分で決める ε <output data-o="eps"></output><input type="range" data-k="eps" min="0" max="0.5" step="0.01" value="0.05"></label>
+    </div>
+    <div class="btnrow"><button type="button">この ε でもう一度</button></div>
+    <figcaption>当たりやすさの違う 10 台のスロットマシン（どれが良いかは知らない）。ε の割合でわざとでたらめに選び、それ以外はこれまでで平均がいちばん高い台を選ぶ。ε = 0（赤）は最初に当たった台に固執して伸びない。ε = 0.1 は早く良い台を見つけるが、ずっと 10% 無駄にする。</figcaption>
+  </figure>
+  <p>これは<strong>多腕バンディット問題</strong>と呼ばれ、探索と活用のジレンマのいちばん単純な形です。ε の割合でわざとでたらめに選ぶ方法を <strong>ε-貪欲法</strong>と言います。</p>
+
+  <h2>楽観的に始める</h2>
+  <p>もうひとつの工夫は、<strong>知らないものは良いと思っておく</strong>ことです。まだ試していない行動の価値を高めに見積もっておくと、試してみてがっかりするまで、次々と新しい行動を試すことになります。デモの台車では、価値の初期値を 0 にしています。報酬は毎歩 −1 なので、0 は「どこからでもすぐゴールに着ける」という楽観的な見積もりです。だから ε = 0 でも、まだ通っていない状態や行動を自然に試します。</p>
+  <p>デモで「悲観的に始める」（初期値 −200）を選んでやり直すと、学習がいつまでも人の規則に届かなくなります。一度ゴールにたどり着いた道筋を「それなりに良い」と思い込み、もっと良い道を探さなくなるからです（試した例では、最後の 50 回の平均が 200 歩前後のまま）。</p>
+
+  <h2>制御にとっての探索</h2>
+  <p>本物の機械で「わざとでたらめに動く」のは危険です。ロボットが壊れたり、人にぶつかったりするかもしれません。これが、強化学習を実機にそのまま使いにくい大きな理由のひとつです。実際には、シミュレーションの中で探索させ、学んだものを実機に移す（シム・トゥ・リアル）ことが多く、その「移す」ところがまた難しい問題になっています。</p>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/rl/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/rl/figs.js"></script>
+</body>
+</html>

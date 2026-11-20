@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>題材：谷の台車</title>
+<meta name="description" content="谷から出られない非力な台車。遅れてやってくる報酬と、目先の得を捨てる必要。自分で操作して試せる。">
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="../../css/guide.css">
+<link rel="stylesheet" href="../../css/series.css">
+</head>
+<body data-root="../../" data-series="rl">
+<nav id="siteNav"></nav>
+<header class="g-top">
+  <nav class="crumbs"><a class="back" href="../">← デモに戻る</a><a class="back" href="./">解説の目次</a></nav>
+  <nav class="steps" id="steps" aria-label="解説のページ"></nav>
+  <p class="kicker" id="kicker"></p>
+  <h1>題材：谷の台車</h1>
+  <p class="g-lead">強化学習の教科書に必ず出てくる、小さいけれど意地の悪い問題です。まず自分でやってみてください。</p>
+</header>
+<main class="g-body">
+  <h2>やってみる</h2>
+  <figure class="fig" data-fig="manual">
+    <canvas style="aspect-ratio: 16 / 7"></canvas>
+    <div class="btnrow"><button type="button">← 左へ押す</button><button type="button">右へ押す →</button><button type="button">最初から</button></div>
+    <p class="readout"></p>
+    <figcaption>この図をクリックしてから ← → キーでも操作できる。右の頂上の旗まで台車を運ぶ。</figcaption>
+  </figure>
+  <p>右へ押し続けても、坂の途中で力尽きて戻ってきます。正解は、<strong>いったん左の坂を登って勢いをつけ、その勢いで右の坂を登る</strong>こと。ブランコをこぐのと同じで、揺れを少しずつ大きくしていきます。</p>
+
+  <h2>なぜ学ぶのが難しいか</h2>
+  <ul>
+    <li><b>報酬が遅れてやってくる</b>：頂上に着くまで、毎歩 −1 が続くだけ。「さっき左に押したのが良かった」と分かるのは、何百歩もあと。</li>
+    <li><b>目先の得と逆のことをする必要がある</b>：ゴールは右なのに、まず左へ行かなければならない。</li>
+    <li><b>最初は一度も着かない</b>：でたらめに押しても、まず頂上には届かない。何も学べないまま時間が過ぎる（だから「探索」の工夫がいる。4 ページ）。</li>
+    <li><b>状態が連続</b>：迷路のマスと違って、位置と速さは連続な数。すべての状態を覚えることはできない（5 ページ）。</li>
+  </ul>
+
+  <h2>学ぶ側が知らないこと</h2>
+  <p>デモの学習する台車は、坂の形も、重力の強さも、エンジンの力も知りません。知っているのは、自分の位置と速さ（2 つの数）、選べる行動（3 つ）、そして毎歩の報酬だけです。それでも数十回から百回ほど挑戦すると、物理を知っている人が考える「動いている向きに押す」という規則と同じくらい（あるいは少し上手に）走れるようになります。</p>
+  <div class="callout">
+    <p><b>物理を知っていれば一瞬</b></p>
+    <p>「動いている向きに押す」は、台車の運動エネルギーと位置エネルギーの和を毎歩増やす規則です。現代制御のデモで、倒れた振り子の揺れを抜くのに使った「エネルギーの考え方」をちょうど逆向きにしたものです。モデルを知っていれば一行で書ける答えを、強化学習は試行錯誤で見つけ出します。</p>
+  </div>
+  <div data-pager></div>
+</main>
+<footer class="g-foot"></footer>
+<script src="../../js/linalg.js"></script>
+<script src="../../js/plot.js"></script>
+<script src="../../js/rl/core.js"></script>
+<script src="../../js/site.js"></script>
+<script src="../../js/rl/figs.js"></script>
+</body>
+</html>
